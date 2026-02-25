@@ -1,0 +1,33 @@
+# General
+.DS_Store
+node_modules/
+dist/
+build/
+.cache/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# PHP / Backend
+vendor/
+composer.lock
+.env
+.env.local
+
+# API Secrets - EXTREMELY IMPORTANT
+# Add all files that contain DB passwords or API keys here
+api.dawmacpolska.pl/public_html/api/forged/db.php
+dawmac-api-main/api/forged/db.php
+dawmac-gallery-master/db.php
+forged.dawmacpolska.pl/public_html/db.php
+
+# IDEs
+.vscode/
+.idea/
+
+# iOS / Xcode
+ios-app/Pods/
+ios-app/*.xcworkspace/
+ios-app/DerivedData/
+ios-app/build/
+ios-app/**/*.xcuserstate

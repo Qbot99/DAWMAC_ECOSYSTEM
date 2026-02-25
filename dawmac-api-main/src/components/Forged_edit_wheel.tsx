@@ -1,0 +1,233 @@
+import { useEffect, useRef, useState } from "react";
+import { useLoading } from "./loading/LoadingContext";
+
+type WheelData = {
+  id: number;
+  name: string;
+  series_name: string;
+  images: string[];
+};
+
+export default function Forged_edit_wheel() {
+  const [wheelList, setWheelList] = useState<WheelData[]>([]);
+  const [selectedWheel, setSelectedWheel] = useState<WheelData | undefined>();
+  const [selectedId, setSelectedId] = useState<string>("");
+  const [newWheelName, setNewWheelName] = useState<string>("");
+  const { setLoading } = useLoading();
+
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  async function getWheels(): Promise<WheelData[]> {
+    try {
+      const res = await fetch(
+        import.meta.env.VITE_DOMAIN + "api/forged/list_wheels.php"
+      );
+      if (!res.ok) throw new Error("Błąd pobierania danych");
+      return res.json();
+    } catch (err) {
+      console.error("Nie udało się pobrać listy felg:", err);
+      return [];
+    }
+  }
+
+  useEffect(() => {
+    refreshWheelList();
+  }, []);
+
+  function refreshWheelList() {
+    getWheels().then((data) => {
+      setWheelList(data);
+      const selected = data.find((wheel) => wheel.id.toString() === selectedId);
+      setSelectedWheel(selected);
+      setNewWheelName(selected?.name ?? "");
+    });
+  }
+
+  function handleSelectChange(e: React.ChangeEvent<HTMLSelectElement>) {
+    const id = e.target.value;
+    setSelectedId(id);
+
+    const selected = wheelList.find((wheel) => wheel.id.toString() === id);
+    setSelectedWheel(selected);
+    setNewWheelName(selected?.name ?? "");
+  }
+
+  function deleteWheel(wheel_id: number) {
+    setLoading(true);
+    fetch(import.meta.env.VITE_DOMAIN + "api/forged/delete_wheel.php", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: `wheel_id=${encodeURIComponent(wheel_id)}`,
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        console.log("Response:", data);
+        console.log("Usunięto felgę ID: " + wheel_id);
+
+        refreshWheelList();
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("Nie udało się usunąć felgi ID:", wheel_id, err);
+        setLoading(false);
+      });
+  }
+
+  function editWheelName(wheel_id: number, new_wheel_name: string) {
+    setLoading(true);
+
+    fetch(import.meta.env.VITE_DOMAIN + "api/forged/edit_wheel_name.php", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: `wheel_id=${encodeURIComponent(
+        wheel_id
+      )}&wheel_name=${encodeURIComponent(new_wheel_name)}`,
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error("HTTP error " + res.status);
+        return res.json();
+        setLoading(false);
+      })
+      .then((data) => {
+        console.log("Response:", data);
+        console.log("Zmieniono nazwę felgi ID: " + wheel_id);
+        refreshWheelList();
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("Nie udało się zmienić nazwy felgi ID:", wheel_id, err);
+        setLoading(false);
+      });
+  }
+
+  function deleteImage(wheel_id: number, img_url: string) {
+    setLoading(true);
+
+    fetch(import.meta.env.VITE_DOMAIN + "api/forged/delete_image.php", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: `wheel_id=${encodeURIComponent(
+        wheel_id
+      )}&img_url=${encodeURIComponent(img_url)}`,
+    })
+      .then((res) => {
+        res.json();
+        setLoading(false);
+      })
+      .then((data) => {
+        console.log("Response:", data);
+        console.log("Usunięto zdjęcie ID felgi:", wheel_id, "URL:", img_url);
+        refreshWheelList();
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("Nie udało się usunąć zdjęcia ID:", wheel_id, err);
+        setLoading(false);
+      });
+  }
+
+  function addWheelImages(wheel_id: number, files: FileList | null) {
+    setLoading(true);
+
+    if (!files || files.length === 0) {
+      console.log("Nie wybrano żadnych plików.");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("wheel_id", wheel_id.toString());
+    for (let i = 0; i < files.length; i++) {
+      formData.append("images[]", files[i]);
+    }
+
+    fetch(import.meta.env.VITE_DOMAIN + "api/forged/add_wheel_images.php", {
+      method: "POST",
+      body: formData,
+    })
+      .then((res) => {
+        res.json();
+        setLoading(false);
+      })
+      .then((data) => {
+        console.log("Response:", data);
+        console.log("Zdjęcia dodane pomyślnie.");
+        refreshWheelList();
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("Nie udało się dodać zdjęć:", err);
+        setLoading(false);
+      });
+  }
+
+  return (
+    <div id="forged-edit-wheel">
+      <h2>Edycja Felgi</h2>
+
+      <select value={selectedId} onChange={handleSelectChange}>
+        <option value="" disabled>
+          Wybierz felgę
+        </option>
+        {wheelList.map((wheel) => (
+          <option key={wheel.id} value={wheel.id}>
+            {wheel.name}
+          </option>
+        ))}
+      </select>
+
+      {selectedWheel && (
+        <>
+          <div id="forged-edit-wheel-info">
+            <span>ID: {selectedWheel.id}</span>
+            <input
+              type="text"
+              value={newWheelName}
+              onChange={(e) => setNewWheelName(e.target.value)}
+            />
+
+            <div id="forged-edit-wheel-images">
+              {selectedWheel.images.map((img) => (
+                <div key={img} id="forged-edit-wheel-image-wrapper">
+                  <button onClick={() => deleteImage(selectedWheel.id, img)}>
+                    Usuń
+                  </button>
+                  <img
+                    src={import.meta.env.VITE_DOMAIN + "forged/" + img}
+                    width={100}
+                  />
+                </div>
+              ))}
+              <input
+                ref={fileInputRef}
+                type="file"
+                name="add-wheel-images[]"
+                multiple
+              />
+              <button
+                onClick={() =>
+                  addWheelImages(
+                    selectedWheel.id,
+                    fileInputRef.current?.files || null
+                  )
+                }
+              >
+                Dodaj
+              </button>
+            </div>
+          </div>
+
+          <div id="forged-edit-controlls">
+            <button
+              onClick={() => editWheelName(selectedWheel.id, newWheelName)}
+            >
+              Zmień nazwę
+            </button>
+            <button onClick={() => deleteWheel(selectedWheel.id)}>
+              Usuń felgę
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}

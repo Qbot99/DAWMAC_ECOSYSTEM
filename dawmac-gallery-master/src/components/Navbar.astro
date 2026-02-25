@@ -1,0 +1,190 @@
+---
+import { Image } from "astro:assets";
+import dawmacLogo from "../assets/logo_noBg_white_newSite.png";
+import menu_icon from "../assets/menu_24dp_E8EAED_FILL0_wght400_GRAD0_opsz24.svg";
+
+const menuItems = [
+  { title: "Strona główna", url: "https://dawmacpolska.pl/" },
+  {
+    title: "Felgi aluminiowe",
+    url: "https://dawmacpolska.pl/felgi-aluminiowe/",
+  },
+  { title: "Galeria", url: `https://${import.meta.env.PUBLIC_DOMAIN}` },
+  { title: "Dawmac Forged", url: "https://dawmacpolska.pl/dawmac-forged/" },
+  { title: "Kontakt", url: "https://dawmacpolska.pl/kontakt/" },
+];
+---
+
+<nav>
+  <div id="navbar_up">
+    <span
+      >Telefon / whatsapp: <a href="tel:+48 518 612 358">518 612 358</a> | <a
+        href="tel:+48 511 819
+      473">511 819 473</a
+      > | <a href="tel:+48 798 392 663">798 392 663</a></span
+    >
+    <span><a href="mailto:sklep@dawmacpolska.pl">sklep@dawmacpolska.pl</a></span
+    >
+  </div>
+  <div id="navbar_down">
+    <div id="menu_logo">
+      <a href="https://dawmacpolska.pl/">
+        <Image src={dawmacLogo} alt="Dawmac Polska Logo" />
+      </a>
+    </div>
+
+    <div id="menu_left">
+      <div class="navbar_menu" id="menu_big_screen">
+        <ul>
+          {
+            menuItems.map((item) => (
+              <li>
+                <a href={item.url}>{item.title}</a>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+      <div class="navbar_menu" id="menu_small_screen">
+        <label for="menu_button">
+          <Image src={menu_icon} alt="menu_icon" />
+        </label>
+      </div>
+    </div>
+  </div>
+  <input type="checkbox" name="" id="menu_button" />
+  <div id="navbar_mobile">
+    <ul>
+      {
+        menuItems.map((item) => (
+          <li>
+            <a href={item.url}>{item.title}</a>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</nav>
+
+<style>
+  nav {
+    background-color: #000;
+  }
+  #navbar_up {
+    height: 32px;
+    color: #fff;
+    font-weight: 550;
+    font-size: medium;
+    line-height: 1em;
+    padding: 8px 0 0 40px;
+  }
+
+  @media (max-width: 1050px) {
+    #navbar_up {
+      display: none;
+    }
+    #menu_big_screen {
+      display: none;
+    }
+    #menu_small_screen {
+      display: block;
+    }
+  }
+  #navbar_mobile {
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    transform: translateY(-10px);
+    transition:
+      max-height 0.4s ease-in-out,
+      opacity 0.3s ease-in-out,
+      transform 0.3s ease-in-out;
+  }
+
+  /* When checkbox is checked, show the menu */
+  #menu_button:checked ~ #navbar_mobile {
+    display: block;
+    max-height: 300px; /* Adjust based on content */
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  #menu_button {
+    display: none;
+  }
+  @media (min-width: 1051px) {
+    #menu_small_screen {
+      display: none;
+    }
+    #navbar_mobile {
+      display: none !important;
+    }
+  }
+  #navbar_down {
+    padding-left: 30px;
+    height: 100px;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  #menu_big_screen > ul {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    list-style: none;
+  }
+  #menu_big_screen > ul > li {
+    padding: 1em;
+    white-space: nowrap;
+  }
+
+  #menu_left {
+    display: flex;
+    align-items: center;
+    color: #fff;
+    font-weight: 550;
+    font-size: medium;
+    line-height: 1em;
+  }
+
+  #menu_small_screen {
+    margin: 1em;
+    align-items: center;
+    justify-content: center;
+  }
+  Image,
+  img {
+    height: 100%;
+    max-width: 70vw;
+    width: auto;
+  }
+
+  @media (max-width: 440px) {
+    #navbar_down {
+      padding-left: 0px;
+    }
+    #menu_logo {
+      align-items: center;
+      display: flex;
+    }
+    Image,
+    img {
+      height: auto;
+      width: 100%;
+    }
+  }
+  a,
+  a :visited {
+    text-decoration: none;
+    color: #fff;
+  }
+
+  #navbar_mobile > ul > li {
+    font-size: large;
+    margin: 0.5em;
+  }
+
+  #navbar_mobile {
+    padding-bottom: 1em;
+  }
+</style>

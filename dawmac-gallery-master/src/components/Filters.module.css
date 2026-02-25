@@ -1,0 +1,38 @@
+#gallery_list_filters{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 1em;
+}
+
+#gallery_list_filters :not(:last-child){
+    margin-right: 1em;
+}
+
+@media (max-width:600px) {
+    #gallery_list_filters {
+    flex-direction: column;
+    align-items: center;
+  }
+  #gallery_list_filters :not(:last-child){
+    margin-right: 0px;
+}
+  #gallery_list_filters :last-child{
+    margin-top: .5em;
+}
+  }
+
+select, input {
+  appearance: none; /* Usuwa domyślny styl przeglądarki */
+  background-color: #fff;
+  padding: 10px 14px;
+  border: 2px solid black;
+  font-size: 16px;
+  font-weight: 500;
+  color: #2d3436;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.3s ease-in-out;
+  /* width: 100%; */
+}
+

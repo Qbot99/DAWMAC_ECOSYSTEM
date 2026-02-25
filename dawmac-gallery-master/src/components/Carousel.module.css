@@ -1,0 +1,102 @@
+.embla {
+  overflow: hidden;
+  
+}
+.embla__container {
+  max-width: 90vw;
+  width:fit-content;
+
+  display: flex;
+  cursor: grab;
+}
+.embla__slide {
+    display: flex;
+  align-items: center;
+  justify-content: center;
+  width: max-content;
+  flex: 0 0 100%;
+  min-width: 0;
+}
+
+.carousel_img {
+  width: auto;  
+  max-width: 100%; 
+  max-height: 75vh; 
+  object-fit: cover; 
+  display: block; 
+}
+
+@media (max-width: 600px) {
+  .carousel_img{
+  width: 100%;
+}
+}
+
+.carousel_button {
+  position: absolute;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  border: none;
+  padding: 10px;
+  cursor: pointer;
+  z-index: 10;
+  font-size: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3em;
+  height: 3em;
+  border-radius: 50%;
+}
+
+  #button_prev {
+  left: 20vw;
+}
+
+#button_next {
+  right: 20vw;
+} 
+
+@media (max-width: 1200px) {
+    #button_prev {
+  left: 15vw;
+}
+
+#button_next {
+  right: 15vw;
+} 
+}
+@media (max-width: 1000px) {
+    #button_prev {
+  left: 10vw;
+}
+
+#button_next {
+  right: 10vw;
+} 
+}
+@media (max-width: 800px) {
+    #button_prev {
+  left: 5vw;
+}
+
+#button_next {
+  right: 5vw;
+} 
+}
+@media (max-width: 700px) {
+  .carousel_button {
+    background: rgba(0, 0, 0, 0.7);
+    width: 2em;
+    height: 2em;
+    font-size: 20px;
+  }
+
+    #button_prev {
+  left: 35px;
+}
+
+#button_next {
+  right: 35px;
+}
+}

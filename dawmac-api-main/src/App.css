@@ -1,0 +1,86 @@
+#root {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem;
+  text-align: center;
+}
+
+#forged-tools{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-direction: column;
+
+}
+
+#forged-add-wheel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+#forged-add-wheel-form{
+  display: flex;
+  flex-direction: column;
+  align-items:baseline;
+  justify-content: center;
+  width: 100%;
+}
+#forged-add-wheel-form>* {
+  width: 100%;
+  max-width: 400px;
+  margin-bottom: 1rem;
+}
+
+
+
+#forged-edit-wheel{
+  display: flex;
+  flex-direction: column;
+}
+
+#forged-edit-wheel-info{
+  display: flex;
+  flex-direction: column;
+}
+#forged-edit-wheel-info span{
+  font-size: larger;
+}
+
+#forged-edit-wheel-images{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin: 1rem;
+
+}
+
+
+#forged-edit-wheel-image-wrapper{
+  display: flex;
+  flex-direction: column;
+}
+
+#forged-edit-controlls *{
+  margin: 1rem;
+}
+
+.gallery-edit-project-images{
+    display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin: 1rem;
+
+}
+
+.gallery-edit-project-image{
+  width: 150px;
+}
+
+#gallery-edit-project-image-wrapper {
+  display: flex;
+  flex-direction: column;
+}

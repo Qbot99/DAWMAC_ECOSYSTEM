@@ -1,0 +1,25 @@
+{
+  "name": "dawmac-gallery",
+  "type": "module",
+  "version": "0.0.1",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build && npm run copy-php && npm run copy-dist2",
+    "copy-php": "copyfiles -u 1 src/api/**/* dist/ && copyfiles -u 1 vendor/**/* dist/api/vendor/ && copyfiles composer.json composer.lock dist/api && copyfiles .htaccess dist2",
+    "copy-dist2": "copyfiles -u 1 dist/**/* dist2/ && copyfiles dist/.env dist2/api/",
+    "preview": "astro preview",
+    "astro": "astro"
+  },
+  "dependencies": {
+    "@astrojs/react": "^4.2.0",
+    "@types/react": "^19.0.8",
+    "@types/react-dom": "^19.0.3",
+    "astro": "^5.2.5",
+    "embla-carousel-react": "^8.5.2",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "copyfiles": "^2.4.1"
+  }
+}

@@ -1,0 +1,47 @@
+.gallery {
+  position: fixed; /* Ustawienie elementu w odniesieniu do okna przeglądarki */
+  top: 50%; /* Ustawienie na środku ekranu w pionie */
+  left: 50%; /* Ustawienie na środku ekranu w poziomie */
+  transform: translate(-50%, -50%); /* Przesunięcie o połowę jego szerokości i wysokości */
+    width: 100vw;
+    height: 100vh;
+    background-color: #00000092;
+  z-index: 9999; /* Zapewnia, że element będzie na wierzchu */
+  display: flex;
+  align-items: center;justify-content: center;
+  flex-direction: column;
+  color: #fff;
+}
+
+.gallery_img{
+    /* max-width: 50%; */
+    width: auto;
+    max-height: 50%;
+}
+
+.storeLink{
+  text-decoration: none;
+  color: #fff;
+}
+
+.storeLink:hover{
+  text-decoration: underline;
+  color: #fff;
+}
+
+.storeLink:visited{
+  color: #fff;
+}
+
+.storeLink:active{
+  color: #fff;
+}
+
+h3{
+  text-align: center;
+}
+
+#carousel_wrapper{
+  display: flex;
+  align-items: center;justify-content: center;  
+}

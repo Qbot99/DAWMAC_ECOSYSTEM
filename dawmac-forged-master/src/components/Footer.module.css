@@ -1,0 +1,89 @@
+.footer {
+    background-color: black;
+    color: white;
+    padding: 2.5rem 1.5rem;
+  }
+  
+  .container {
+    max-width: 80rem;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+  
+  @media (min-width: 768px) {
+    .footer {
+      padding-left: 4rem;
+      padding-right: 4rem;
+    }
+  
+    .container {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+  
+  .heading {
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin-bottom: 1rem;
+  }
+  
+  .description {
+    font-size: 0.875rem;
+    color: #9ca3af; /* gray-400 */
+  }
+  
+  .links {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+  }
+  
+  .link {
+    color: white;
+    text-decoration: none;
+    transition: color 0.2s ease;
+  }
+  
+  .link:hover {
+    color: #d1d5db; /* gray-300 */
+  }
+  
+  .bottom {
+    margin-top: 2.5rem;
+    text-align: center;
+    font-size: 0.75rem;
+    color: #6b7280; /* gray-500 */
+    border-top: 1px solid #374151; /* gray-700 */
+    padding-top: 1rem;
+  }
+  
+  /* opcjonalnie do sociali */
+  .socialSection {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .socialHeading {
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+  }
+  
+  .socialIcons {
+    display: flex;
+    gap: 1rem;
+    font-size: 1.5rem;
+  }
+  
+  .socialLink {
+    color: white;
+    transition: color 0.2s ease;
+  }
+  
+  .socialLink:hover {
+    color: #d1d5db;
+  }
+  
