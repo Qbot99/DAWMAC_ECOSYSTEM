@@ -1,27 +1,65 @@
-import Header from "./components/Header";
-import Footer from "./components/Footer";
-// import PartnerLink from "./components/PartnerLink";
-import { Routes, Route } from "react-router-dom";
-import Home from "./pages/home/Home";
-import FactoryStock from "./pages/forged_factory_stock/forged_factory_stock";
-import ListPage from "./pages/wheel/ListPage";
-import WheelPage from "./pages/wheel/WheelPage";
-import Pricing from "./pages/pricing/Pricing";
+import { useState } from "react";
+import Builds from "./components/Builds";
+import Catalog from "./components/Catalog";
+import ContactSection from "./components/ContactSection";
+import CursorGlow from "./components/CursorGlow";
+import FooterNew from "./components/FooterNew";
+import Hero from "./components/Hero";
+import Marquee from "./components/Marquee";
+import Nav from "./components/Nav";
+import Preloader from "./components/Preloader";
+import PricingSection from "./components/PricingSection";
+import TechPanels from "./components/TechPanels";
+import WhatsAppFab from "./components/WhatsAppFab";
+import WheelLightbox from "./components/WheelLightbox";
+import WhyForged from "./components/WhyForged";
+import { useForgedData } from "./data/useForgedData";
+import { useReveal } from "./hooks/useReveal";
+import { useWheelRoute } from "./hooks/useWheelRoute";
 
 export default function App() {
+  const { wheels, findWheel, loading } = useForgedData();
+  const { wheelName, openWheel, switchWheel, closeWheel } = useWheelRoute();
+  const [formTopic, setFormTopic] = useState<string | null>(null);
+  useReveal(!loading);
+
+  const selectedWheel = wheelName ? findWheel(wheelName) : undefined;
+
   return (
-    <>
-      <Header />
+    <div className="page">
+      <Preloader />
+      <CursorGlow />
+      <div className="hazard" />
+      <Nav />
       <main>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/forged_facotry_stock" element={<FactoryStock />} />
-          <Route path="/wheel" element={<ListPage />} />
-          <Route path="/wheel/:name" element={<WheelPage />} />
-          <Route path="pricing" element={<Pricing />} />
-        </Routes>
+        <Hero />
+        <Marquee />
+        <Catalog onOpenWheel={openWheel} />
+        <div className="hazard--thin" />
+        <TechPanels />
+        <PricingSection />
+        <WhyForged />
+        <Builds />
+        <ContactSection
+          topic={formTopic}
+          onClearTopic={() => setFormTopic(null)}
+        />
       </main>
-      <Footer />
-    </>
+      <FooterNew />
+      <WhatsAppFab />
+
+      {selectedWheel && (
+        <WheelLightbox
+          wheel={selectedWheel}
+          wheels={wheels}
+          onSwitch={switchWheel}
+          onClose={closeWheel}
+          onAsk={(name) => {
+            setFormTopic(name);
+            closeWheel();
+          }}
+        />
+      )}
+    </div>
   );
 }
