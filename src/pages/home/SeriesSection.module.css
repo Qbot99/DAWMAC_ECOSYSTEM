@@ -1,0 +1,92 @@
+.section {
+    background-color: white;
+    padding: 4rem 1.5rem;
+    text-align: center;
+  }
+  
+  .heading {
+    font-size: 1.875rem; /* text-3xl */
+    font-weight: 600;
+    margin-bottom: 2.5rem;
+  }
+  
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    margin-left: 0;
+    margin-right: 0;
+  }
+  
+  @media (min-width: 768px) {
+    .grid {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+  
+  @media (min-width: 1300px) {
+    .grid {
+      margin-left: 10rem;
+      margin-right: 10rem;
+    }
+  }
+  
+  .card {
+    padding: 1.5rem;
+    transition: box-shadow 0.3s;
+    line-height: 1.5;
+  }
+  
+  .card:hover {
+    box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+  }
+  
+  .image {
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  @media (min-width: 766px)and (max-width: 1024px) {
+    .image {
+      width: 300px ;
+      height: auto;
+    }
+    
+  }
+
+  @media (max-width: 640px) {
+    .image {
+      width: 300px ;
+      height: auto;
+    }
+    
+  }
+  
+  .title {
+    font-size: 1.25rem; /* text-xl */
+    margin-top: 1rem;
+    font-weight: 500;
+  }
+  
+  .description {
+    margin-top: 0.5rem;
+    color: #6b7280; /* gray-500 */
+  }
+  
+  .button {
+    margin-top: 1rem;
+    padding: 0.75rem 1.5rem;
+    border: 1px solid black;
+    border-radius: 9999px;
+    background-color: transparent;
+    color: black;
+    transition: background-color 0.3s, color 0.3s;
+    cursor: pointer;
+    font-size: inherit;
+  }
+  
+  .card:hover .button {
+    background-color: black;
+    color: white;
+  }
+  

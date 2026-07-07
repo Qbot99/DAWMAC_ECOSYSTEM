@@ -1,0 +1,164 @@
+.main {
+
+  }
+
+  .primaryWrapper{
+    display: grid;
+    grid-template-columns: 1fr;
+    max-width: 72rem; 
+    margin-top: 80.5px;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 2rem 1.5rem;
+    gap: 2.5rem;
+  }
+  
+  @media (min-width: 768px) {
+    .primaryWrapper {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  
+  .title {
+    font-size: 1.875rem; /* text-3xl */
+    font-weight: 600;
+    margin-bottom: 2rem;
+  }
+  
+  .leftColumn {
+    /* opcjonalnie */
+  }
+  
+  .rightColumn {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    max-width: 100%;
+  }
+  
+  .rightContent {
+    /* text-align: center; */
+  }
+  
+  @media (min-width: 1024px) {
+    .rightContent {
+      text-align: left;
+    }
+  }
+  
+  .priceLabel {
+    margin-bottom: 0.5rem;
+  }
+  
+  .seriesLabel {
+    font-size: 1.25rem; /* text-xl */
+    font-weight: 500;
+    margin-bottom: 1rem;
+  }
+  
+  .seriesName {
+    font-weight: 600;
+  }
+  
+  .note {
+    margin-top: 1rem;
+    font-size: 1rem;
+    line-height: 1.5;
+  }
+  
+
+  .button {
+    border: 1px solid rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+    padding: .75rem 1.5rem;
+    white-space: nowrap;
+    flex-shrink: 0;
+    background-color: transparent;
+    color: black;
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease;
+    font-size: 1rem; /* text-base */
+    margin-top: .5rem;
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    justify-content: center;  
+  }
+
+  
+  .button:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+  }
+  
+  .socialIcons {
+    display: flex;
+    gap: 1rem;
+    font-size: 1.5rem;
+  }
+  
+
+  .order{
+    display: flex;
+    flex-direction: column;
+    align-items: baseline;
+    justify-content: center;
+    margin: 2rem 0 2rem 0;
+
+  }
+
+
+    .contactLink {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: .5rem;
+    }
+    .contactLink:hover {
+    color: gray !important;
+
+  }
+    .orderNowText{
+
+      margin-bottom: 0.5rem;
+    }
+
+  .youtubeEmbed{
+    aspect-ratio: 16 / 9;
+    width: 100% !important;
+  }
+
+
+   .mediaWrapper{
+    display: grid;
+    grid-template-columns: 1fr;
+    align-items: center;
+    max-width: 72rem; 
+    margin-left: auto;
+    margin-right: auto;
+    padding: 2rem 1.5rem;
+    gap: 2.5rem;
+  }
+  
+  @media (min-width: 768px) {
+    .mediaWrapper {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  .description{
+    font-size: 1rem;
+    line-height: 1.5;
+    /* color: #666; */
+    /* text-align: center; */
+    /* padding: 0 1.5rem ;   */
+  }
+
+  .loadingPlaceholder{
+    height:100vh;
+  }
+  @media (min-width: 768px) {
+  .loadingPlaceholder{
+    height:80vh;
+  }
+    
+  }
