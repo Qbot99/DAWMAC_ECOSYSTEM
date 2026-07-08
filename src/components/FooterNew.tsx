@@ -53,25 +53,24 @@ export default function FooterNew() {
         </div>
       </div>
 
-      <a
-        className="credit"
-        href="https://hkubot.com"
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        <span className="credit__line" />
-        <span className="credit__text">
-          designed &amp; engineered by{" "}
-          <span className="credit__name">
-            Kubot&nbsp;<span className="credit__h">H</span>
-          </span>
-        </span>
-      </a>
-
       <div className="footer__bottom">
         <span>
           © {new Date().getFullYear()} DAWMAC Polska. {t.footRights}
         </span>
+        <a
+          className="credit"
+          href="https://hkubot.com"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <span className="credit__line" />
+          <span className="credit__text">
+            designed &amp; engineered by{" "}
+            <span className="credit__name">
+              Kubot&nbsp;<span className="credit__h">H</span>
+            </span>
+          </span>
+        </a>
         <span>forged.dawmacpolska.pl</span>
       </div>
     </footer>

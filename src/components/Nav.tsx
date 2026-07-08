@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { DotLottie } from "@lottiefiles/dotlottie-web";
 import { STORE_URL } from "../config";
+import { useLang } from "../i18n";
+import type { Lang } from "../i18n";
 
 // renderer WASM hostowany lokalnie (kopia w public/, bez zależności od CDN);
 // przy aktualizacji @lottiefiles/dotlottie-web trzeba odświeżyć public/dotlottie-player.wasm
 DotLottie.setWasmUrl("/dotlottie-player.wasm");
-import { useLang } from "../i18n";
-import type { Lang } from "../i18n";
 
 const HREFS = ["#cennik", "#kontakt"];
 const INTRO_MS = 2000; // czas przejazdu koła przez belkę menu
