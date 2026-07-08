@@ -53,7 +53,7 @@ export default function ContactSection({ topic, onClearTopic }: Props) {
       href: `tel:${CONTACT.phone}`,
     },
     { label: t.chMail, val: CONTACT.email, href: `mailto:${CONTACT.email}` },
-    { label: t.chLoc, val: t.chLocVal, href: "#kontakt" },
+    { label: t.chLoc, val: t.chLocVal, href: CONTACT.mapsUrl },
   ];
 
   return (

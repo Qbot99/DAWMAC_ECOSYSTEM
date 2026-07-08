@@ -9,12 +9,18 @@ export const wheelImg = (path: string) => `${API_BASE}/forged/${path}`;
 export const galleryImg = (path: string) => `${API_BASE}/gallery/${path}`;
 
 export const CONTACT = {
+  // WhatsApp i telefon to ten sam numer
   whatsapp: "+48518612358",
   whatsappDisplay: "+48 518 612 358",
   phone: "+48518612358",
   phoneDisplay: "+48 518 612 358",
-  email: "forged@dawmacpolska.pl",
+  email: "dawmacpolska@gmail.com",
+  address: "Perzów 109B, 63-642 Perzów",
+  mapsUrl: "https://maps.google.com/?q=Perz%C3%B3w+109B,+63-642+Perz%C3%B3w,+Polska",
 };
+
+/** felgi kute dostępne od ręki — sklep na dawmac.pl */
+export const STORE_URL = "https://dawmac.pl/kategoria-produktu/dawmac-forged/";
 
 export const SOCIAL = {
   facebook: "https://www.facebook.com/dawmacpolska",

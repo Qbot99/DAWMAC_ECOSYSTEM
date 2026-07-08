@@ -9,13 +9,20 @@ export default function Builds() {
 
   useEffect(() => {
     let cancelled = false;
-    // ?forged=1 — auta oznaczone „ptaszkiem" w panelu galerii; starsza wersja API
-    // ignoruje parametr i zwraca wszystkie (bierzemy wtedy najnowsze)
-    fetch(`${PROJECTS_ENDPOINT}?forged=1`)
+    // pokazujemy tylko projekty, których felga ma "forged" w marce lub modelu
+    fetch(PROJECTS_ENDPOINT)
       .then((r) => r.json())
       .then((data: GalleryProject[]) => {
         if (!cancelled && Array.isArray(data)) {
-          setProjects(data.filter((p) => p.image).slice(0, 12));
+          setProjects(
+            data
+              .filter(
+                (p) =>
+                  p.image &&
+                  `${p.brand} ${p.model}`.toLowerCase().includes("forged")
+              )
+              .slice(0, 12)
+          );
         }
       })
       .catch(() => {});

@@ -1,5 +1,5 @@
 import { FaFacebookF, FaInstagram, FaTiktok, FaYoutube } from "react-icons/fa";
-import { SOCIAL } from "../config";
+import { SOCIAL, STORE_URL } from "../config";
 import { useLang } from "../i18n";
 
 export default function FooterNew() {
@@ -19,6 +19,9 @@ export default function FooterNew() {
         <div>
           <div className="footer__heading">Dawmac</div>
           <div className="footer__links">
+            <a href={STORE_URL} className="footer__link" target="_blank" rel="noreferrer">
+              {t.navStore}
+            </a>
             <a href="https://dawmacpolska.pl/o-nas/" className="footer__link" target="_blank" rel="noreferrer">
               {t.footAbout}
             </a>
@@ -49,6 +52,21 @@ export default function FooterNew() {
           </div>
         </div>
       </div>
+
+      <a
+        className="credit"
+        href="https://hkubot.com"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        <span className="credit__line" />
+        <span className="credit__text">
+          designed &amp; engineered by{" "}
+          <span className="credit__name">
+            Kubot&nbsp;<span className="credit__h">H</span>
+          </span>
+        </span>
+      </a>
 
       <div className="footer__bottom">
         <span>

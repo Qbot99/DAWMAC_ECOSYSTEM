@@ -7,7 +7,6 @@ import FooterNew from "./components/FooterNew";
 import Hero from "./components/Hero";
 import Marquee from "./components/Marquee";
 import Nav from "./components/Nav";
-import Preloader from "./components/Preloader";
 import PricingSection from "./components/PricingSection";
 import TechPanels from "./components/TechPanels";
 import WhatsAppFab from "./components/WhatsAppFab";
@@ -27,7 +26,6 @@ export default function App() {
 
   return (
     <div className="page">
-      <Preloader />
       <CursorGlow />
       <div className="hazard" />
       <Nav />

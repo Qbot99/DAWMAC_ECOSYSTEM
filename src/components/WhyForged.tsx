@@ -28,24 +28,6 @@ export default function WhyForged() {
           </div>
         ))}
       </div>
-      <div className="cmp">
-        <div className="cmp__title" data-reveal="0">
-          {t.cmpTitle}
-        </div>
-        <div className="cmp__row">
-          <span className="cmp__label cmp__label--forged">{t.cmpForged}</span>
-          <div className="cmp__track">
-            <div className="cmp__fill cmp__fill--forged" data-bar="92" />
-          </div>
-        </div>
-        <div className="cmp__row">
-          <span className="cmp__label cmp__label--cast">{t.cmpCast}</span>
-          <div className="cmp__track">
-            <div className="cmp__fill cmp__fill--cast" data-bar="44" />
-          </div>
-        </div>
-        <div className="cmp__note">{t.cmpNote}</div>
-      </div>
     </section>
   );
 }
