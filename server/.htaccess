@@ -1,0 +1,18 @@
+RewriteEngine On
+RewriteBase /
+
+# 1. WYJĄTEK DLA PLIKÓW GRAFICZNYCH
+# Jeśli to żądanie o obrazek, serwuj go normalnie bez żadnego bot.php
+RewriteCond %{REQUEST_URI} \.(jpe?g|png|gif|webp)$ [NC]
+RewriteRule ^ - [L]
+
+# 2. PRZEKIEROWANIE BOTÓW DO bot.php
+# Działa tylko dla wszystkiego, co NIE jest obrazkiem (bo powyżej daliśmy [L])
+RewriteCond %{HTTP_USER_AGENT} (facebookexternalhit|WhatsApp|Twitterbot|Pinterest|LinkedInBot|Slackbot|TelegramBot) [NC]
+RewriteRule ^(.*)$ /bot.php [L]
+
+# 3. STANDARDOWE REGUŁY DLA APLIKACJI (SPA - React)
+RewriteRule ^index\.html$ - [L]
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule . /index.html [L]
