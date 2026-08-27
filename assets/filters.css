@@ -1,0 +1,454 @@
+/* Dawmac Filters - style. Zmienne na górze = łatwe dopasowanie do motywu. */
+
+/* Tryb natywny: formularz-widget w sidebarze sklepu potrzebuje tych samych
+   zmiennych (dziedziczy stylowanie sekcji .dawmac-group poniżej). */
+.dawmac-native {
+	--df-bg: #111214;
+	--df-panel: #1b1d21;
+	--df-panel-2: #222529;
+	--df-text: #f2f2f2;
+	--df-muted: #8b8f96;
+	--df-accent: #e01a22;
+	--df-border: #2c2f34;
+	--df-radius: 8px;
+	display: block;
+}
+.dawmac-native .dawmac-more { width: 100%; margin: 10px 0 8px; }
+.dawmac-native .dawmac-clear { width: 100%; }
+
+/* --- Sticky: filtry jadą razem ze stroną ---------------------------------
+   Sam sidebar bywa wyższy od ekranu (rozwinięta długa lista), a wtedy samo
+   position:sticky nic nie daje - dolna część i tak ucieka poza widok.
+   Dlatego para: sticky + własne przewijanie panelu do wysokości ekranu.
+   Trzymamy to na naszym formularzu, więc działa niezależnie od reguł motywu. */
+@media (min-width: 921px) {
+	/* WARUNEK KONIECZNY dla sticky: motyw ma overflow-x:hidden na html
+	   ORAZ body. Skoro html nie jest "visible", overflow body nie
+	   propaguje się do okna i body staje się WŁASNYM kontenerem
+	   przewijania, który nigdy się nie przewija (strona jedzie na html)
+	   - a wtedy sticky w środku nie ma się do czego przykleić.
+	   overflow-x: clip przycina tak samo (zero poziomego paska), ale NIE
+	   tworzy kontenera przewijania. Zawężone przez :has do stron
+	   z naszym widgetem, więc reszta sklepu zostaje nietknięta. */
+	body:has(.dawmac-native) {
+		overflow-x: clip !important;
+		overflow-y: visible !important;
+	}
+
+	/* Przypinamy KOLUMNĘ sidebara (a nie sam formularz): element sticky
+	   musi mieć w czym "jechać", a kontener widgetu jest dokładnie tak
+	   wysoki jak formularz. :has ogranicza regułę do stron z naszym
+	   widgetem, więc kategorie/opony (Filter Everything) zostają nietknięte. */
+	#secondary:has(.dawmac-native),
+	.widget-area:has(.dawmac-native) {
+		position: sticky;
+		top: calc(20px + var(--wp-admin--admin-bar--height, 0px));
+		align-self: flex-start;
+		max-height: calc(100vh - 40px - var(--wp-admin--admin-bar--height, 0px));
+		overflow-y: auto;
+		overscroll-behavior: contain;
+		scrollbar-width: thin;
+		scrollbar-color: #2c2f34 transparent;
+	}
+	#secondary:has(.dawmac-native)::-webkit-scrollbar,
+	.widget-area:has(.dawmac-native)::-webkit-scrollbar { width: 8px; }
+	#secondary:has(.dawmac-native)::-webkit-scrollbar-thumb,
+	.widget-area:has(.dawmac-native)::-webkit-scrollbar-thumb {
+		background: #2c2f34;
+		border-radius: 99px;
+	}
+	#secondary:has(.dawmac-native)::-webkit-scrollbar-track,
+	.widget-area:has(.dawmac-native)::-webkit-scrollbar-track { background: transparent; }
+}
+
+/* Po rozwinięciu sekcji pokazujemy DŁUGĄ listę (bez dłubania w małym
+   okienku): wysokość ograniczamy dopiero na poziomie ekranu, a całość
+   przewija panel filtrów, nie każdy pojedynczy boks z osobna. */
+.dawmac-native .dawmac-group ul {
+	max-height: min(70vh, 900px);
+}
+
+/* Pancerz na kolory motywu - wersja dla widgetu w sidebarze
+   (motyw/Astra potrafi ustawić ciemny tekst; wymuszamy nasze). */
+.dawmac-native,
+.dawmac-native span,
+.dawmac-native label,
+.dawmac-native summary,
+.dawmac-native li {
+	color: var(--df-text) !important;
+}
+.dawmac-native .dawmac-group li em,
+.dawmac-native .dawmac-price span {
+	color: var(--df-muted) !important;
+}
+.dawmac-native input[type="search"],
+.dawmac-native input[type="number"] {
+	color: var(--df-text) !important;
+	background: var(--df-panel-2) !important;
+	border: 1px solid var(--df-border) !important;
+}
+/* Klik w nagłówek sekcji nie zostawia niebieskiej obwódki focus
+   (zostaje widoczna przy nawigacji klawiaturą). */
+.dawmac-native summary:focus:not(:focus-visible) { outline: none; }
+.dawmac-native summary:focus-visible { outline: 2px solid var(--df-accent); outline-offset: 2px; }
+
+.dawmac-filters {
+	--df-bg: #111214;
+	--df-panel: #1b1d21;
+	--df-panel-2: #222529;
+	--df-text: #f2f2f2;
+	--df-muted: #8b8f96;
+	--df-accent: #e01a22;   /* czerwień dawmac */
+	--df-border: #2c2f34;
+	--df-radius: 8px;
+
+	display: grid;
+	grid-template-columns: 280px minmax(0, 1fr);
+	gap: 28px;
+	color: var(--df-text);
+	background: var(--df-bg);
+	padding: 28px;
+	font-size: 14px;
+	line-height: 1.4;
+	border-radius: var(--df-radius);
+
+	/* Full-bleed: wyłam się z wąskiej kolumny treści motywu. */
+	width: 100vw;
+	max-width: 100vw;
+	margin-left: calc(50% - 50vw);
+	box-sizing: border-box;
+}
+
+.dawmac-filters *, .dawmac-filters *::before, .dawmac-filters *::after { box-sizing: border-box; }
+
+@media (max-width: 900px) {
+	.dawmac-filters { grid-template-columns: 1fr; padding: 16px; }
+}
+
+/* ---------- Strona sklepu (szablon templates/shop.php) ---------- */
+/* Wrapper bierze pełną szerokość niezależnie od tego, w jaki kontener
+   (flex/grid Astry) trafi nasza treść - bez tego hero i filtry potrafiły
+   ustawić się obok siebie jak dwie kolumny. */
+.dawmac-shop-main {
+	flex: 1 1 100%;
+	width: 100%;
+	min-width: 0;
+}
+
+.dawmac-shop-hero {
+	background: #111214;
+	color: #f2f2f2;
+	padding: 34px 5vw 6px;
+}
+.dawmac-shop-breadcrumb { font-size: 13px; color: #8b8f96; margin-bottom: 10px; }
+.dawmac-shop-breadcrumb a { color: #8b8f96; text-decoration: none; }
+.dawmac-shop-breadcrumb a:hover { color: #f2f2f2; }
+.dawmac-shop-breadcrumb span { margin: 0 6px; }
+.dawmac-shop-hero h1 {
+	margin: 0;
+	font-size: 30px;
+	color: #f2f2f2;
+	border-left: 4px solid #e01a22;
+	padding-left: 14px;
+}
+
+/* ---------- Sidebar ---------- */
+.dawmac-side, .dawmac-sidebar { min-width: 0; }
+
+.dawmac-search-group { padding: 10px; }
+
+.dawmac-search-input {
+	width: 100%;
+	padding: 10px 14px;
+	background: var(--df-panel-2);
+	border: 1px solid var(--df-border);
+	color: var(--df-text);
+	border-radius: 99px;
+	font-size: 14px;
+}
+.dawmac-search-input:focus { outline: none; border-color: var(--df-accent); }
+.dawmac-search-input::placeholder { color: var(--df-muted); }
+
+.dawmac-group {
+	background: var(--df-panel);
+	border: 1px solid var(--df-border);
+	border-radius: var(--df-radius);
+	margin-bottom: 12px;
+	overflow: hidden;
+}
+
+.dawmac-group summary {
+	list-style: none;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 12px 14px;
+	font-size: 12px;
+	font-weight: 700;
+	letter-spacing: .1em;
+	text-transform: uppercase;
+	border-left: 3px solid var(--df-accent);
+	user-select: none;
+}
+.dawmac-group summary::-webkit-details-marker { display: none; }
+.dawmac-group summary::after {
+	content: "";
+	width: 8px; height: 8px;
+	border-right: 2px solid var(--df-muted);
+	border-bottom: 2px solid var(--df-muted);
+	transform: rotate(45deg);
+	transition: transform .15s;
+	flex: none;
+}
+.dawmac-group[open] summary::after { transform: rotate(225deg); }
+
+.dawmac-group summary .df-active {
+	margin-left: auto;
+	margin-right: 10px;
+	background: var(--df-accent);
+	color: #fff;
+	border-radius: 99px;
+	font-size: 11px;
+	padding: 1px 8px;
+	letter-spacing: 0;
+}
+
+.dawmac-group ul {
+	list-style: none;
+	margin: 0;
+	padding: 4px 8px 10px;
+	max-height: 230px;
+	overflow-y: auto;
+	scrollbar-width: thin;
+	scrollbar-color: var(--df-border) transparent;
+}
+
+.dawmac-group li label {
+	display: flex;
+	align-items: center;
+	gap: 9px;
+	padding: 5px 8px;
+	cursor: pointer;
+	border-radius: 5px;
+	transition: background .1s;
+}
+.dawmac-group li label:hover { background: var(--df-panel-2); }
+.dawmac-group li label.is-off { opacity: .3; cursor: default; }
+
+.dawmac-group li input {
+	accent-color: var(--df-accent);
+	width: 15px; height: 15px;
+	flex: none;
+}
+
+.dawmac-group li em {
+	margin-left: auto;
+	font-style: normal;
+	color: var(--df-muted);
+	font-size: 12px;
+	background: var(--df-panel-2);
+	border-radius: 99px;
+	padding: 1px 8px;
+}
+
+.dawmac-price {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 10px 14px 14px;
+}
+.dawmac-price span { color: var(--df-muted); }
+.dawmac-price input {
+	width: 100%;
+	min-width: 0;
+	padding: 8px 10px;
+	background: var(--df-panel-2);
+	border: 1px solid var(--df-border);
+	color: var(--df-text);
+	border-radius: 6px;
+	font-size: 14px;
+}
+.dawmac-price input:focus { outline: none; border-color: var(--df-accent); }
+
+.dawmac-stock {
+	display: flex;
+	gap: 10px;
+	align-items: center;
+	cursor: pointer;
+	padding: 12px 14px;
+	font-weight: 600;
+}
+.dawmac-stock input { accent-color: var(--df-accent); width: 15px; height: 15px; }
+
+.dawmac-clear {
+	width: 100%;
+	padding: 10px;
+	background: transparent;
+	border: 1px solid var(--df-border);
+	color: var(--df-muted);
+	border-radius: var(--df-radius);
+	cursor: pointer;
+	font-size: 13px;
+	transition: border-color .15s, color .15s;
+}
+.dawmac-clear:hover { border-color: var(--df-accent); color: var(--df-text); }
+
+/* ---------- Wyniki ---------- */
+.dawmac-results { min-width: 0; }
+
+/* Pasek chipów w trybie natywnym (wstrzykiwany nad ul.products w #primary -
+   poza kontenerami z definicjami zmiennych, więc dostaje własny komplet). */
+.dawmac-chips-bar {
+	--df-panel: #1b1d21;
+	--df-panel-2: #222529;
+	--df-text: #f2f2f2;
+	--df-muted: #8b8f96;
+	--df-accent: #e01a22;
+	--df-border: #2c2f34;
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px;
+	margin: 0 0 16px;
+	/* Woo pływa licznikiem wyników i sortowaniem - bez clear chipy
+	   wskakiwały w ich linię i nachodziły na tekst. Własny pełny wiersz. */
+	clear: both;
+	width: 100%;
+	padding-top: 6px;
+}
+
+/* Chipy aktywnych filtrów nad wynikami */
+.dawmac-chips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin-bottom: 14px;
+}
+
+.dawmac-chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 7px;
+	padding: 6px 12px;
+	background: var(--df-panel);
+	border: 1px solid var(--df-accent);
+	color: var(--df-text);
+	border-radius: 99px;
+	font-size: 13px;
+	cursor: pointer;
+	transition: background .12s;
+}
+.dawmac-chip span { color: var(--df-accent); font-weight: 700; font-size: 15px; line-height: 1; }
+.dawmac-chip:hover { background: var(--df-panel-2); }
+
+.dawmac-chip-clear {
+	border-color: var(--df-border);
+	color: var(--df-muted);
+}
+.dawmac-chip-clear:hover { border-color: var(--df-accent); color: var(--df-text); }
+
+.dawmac-toolbar {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 16px;
+	gap: 12px;
+	flex-wrap: wrap;
+}
+
+.dawmac-total { color: var(--df-muted); font-size: 15px; }
+.dawmac-total strong { color: var(--df-text); }
+
+.dawmac-sort {
+	padding: 8px 12px;
+	background: var(--df-panel);
+	border: 1px solid var(--df-border);
+	color: var(--df-text);
+	border-radius: 6px;
+	font-size: 13px;
+}
+
+.dawmac-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+	gap: 16px;
+}
+
+/* ------------------------------------------------------------------
+   KAFELKI: markup .nwk-card renderuje filters.js zgodnie ze snippetem
+   nwk_* sklepu; CAŁE stylowanie kafelków i siatki (.nwk-wrap) pochodzi
+   z Additional CSS motywu (ARKUSZ GLOWNY, sekcja 20). Tu celowo NIC
+   nie stylujemy, żeby nie konkurować z arkuszem sklepu.
+   ------------------------------------------------------------------ */
+
+/* [hidden] musi wygrać z regułą motywu button{display:...} (Astra). */
+.dawmac-filters [hidden] { display: none !important; }
+
+/* ------------------------------------------------------------------
+   PANCERZ NA STYLE MOTYWU. Selektory Astry typu ".entry-content a"
+   mają wyższą specyficzność niż nasze klasy i potrafią przemalować
+   linki/tekst na kolory motywu (tekst zlewa się z ciemnym tłem).
+   Prefiks #dawmac-filters (ID) wygrywa z każdym selektorem klasowym.
+   ------------------------------------------------------------------ */
+#dawmac-filters,
+#dawmac-filters p,
+#dawmac-filters li,
+#dawmac-filters span,
+#dawmac-filters label,
+#dawmac-filters summary,
+#dawmac-filters h3 {
+	color: var(--df-text);
+}
+
+#dawmac-filters a,
+#dawmac-filters a:visited,
+#dawmac-filters a:hover,
+#dawmac-filters a:focus {
+	color: var(--df-text);
+	text-decoration: none;
+	border-bottom: 0;
+	box-shadow: none; /* Astra podkreśla linki box-shadowem */
+}
+
+#dawmac-filters .dawmac-group li em,
+#dawmac-filters .dawmac-total,
+#dawmac-filters .dawmac-empty,
+#dawmac-filters .dawmac-card-price del,
+#dawmac-filters .dawmac-price span {
+	color: var(--df-muted);
+}
+
+#dawmac-filters .dawmac-total strong { color: var(--df-text); }
+
+#dawmac-filters input[type="search"],
+#dawmac-filters input[type="number"],
+#dawmac-filters select {
+	color: var(--df-text);
+	background: var(--df-panel-2);
+	border: 1px solid var(--df-border);
+}
+
+#dawmac-filters .dawmac-more { color: #fff; }
+#dawmac-filters .dawmac-badge { color: #ddd; }
+#dawmac-filters .dawmac-chip { color: var(--df-text); }
+#dawmac-filters .dawmac-chip span { color: var(--df-accent); }
+#dawmac-filters .dawmac-clear { color: var(--df-muted); }
+#dawmac-filters .dawmac-clear:hover { color: var(--df-text); }
+
+.dawmac-more {
+	display: block;
+	margin: 24px auto 0;
+	padding: 12px 40px;
+	background: var(--df-accent);
+	color: #fff;
+	border: 0;
+	border-radius: 99px;
+	cursor: pointer;
+	font-size: 14px;
+	font-weight: 700;
+	transition: filter .15s;
+}
+.dawmac-more:hover { filter: brightness(1.12); }
+
+.dawmac-empty { color: var(--df-muted); padding: 40px 0; text-align: center; }
