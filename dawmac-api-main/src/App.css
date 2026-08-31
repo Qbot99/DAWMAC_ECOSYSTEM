@@ -166,3 +166,118 @@
   #forged-add-wheel,
   #forged-edit-wheel { padding: 1rem; }
 }
+
+/* ---------- lista robocza "Do poprawy" ---------- */
+
+#gallery-fix-list {
+  background: var(--dm-panel);
+  border: 1px solid var(--dm-obrys);
+  border-radius: 4px;
+  padding: 1.4rem;
+  margin-bottom: 1.5rem;
+}
+
+#gallery-fix-list h2 {
+  border-left: 3px solid var(--dm-czerwony);
+  padding-left: .7rem;
+  margin-bottom: .9rem;
+}
+
+.fix-podsumowanie {
+  font-size: .88rem;
+  color: var(--dm-tekst-2);
+  margin: 0 0 1rem;
+}
+
+.fix-lista { list-style: none; margin: 0; padding: 0; }
+
+.fix-poz { border-bottom: 1px solid var(--dm-obrys); }
+.fix-poz:last-child { border-bottom: 0; }
+
+/* Nagłówek pozycji jest przyciskiem, ale ma wyglądać jak wiersz listy,
+   a nie jak czerwony przycisk akcji. */
+.fix-naglowek {
+  display: flex;
+  align-items: center;
+  gap: .8rem;
+  width: 100%;
+  background: none;
+  border: 0;
+  border-radius: 0;
+  padding: .7rem .2rem;
+  text-align: left;
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 400;
+  font-size: .9rem;
+  color: var(--dm-tekst);
+}
+
+.fix-naglowek:hover:not(:disabled) { background: var(--dm-panel-2); }
+
+.fix-licznik {
+  flex: 0 0 3rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  color: var(--dm-czerwony);
+}
+
+.fix-nazwa { flex: 1 1 auto; font-weight: 600; }
+
+.fix-rodzaj {
+  flex: 0 0 auto;
+  font-size: .7rem;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: var(--dm-tekst-3);
+  border: 1px solid var(--dm-obrys);
+  border-radius: 2px;
+  padding: .15rem .45rem;
+}
+
+.fix-poz.otwarta .fix-naglowek { background: var(--dm-panel-2); }
+
+.fix-tresc {
+  display: flex;
+  flex-direction: column;
+  gap: .7rem;
+  padding: .9rem .2rem 1.2rem;
+}
+
+.fix-podpowiedzi { display: flex; flex-direction: column; gap: .45rem; }
+
+.fix-sug {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: .15rem;
+  background: var(--dm-panel-2);
+  border: 1px solid var(--dm-obrys);
+  border-left: 3px solid var(--dm-ok);
+  color: var(--dm-tekst);
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 400;
+  padding: .55rem .75rem;
+}
+
+.fix-sug:hover:not(:disabled) {
+  background: var(--dm-obrys);
+  border-color: var(--dm-obrys-mocny);
+  border-left-color: var(--dm-ok);
+}
+
+/* Podpowiedź różniąca się cyfrą modelu to prawie zawsze INNA felga —
+   ma wyglądać na ostrzeżenie, a nie na gotową odpowiedź. */
+.fix-sug.ryzyko { border-left-color: var(--dm-uwaga); }
+.fix-sug.ryzyko:hover:not(:disabled) { border-left-color: var(--dm-uwaga); }
+
+.fix-sug strong { font-weight: 600; font-size: .9rem; }
+.fix-sug span { font-size: .76rem; color: var(--dm-tekst-3); }
+.fix-sug.ryzyko span { color: var(--dm-uwaga); }
+
+@media (max-width: 640px) {
+  .fix-naglowek { flex-wrap: wrap; }
+  .fix-rodzaj { flex-basis: 100%; margin-left: 3.8rem; }
+}

@@ -3,6 +3,7 @@ import "./App.css";
 import LoginForm from "./components/login";
 import Forged_add_wheel from "./components/Forged_add_wheel";
 import Gallery_add_wheel from "./components/Gallery_add_wheel";
+import Gallery_fix_list from "./components/Gallery_fix_list";
 import Gallery_edit_wheel from "./components/Gallery_edit_wheel";
 import Forged_edit_wheel from "./components/Forged_edit_wheel";
 import LoadingProvider from "./components/loading/LoadingProvider";
@@ -56,6 +57,7 @@ function App() {
             </h2>
 
             <Gallery_add_wheel />
+            <Gallery_fix_list />
             <Gallery_edit_wheel />
             <hr />
             <div id="forged">
