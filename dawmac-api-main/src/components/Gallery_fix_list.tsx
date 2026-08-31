@@ -113,6 +113,45 @@ export default function Gallery_fix_list() {
     }
   }
 
+  /**
+   * "Sklep tego nie prowadzi" to decyzja, nie poprawka. Wpis w galerii jest
+   * prawidłowy — po prostu nie ma produktu, na którego karcie zdjęcia mogłyby
+   * się pokazać. Podpięcie go pod inny model byłoby gorsze niż zostawienie:
+   * klient zobaczyłby cudze felgi na karcie zupełnie innego wzoru.
+   */
+  async function oznaczJakoNieprowadzone(g: Group) {
+    setZapisuje(true);
+    setKomunikat(null);
+
+    const dane = new FormData();
+    dane.append("brand", g.brand_norm);
+    dane.append("model", g.model_norm);
+
+    try {
+      const res = await fetch(
+        `${import.meta.env.VITE_DOMAIN}api/gallery/save_ignored.php`,
+        { method: "POST", body: dane, credentials: "same-origin" }
+      );
+      const wynik = await res.json();
+
+      if (!res.ok || wynik.error) {
+        setKomunikat(wynik.error ?? "Nie udało się zapisać.");
+        return;
+      }
+
+      setKomunikat(
+        `„${g.brand} ${g.model}" oznaczone jako nieprowadzone. Zdjęcia zostają w galerii.`
+      );
+      setOtwarta(null);
+      pobierz(ile);
+    } catch (err) {
+      console.error(err);
+      setKomunikat("Nie udało się zapisać. Spróbuj ponownie.");
+    } finally {
+      setZapisuje(false);
+    }
+  }
+
   return (
     <div id="gallery-fix-list">
       <h2>Do poprawy</h2>
@@ -192,6 +231,23 @@ export default function Gallery_fix_list() {
                       Producenta „{g.brand}” nie ma w sklepie — poprawka obejmie
                       wszystkie jego modele naraz.
                     </span>
+                  )}
+
+                  {g.kind !== "empty" && (
+                    <div className="fix-odrzuc">
+                      <span className="wheel-picker-hint">
+                        Nie ma tego w ofercie? To nie błąd — zdjęcia zostaną
+                        w galerii, tylko znikną z tej listy.
+                      </span>
+                      <button
+                        type="button"
+                        className="wheel-picker-link"
+                        disabled={zapisuje}
+                        onClick={() => oznaczJakoNieprowadzone(g)}
+                      >
+                        Sklep już tego nie prowadzi
+                      </button>
+                    </div>
                   )}
                 </div>
               )}

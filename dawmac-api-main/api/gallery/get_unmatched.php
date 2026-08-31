@@ -35,6 +35,15 @@ while ($d = $res->fetch_assoc()) {
     $sklejone[$d['brand_norm'] . $d['model_norm']] = $d;
 }
 
+/* Felgi oznaczone jako nieprowadzone przez sklep — nie należą na listę. */
+$pominiete = [];
+$res = @$conn->query("SELECT brand_norm, model_norm FROM wheel_ignored");
+if ($res) {
+    while ($i = $res->fetch_assoc()) {
+        $pominiete[$i['brand_norm'] . "\x1f" . $i['model_norm']] = true;
+    }
+}
+
 /* Pary z galerii + ile aut na każdą. */
 $res = $conn->query(
     "SELECT w.brand_norm, w.model_norm,
@@ -50,6 +59,10 @@ $grupy = [];
 while ($g = $res->fetch_assoc()) {
     $bn = $g['brand_norm'];
     $mn = $g['model_norm'];
+
+    if (isset($pominiete[$bn . "\x1f" . $mn])) {
+        continue;
+    }
 
     /* Puste pole = nie ma czego dopasowywać, ale trzeba to zgłosić. */
     if ($bn === '' || $mn === '') {
@@ -105,6 +118,39 @@ while ($g = $res->fetch_assoc()) {
                        (Stuttgart ST4 vs ST3), więc oznaczamy to wprost. */
                     'digit_diff' => preg_replace('~\D~', '', $mn) !== preg_replace('~\D~', '', $d['model_norm']),
                 ];
+            }
+        }
+
+        /*
+         * Odległość edycyjna nie łapie marki zapisanej krócej lub dłużej:
+         * FERRADA vs FERRADAWHEELS to 6 znaków różnicy, a to ta sama marka.
+         * Dla takich przypadków sprawdzamy, czy jedna nazwa jest początkiem
+         * drugiej — przy zachowanym modelu daje to pewne trafienie.
+         */
+        if ($rodzaj === 'brand') {
+            foreach ($slownik as $d) {
+                if ($d['model_norm'] !== $mn) {
+                    continue;
+                }
+
+                $db = $d['brand_norm'];
+                $wspolny = min(strlen($db), strlen($bn));
+
+                if ($wspolny < 4 || $db === $bn) {
+                    continue;
+                }
+
+                if (str_starts_with($db, $bn) || str_starts_with($bn, $db)) {
+                    $podpowiedzi[] = [
+                        'brand'      => $d['brand'],
+                        'model'      => $d['model'],
+                        'brand_norm' => $db,
+                        'model_norm' => $d['model_norm'],
+                        'products'   => $d['products'],
+                        'distance'   => 0,
+                        'digit_diff' => false,
+                    ];
+                }
             }
         }
 

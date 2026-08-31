@@ -281,3 +281,13 @@
   .fix-naglowek { flex-wrap: wrap; }
   .fix-rodzaj { flex-basis: 100%; margin-left: 3.8rem; }
 }
+
+.fix-odrzuc {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: .3rem;
+  margin-top: .4rem;
+  padding-top: .8rem;
+  border-top: 1px solid var(--dm-obrys);
+}
