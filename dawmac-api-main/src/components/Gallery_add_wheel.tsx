@@ -109,8 +109,12 @@ export default function Gallery_add_wheel() {
       );
       const data = await res.json();
 
-      if (data?.errors?.length) {
-        setKomunikat("Zapisano z błędami: " + data.errors.join(" | "));
+      if (!res.ok || data?.errors?.length) {
+        setKomunikat(
+          data?.errors?.length
+            ? "Zapisano z błędami: " + data.errors.join(" | ")
+            : "Nie udało się zapisać."
+        );
       } else {
         setKomunikat(
           wheel.fromDict && wheel.products > 0
@@ -173,7 +177,7 @@ export default function Gallery_add_wheel() {
 
       <input
         type="url"
-        placeholder="Link do filmu na YouTube (opcjonalnie)"
+        placeholder="Link do filmu — YouTube lub Facebook (opcjonalnie)"
         value={youtubeUrl}
         onChange={(e) => setYoutubeUrl(e.target.value)}
       />

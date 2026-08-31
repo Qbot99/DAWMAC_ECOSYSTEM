@@ -56,6 +56,47 @@ if (!function_exists('dawmac_youtube_id')) {
     }
 
     /**
+     * Link do filmu — YouTube ALBO Facebook.
+     *
+     * Filmy trafiają na oba serwisy, więc pole musi przyjąć jedno i drugie.
+     * YouTube sprowadzamy do postaci kanonicznej (ten sam film wklejony raz
+     * jako youtu.be, a raz jako watch?v= to nie są dwa różne filmy).
+     * Adresy Facebooka zostawiamy jak są — reels i /videos/ mają tam
+     * identyfikatory, których nie ma sensu przepisywać.
+     *
+     * Wszystko inne odrzucamy: na stronie ma się pojawić odnośnik do filmu,
+     * a nie do przypadkowej strony.
+     */
+    function dawmac_video_url(?string $url): string
+    {
+        $url = trim((string) $url);
+
+        if ($url === '') {
+            return '';
+        }
+
+        $kanoniczny = dawmac_youtube_url($url);
+
+        if ($kanoniczny !== '') {
+            return $kanoniczny;
+        }
+
+        if (preg_match('~^https?://([a-z0-9-]+\.)*(facebook\.com|fb\.watch)/~i', $url)) {
+            return mb_substr($url, 0, 255);
+        }
+
+        return '';
+    }
+
+    /**
+     * Czy adres wskazuje na Facebooka (do etykiety przy odnośniku).
+     */
+    function dawmac_video_is_facebook(?string $url): bool
+    {
+        return (bool) preg_match('~^https?://([a-z0-9-]+\.)*(facebook\.com|fb\.watch)/~i', (string) $url);
+    }
+
+    /**
      * Link do aukcji. Wymagamy http/https i przycinamy do długości kolumny.
      * Nie ograniczamy do Allegro — dziś sprzedajesz też gdzie indziej.
      */

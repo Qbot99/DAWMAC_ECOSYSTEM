@@ -64,7 +64,7 @@ $show_in_store = 1; // Możesz zmienić na $_POST["show_in_store"] ?? 1
 
 // Linki opcjonalne. Niepoprawny adres YouTube zapisujemy jako pusty zamiast
 // wstawiać na stronę odtwarzacz, który się nie uruchomi.
-$youtube_url = dawmac_youtube_url($_POST["youtube_url"] ?? '');
+$youtube_url = dawmac_video_url($_POST["youtube_url"] ?? '');
 $auction_url = dawmac_auction_url($_POST["auction_url"] ?? '');
 
 if ($car_brand_id === '' || !is_numeric($car_brand_id)) $response['errors'][] = "ID marki auta jest wymagane i musi być liczbą.";
@@ -160,10 +160,20 @@ if (!empty($response['images'])) {
 $conn->close();
 
 // -------------------- KOŃCOWA ODPOWIEDŹ --------------------
-if (empty($response["errors"])) {
-    header('Location: /');
-} else {
-    header('Content-Type: application/json');
-    echo json_encode($response);
+/*
+ * Zawsze JSON — ten endpoint jest wołany przez fetch() z panelu, nie przez
+ * zwykłe wysłanie formularza. Wcześniej po udanym zapisie leciało
+ * przekierowanie na "/", więc panel dostawał HTML strony głównej, nie mógł
+ * go sparsować i pokazywał "Nie udało się zapisać" MIMO ŻE AUTO SIĘ ZAPISAŁO.
+ */
+header('Content-Type: application/json');
+
+$response['ok']         = empty($response['errors']);
+$response['project_id'] = $project_id ?? null;
+
+if (!$response['ok']) {
+    http_response_code(400);
 }
+
+echo json_encode($response, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 ?>

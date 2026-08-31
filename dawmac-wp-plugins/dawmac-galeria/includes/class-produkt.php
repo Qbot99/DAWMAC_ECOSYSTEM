@@ -239,8 +239,10 @@ class Dawmac_Galeria_Produkt {
 										href="<?php echo esc_url( $film ); ?>"
 										target="_blank"
 										rel="noopener nofollow"
-										aria-label="<?php echo esc_attr( 'Obejrzyj film na YouTube: ' . $opis ); ?>">
-										Zobacz film
+										aria-label="<?php echo esc_attr( 'Obejrzyj film: ' . $opis ); ?>">
+										<?php echo false !== stripos( $film, 'facebook' ) || false !== stripos( $film, 'fb.watch' )
+											? 'Zobacz film na FB'
+											: 'Zobacz film'; ?>
 									</a>
 								<?php endif; ?>
 							</figcaption>
