@@ -1,232 +1,168 @@
+/* Układ panelu — sekcje jako karty na ciemnym tle, jak bloki na dawmac.pl. */
+
 #root {
-  max-width: 1280px;
+  max-width: 980px;
   margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+  padding: 2rem 1.25rem 4rem;
+  text-align: left;
 }
 
-#forged-tools{
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-direction: column;
-
+#root > h1 {
+  border-bottom: 2px solid var(--dm-czerwony);
+  padding-bottom: .6rem;
+  margin-bottom: 1.5rem;
 }
 
-#forged-add-wheel {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
+/* Wspólny wygląd bloków narzędziowych */
+#gallery-add-wheel,
+#gallery-edit-wheel,
+#forged-add-wheel,
+#forged-edit-wheel {
+  background: var(--dm-panel);
+  border: 1px solid var(--dm-obrys);
+  border-radius: 4px;
+  padding: 1.4rem;
+  margin-bottom: 1.5rem;
 }
 
-#forged-add-wheel-form{
-  display: flex;
-  flex-direction: column;
-  align-items:baseline;
-  justify-content: center;
-  width: 100%;
+#gallery-add-wheel h2,
+#forged-add-wheel h2 {
+  border-left: 3px solid var(--dm-czerwony);
+  padding-left: .7rem;
+  margin-bottom: 1.1rem;
 }
-#forged-add-wheel-form>* {
-  width: 100%;
-  max-width: 400px;
-  margin-bottom: 1rem;
-}
-
-
-
-#forged-edit-wheel{
-  display: flex;
-  flex-direction: column;
-}
-
-#forged-edit-wheel-info{
-  display: flex;
-  flex-direction: column;
-}
-#forged-edit-wheel-info span{
-  font-size: larger;
-}
-
-#forged-edit-wheel-images{
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 1rem;
-  margin: 1rem;
-
-}
-
-
-#forged-edit-wheel-image-wrapper{
-  display: flex;
-  flex-direction: column;
-}
-
-#forged-edit-controlls *{
-  margin: 1rem;
-}
-
-.gallery-edit-project-images{
-    display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 1rem;
-  margin: 1rem;
-
-}
-
-.gallery-edit-project-image{
-  width: 150px;
-}
-
-#gallery-edit-project-image-wrapper {
-  display: flex;
-  flex-direction: column;
-}
-
-/* ---------- Dodawanie do galerii + wybór felgi ze słownika ---------- */
 
 #gallery-add-wheel {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: .75rem;
+  align-items: stretch;
+  gap: .9rem;
 }
 
-#gallery-add-wheel > *,
-#gallery-add-wheel .wheel-picker {
-  width: 100%;
-  max-width: 400px;
+#gallery-add-wheel > label,
+.dm-label {
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: var(--dm-tekst-3);
 }
 
 .gallery-add-msg {
-  max-width: 400px;
-  font-size: .9rem;
-  padding: .6rem .8rem;
-  border-radius: 4px;
-  border: 1px solid var(--wp-border);
-  background: var(--wp-bg);
-  text-align: left;
+  font-size: .88rem;
+  padding: .7rem .9rem;
+  border-radius: 3px;
+  border: 1px solid var(--dm-obrys);
+  border-left: 3px solid var(--dm-czerwony);
+  background: var(--dm-panel-2);
+  color: var(--dm-tekst-2);
+  margin: 0;
 }
 
-/* Panel bywa używany i w ciemnym, i w jasnym trybie systemu — kolory
-   trzymamy w zmiennych, żeby lista podpowiedzi nie zniknęła w tle. */
+/* ---------- wybór felgi: producent + model ---------- */
+
 .wheel-picker {
-  --wp-bg: #1b1b1b;
-  --wp-border: rgba(255, 255, 255, .18);
-  --wp-hover: rgba(100, 108, 255, .24);
-  --wp-meta: rgba(255, 255, 255, .55);
-  --wp-ok: #4ade80;
-  --wp-warn: #fbbf24;
-
-  position: relative;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: .35rem;
-  text-align: left;
+  gap: .55rem;
+  padding: .9rem;
+  background: var(--dm-panel-2);
+  border: 1px solid var(--dm-obrys);
+  border-left: 3px solid var(--dm-obrys-mocny);
+  border-radius: 3px;
 }
 
-@media (prefers-color-scheme: light) {
-  .wheel-picker {
-    --wp-bg: #ffffff;
-    --wp-border: rgba(0, 0, 0, .2);
-    --wp-hover: rgba(100, 108, 255, .14);
-    --wp-meta: rgba(0, 0, 0, .58);
-    --wp-ok: #15803d;
-    --wp-warn: #b45309;
-  }
-}
-
-.wheel-picker > label {
-  font-size: .8rem;
-  letter-spacing: .04em;
+.wheel-picker-title {
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .09em;
   text-transform: uppercase;
-  opacity: .65;
+  color: var(--dm-tekst-3);
 }
 
-.wheel-picker > input {
-  width: 100%;
-}
+.wheel-picker-select { width: 100%; }
 
-/* Lista musi unosić się nad formularzem, inaczej rozpycha stronę
-   przy każdym wpisanym znaku. */
-.wheel-picker-list {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  z-index: 30;
-  margin: .25rem 0 0;
-  padding: 0;
-  list-style: none;
-  max-height: 17rem;
-  overflow-y: auto;
-  background: var(--wp-bg);
-  border: 1px solid var(--wp-border);
-  border-radius: 4px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, .35);
-}
-
-.wheel-picker-list li {
-  display: flex;
-  flex-direction: column;
-  gap: .1rem;
-  padding: .5rem .7rem;
-  cursor: pointer;
-  border-bottom: 1px solid var(--wp-border);
-}
-
-.wheel-picker-list li:last-child { border-bottom: 0; }
-.wheel-picker-list li.active { background: var(--wp-hover); }
-
-.wheel-picker-label { font-weight: 600; }
-
-.wheel-picker-meta {
-  font-size: .78rem;
-  color: var(--wp-meta);
+.wheel-picker-hint {
+  font-size: .82rem;
+  line-height: 1.45;
+  color: var(--dm-tekst-2);
   font-variant-numeric: tabular-nums;
 }
 
-.wheel-picker-info {
-  cursor: default !important;
-  font-size: .85rem;
-  color: var(--wp-meta);
-  gap: .4rem !important;
-}
+.wheel-picker-hint.ok { color: var(--dm-ok); }
+.wheel-picker-hint.warn { color: var(--dm-uwaga); }
 
-.wheel-picker-info button {
+/* Link-przycisk: świadomie nie wygląda jak czerwony przycisk akcji,
+   żeby "wpiszę ręcznie" nie konkurowało wzrokowo z "Dodaj". */
+.wheel-picker-link {
   align-self: flex-start;
-  font-size: .8rem;
-  padding: .25rem .6rem;
+  background: none;
+  border: 0;
+  padding: 0;
+  font-size: .78rem;
+  font-weight: 600;
+  letter-spacing: .02em;
+  text-transform: none;
+  color: var(--dm-tekst-3);
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
-.wheel-picker-chosen {
+.wheel-picker-link:hover:not(:disabled) {
+  background: none;
+  color: var(--dm-czerwony-jasny);
+}
+
+/* ---------- forged ---------- */
+
+#forged-tools {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: .25rem;
-  width: 100%;
-  padding: .6rem .7rem;
-  border: 1px solid var(--wp-border);
-  border-left: 3px solid var(--wp-ok);
+}
+
+#forged-add-wheel-form {
+  display: flex;
+  flex-direction: column;
+  gap: .9rem;
+}
+
+#forged-edit-wheel-info { display: flex; flex-direction: column; gap: .3rem; }
+#forged-edit-wheel-info span { font-size: .95rem; color: var(--dm-tekst-2); }
+
+#forged-edit-wheel-images {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .8rem;
+  margin: 1rem 0;
+}
+
+#forged-edit-wheel-images img,
+#gallery-edit-wheel img {
+  border: 1px solid var(--dm-obrys);
+  border-radius: 3px;
+}
+
+/* ---------- logowanie ---------- */
+
+#login-form,
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: .9rem;
+  max-width: 340px;
+  margin: 3rem auto;
+  padding: 1.6rem;
+  background: var(--dm-panel);
+  border: 1px solid var(--dm-obrys);
+  border-top: 3px solid var(--dm-czerwony);
   border-radius: 4px;
-  background: var(--wp-bg);
 }
 
-.wheel-picker-chosen.manual { border-left-color: var(--wp-warn); }
-
-.wheel-picker-hint {
-  font-size: .78rem;
-  color: var(--wp-meta);
-}
-
-.wheel-picker-hint.warn { color: var(--wp-warn); }
-
-.wheel-picker-chosen button {
-  align-self: flex-start;
-  font-size: .8rem;
-  padding: .25rem .6rem;
-  margin-top: .2rem;
+@media (max-width: 640px) {
+  #root { padding: 1.25rem .9rem 3rem; }
+  #gallery-add-wheel,
+  #gallery-edit-wheel,
+  #forged-add-wheel,
+  #forged-edit-wheel { padding: 1rem; }
 }

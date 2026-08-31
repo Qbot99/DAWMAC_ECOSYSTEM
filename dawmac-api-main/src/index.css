@@ -1,11 +1,33 @@
-:root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
+/*
+ * Panel Dawmac — paleta i typografia wzięte wprost z dawmac.pl,
+ * żeby narzędzie wyglądało jak część tej samej marki, a nie jak
+ * domyślny szablon Vite.
+ *
+ * Kolory odczytane ze strony: czerwień #d10404 (hover #ff1f1f),
+ * tła #1b1b1b / #222222 / #2a2a2c, szarości #c0c0c1 i #8a8a8b,
+ * krój Montserrat.
+ */
 
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+:root {
+  --dm-czerwony:      #d10404;
+  --dm-czerwony-jasny:#ff1f1f;
+  --dm-tlo:           #131315;
+  --dm-panel:         #1b1b1b;
+  --dm-panel-2:       #222222;
+  --dm-obrys:         #2a2a2c;
+  --dm-obrys-mocny:   #3a3a3d;
+  --dm-tekst:         #ffffff;
+  --dm-tekst-2:       #c0c0c1;
+  --dm-tekst-3:       #8a8a8b;
+  --dm-ok:            #4ade80;
+  --dm-uwaga:         #f0a91e;
+
+  font-family: 'Montserrat', system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+  line-height: 1.55;
+  font-weight: 400;
+  color-scheme: dark;
+  color: var(--dm-tekst);
+  background-color: var(--dm-tlo);
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -13,55 +35,120 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
-}
+* { box-sizing: border-box; }
 
 body {
   margin: 0;
-  display: flex;
   min-width: 320px;
   min-height: 100vh;
+  background: var(--dm-tlo);
 }
 
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
+a {
+  color: var(--dm-czerwony);
+  font-weight: 600;
+  text-decoration: none;
 }
+
+a:hover { color: var(--dm-czerwony-jasny); }
+
+h1, h2, h3 {
+  font-weight: 700;
+  letter-spacing: .02em;
+  text-transform: uppercase;
+  margin: 0 0 .6rem;
+}
+
+h1 { font-size: 1.65rem; }
+h2 { font-size: 1.15rem; }
+h3 { font-size: .95rem; }
+
+/* ---------- pola formularzy ---------- */
+
+input,
+select,
+textarea {
+  font-family: inherit;
+  font-size: .92rem;
+  color: var(--dm-tekst);
+  background: var(--dm-panel-2);
+  border: 1px solid var(--dm-obrys);
+  border-radius: 3px;
+  padding: .58rem .7rem;
+  width: 100%;
+}
+
+input::placeholder { color: var(--dm-tekst-3); }
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--dm-czerwony);
+}
+
+input:disabled,
+select:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+}
+
+select option { background: var(--dm-panel-2); color: var(--dm-tekst); }
+
+input[type="file"] {
+  padding: .45rem;
+  color: var(--dm-tekst-2);
+}
+
+input[type="file"]::file-selector-button {
+  font-family: inherit;
+  font-weight: 600;
+  font-size: .8rem;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--dm-tekst);
+  background: var(--dm-obrys);
+  border: 0;
+  border-radius: 2px;
+  padding: .4rem .8rem;
+  margin-right: .7rem;
+  cursor: pointer;
+}
+
+input[type="file"]::file-selector-button:hover { background: var(--dm-obrys-mocny); }
+
+/* ---------- przyciski ---------- */
 
 button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
   font-family: inherit;
-  background-color: #1a1a1a;
+  font-size: .85rem;
+  font-weight: 700;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: var(--dm-tekst);
+  background: var(--dm-czerwony);
+  border: 1px solid var(--dm-czerwony);
+  border-radius: 3px;
+  padding: .6rem 1.2rem;
   cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+  transition: background .15s ease, border-color .15s ease;
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
+button:hover:not(:disabled) {
+  background: var(--dm-czerwony-jasny);
+  border-color: var(--dm-czerwony-jasny);
+}
+
+button:disabled { opacity: .4; cursor: not-allowed; }
+
+button:focus-visible { outline: 2px solid var(--dm-czerwony-jasny); outline-offset: 2px; }
+
+hr {
+  border: 0;
+  border-top: 1px solid var(--dm-obrys);
+  margin: 2.5rem 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; }
 }

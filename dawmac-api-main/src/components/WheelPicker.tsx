@@ -1,19 +1,29 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 
 /**
- * Wybór felgi ze słownika zamiast wpisywania marki i modelu z palca.
+ * Wybór felgi: producent z listy, potem model zawężony do tego producenta.
+ * Ten sam układ co marka i model samochodu wyżej, więc nie trzeba się uczyć
+ * niczego nowego.
  *
- * Słownik pochodzi z katalogu sklepu (pa_producent + pa_model), więc wybranie
- * pozycji z listy gwarantuje, że wpis od razu pasuje do produktów. Przy każdej
- * podpowiedzi widać, ile produktów jej dotyczy i ile aut już mamy — czyli
- * jeszcze przed zapisem wiadomo, na ile kart trafi to zdjęcie.
+ * Obie listy pochodzą z katalogu sklepu (pa_producent + pa_model), więc wybór
+ * z listy gwarantuje, że wpis od razu pasuje do produktów. Przy modelu widać,
+ * ile produktów go dotyczy i ile aut już mamy — czyli jeszcze przed zapisem
+ * wiadomo, na ile kart trafią zdjęcia.
  *
- * Świadomie NIE blokujemy wpisania czegoś spoza słownika: nowa felga bywa
- * fotografowana zanim trafi do sklepu. Taki wpis jest tylko oznaczany, żeby
- * dało się go później znaleźć na liście roboczej.
+ * Świadomie zostaje furtka na wpisanie ręczne: nowa felga bywa fotografowana,
+ * zanim trafi do sklepu. Taki wpis jest oznaczany, żeby dało się go znaleźć
+ * na liście roboczej.
  */
 
-export type WheelDictItem = {
+type DictBrand = {
+  brand: string;
+  brand_norm: string;
+  models: number;
+  products: number;
+  projects: number;
+};
+
+type DictModel = {
   id: number;
   brand: string;
   model: string;
@@ -28,7 +38,7 @@ export type WheelDictItem = {
 export type WheelChoice = {
   brand: string;
   model: string;
-  /** true = wybrane ze słownika, false = wpisane ręcznie */
+  /** true = wybrane z list, false = wpisane ręcznie */
   fromDict: boolean;
   products: number;
 };
@@ -39,186 +49,181 @@ type Props = {
 };
 
 export default function WheelPicker({ value, onChange }: Props) {
-  const [query, setQuery] = useState("");
-  const [items, setItems] = useState<WheelDictItem[]>([]);
-  const [open, setOpen] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const [highlight, setHighlight] = useState(0);
-  const boxRef = useRef<HTMLDivElement>(null);
+  const [brands, setBrands] = useState<DictBrand[]>([]);
+  const [models, setModels] = useState<DictModel[]>([]);
+  const [brandNorm, setBrandNorm] = useState("");
+  const [ladujeModele, setLadujeModele] = useState(false);
+  const [recznie, setRecznie] = useState(false);
 
-  // Odpytujemy dopiero gdy user przestanie pisać — inaczej przy "japan racing"
-  // poleciałoby 12 zapytań zamiast jednego.
+  // Producenci — raz przy starcie.
   useEffect(() => {
-    const szukane = query.trim();
+    (async () => {
+      try {
+        const res = await fetch(
+          `${import.meta.env.VITE_DOMAIN}api/gallery/get_wheel_dict.php`
+        );
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        setBrands(data.brands ?? []);
+      } catch (err) {
+        console.error("Nie udało się pobrać producentów felg:", err);
+      }
+    })();
+  }, []);
 
-    if (szukane.length < 2) {
-      setItems([]);
+  // Modele — po każdej zmianie producenta.
+  useEffect(() => {
+    if (!brandNorm) {
+      setModels([]);
       return;
     }
 
     let anulowane = false;
-    setBusy(true);
+    setLadujeModele(true);
 
-    const timer = setTimeout(async () => {
+    (async () => {
       try {
         const res = await fetch(
-          `${import.meta.env.VITE_DOMAIN}api/gallery/get_wheel_dict.php?q=${encodeURIComponent(
-            szukane
-          )}&limit=12`
+          `${import.meta.env.VITE_DOMAIN}api/gallery/get_wheel_dict.php?brand=${encodeURIComponent(
+            brandNorm
+          )}`
         );
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
-        if (!anulowane) {
-          setItems(data.items ?? []);
-          setHighlight(0);
-        }
+        if (!anulowane) setModels(data.items ?? []);
       } catch (err) {
-        console.error("Nie udało się pobrać słownika felg:", err);
-        if (!anulowane) setItems([]);
+        console.error("Nie udało się pobrać modeli felg:", err);
+        if (!anulowane) setModels([]);
       } finally {
-        if (!anulowane) setBusy(false);
+        if (!anulowane) setLadujeModele(false);
       }
-    }, 250);
+    })();
 
     return () => {
       anulowane = true;
-      clearTimeout(timer);
     };
-  }, [query]);
+  }, [brandNorm]);
 
-  // Klik poza komponentem zamyka listę.
-  useEffect(() => {
-    function poza(e: MouseEvent) {
-      if (boxRef.current && !boxRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
+  function zmienProducenta(norm: string) {
+    setBrandNorm(norm);
+    const b = brands.find((x) => x.brand_norm === norm);
+    // Producent bez modelu to jeszcze nie jest wybór — zerujemy, żeby nie dało
+    // się zapisać połowicznej felgi.
+    onChange({ brand: b?.brand ?? "", model: "", fromDict: false, products: 0 });
+  }
+
+  function zmienModel(id: string) {
+    const m = models.find((x) => String(x.id) === id);
+    if (!m) {
+      onChange({ brand: value.brand, model: "", fromDict: false, products: 0 });
+      return;
     }
-    document.addEventListener("mousedown", poza);
-    return () => document.removeEventListener("mousedown", poza);
-  }, []);
-
-  function wybierz(item: WheelDictItem) {
     onChange({
-      brand: item.brand,
-      model: item.model,
+      brand: m.brand,
+      model: m.model,
       fromDict: true,
-      products: item.products,
+      products: m.products,
     });
-    setQuery("");
-    setItems([]);
-    setOpen(false);
   }
 
-  function klawisz(e: React.KeyboardEvent<HTMLInputElement>) {
-    if (!open || items.length === 0) return;
-
-    if (e.key === "ArrowDown") {
-      e.preventDefault();
-      setHighlight((h) => (h + 1) % items.length);
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
-      setHighlight((h) => (h - 1 + items.length) % items.length);
-    } else if (e.key === "Enter") {
-      e.preventDefault();
-      wybierz(items[highlight]);
-    } else if (e.key === "Escape") {
-      setOpen(false);
-    }
-  }
-
-  const wybrana = value.brand !== "" || value.model !== "";
+  const wybranyModel = models.find(
+    (m) => m.model === value.model && value.fromDict
+  );
 
   return (
-    <div className="wheel-picker" ref={boxRef}>
-      <label htmlFor="wheel-picker-input">Felga</label>
+    <div className="wheel-picker">
+      <span className="wheel-picker-title">Felga</span>
 
-      {wybrana ? (
-        <div className={`wheel-picker-chosen ${value.fromDict ? "ok" : "manual"}`}>
-          <strong>
-            {value.brand} {value.model}
-          </strong>
-          {value.fromDict ? (
-            <span className="wheel-picker-hint">
-              {value.products} produktów w sklepie — zdjęcia trafią na ich karty
-            </span>
-          ) : (
-            <span className="wheel-picker-hint warn">
-              Wpisane ręcznie — nie ma tego w sklepie. Wpis trafi na listę roboczą.
+      {!recznie ? (
+        <>
+          <select
+            className="wheel-picker-select"
+            value={brandNorm}
+            onChange={(e) => zmienProducenta(e.target.value)}
+          >
+            <option value="">Wybierz producenta felgi</option>
+            {brands.map((b) => (
+              <option key={b.brand_norm} value={b.brand_norm}>
+                {b.brand} ({b.models})
+              </option>
+            ))}
+          </select>
+
+          <select
+            className="wheel-picker-select"
+            value={wybranyModel ? String(wybranyModel.id) : ""}
+            disabled={!brandNorm || ladujeModele}
+            onChange={(e) => zmienModel(e.target.value)}
+          >
+            <option value="">
+              {!brandNorm
+                ? "Najpierw wybierz producenta"
+                : ladujeModele
+                ? "Wczytuję modele…"
+                : `Wybierz model (${models.length})`}
+            </option>
+            {models.map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.model} — {m.products} prod.
+                {m.projects > 0 ? ` · ${m.projects} aut` : ""}
+                {!m.active ? " · wycofana" : ""}
+              </option>
+            ))}
+          </select>
+
+          {value.fromDict && (
+            <span className="wheel-picker-hint ok">
+              {value.brand} {value.model} — zdjęcia trafią na {value.products}{" "}
+              {value.products === 1 ? "kartę produktu" : "kart produktów"}
             </span>
           )}
+
           <button
             type="button"
-            onClick={() =>
-              onChange({ brand: "", model: "", fromDict: false, products: 0 })
-            }
+            className="wheel-picker-link"
+            onClick={() => {
+              setRecznie(true);
+              onChange({ brand: "", model: "", fromDict: false, products: 0 });
+            }}
           >
-            Zmień
+            Nie ma tej felgi na liście — wpiszę ręcznie
           </button>
-        </div>
+        </>
       ) : (
         <>
           <input
-            id="wheel-picker-input"
             type="text"
-            autoComplete="off"
-            placeholder="Wpisz np. jr21, forzza titan, cvr1…"
-            value={query}
-            onChange={(e) => {
-              setQuery(e.target.value);
-              setOpen(true);
-            }}
-            onFocus={() => setOpen(true)}
-            onKeyDown={klawisz}
+            className="wheel-picker-select"
+            placeholder="Producent felgi"
+            value={value.brand}
+            onChange={(e) =>
+              onChange({ ...value, brand: e.target.value, fromDict: false, products: 0 })
+            }
           />
-
-          {open && query.trim().length >= 2 && (
-            <ul className="wheel-picker-list">
-              {busy && <li className="wheel-picker-info">Szukam…</li>}
-
-              {!busy &&
-                items.map((item, i) => (
-                  <li
-                    key={item.id}
-                    className={i === highlight ? "active" : ""}
-                    onMouseEnter={() => setHighlight(i)}
-                    onMouseDown={(e) => {
-                      e.preventDefault();
-                      wybierz(item);
-                    }}
-                  >
-                    <span className="wheel-picker-label">{item.label}</span>
-                    <span className="wheel-picker-meta">
-                      {item.products} produktów
-                      {item.projects > 0 && ` · ${item.projects} aut`}
-                      {!item.active && " · wycofana"}
-                    </span>
-                  </li>
-                ))}
-
-              {!busy && items.length === 0 && (
-                <li className="wheel-picker-info">
-                  Nie ma takiej felgi w sklepie.
-                  <button
-                    type="button"
-                    onMouseDown={(e) => {
-                      e.preventDefault();
-                      const czesci = query.trim().split(/\s+/);
-                      onChange({
-                        brand: czesci[0] ?? "",
-                        model: czesci.slice(1).join(" "),
-                        fromDict: false,
-                        products: 0,
-                      });
-                      setQuery("");
-                      setOpen(false);
-                    }}
-                  >
-                    Użyj „{query.trim()}” mimo to
-                  </button>
-                </li>
-              )}
-            </ul>
-          )}
+          <input
+            type="text"
+            className="wheel-picker-select"
+            placeholder="Model felgi"
+            value={value.model}
+            onChange={(e) =>
+              onChange({ ...value, model: e.target.value, fromDict: false, products: 0 })
+            }
+          />
+          <span className="wheel-picker-hint warn">
+            Wpis ręczny — nie ma tego w sklepie, więc zdjęcia nie trafią jeszcze
+            na żadną kartę. Wpis czeka na liście roboczej.
+          </span>
+          <button
+            type="button"
+            className="wheel-picker-link"
+            onClick={() => {
+              setRecznie(false);
+              setBrandNorm("");
+              onChange({ brand: "", model: "", fromDict: false, products: 0 });
+            }}
+          >
+            Wróć do listy
+          </button>
         </>
       )}
     </div>

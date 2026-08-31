@@ -17,6 +17,7 @@
 
 require 'db.php';
 require_once __DIR__ . '/lib/wheel_norm.php';
+require_once __DIR__ . '/lib/wheel_alias.php';
 
 $q     = trim((string) ($_GET['q'] ?? ''));
 $brand = trim((string) ($_GET['brand'] ?? ''));
@@ -58,15 +59,74 @@ if ($q !== '') {
     $res = $stmt->get_result();
 
     $pozycje = [];
+    $juzMam  = [];
     while ($r = $res->fetch_assoc()) {
         $r['id']       = (int) $r['id'];
         $r['products'] = (int) $r['products'];
         $r['projects'] = (int) $r['projects'];
         $r['active']   = (bool) $r['active'];
         $r['label']    = $r['brand'] . ' ' . $r['model'];
+        $r['fuzzy']    = false;
+        $juzMam[$r['id']] = true;
         $pozycje[]     = $r;
     }
     $stmt->close();
+
+    /*
+     * Podpowiedzi przy literówce — dopiero gdy zwykłe szukanie nic sensownego
+     * nie znalazło. Wpisanie "forza" ma pokazać "Forzza", bo w katalogu nie ma
+     * żadnej "Forzy".
+     *
+     * To jest WYŁĄCZNIE podpowiedź do kliknięcia. Nic się tu nie scala samo:
+     * w danych są pary różniące się jednym znakiem, które są innymi felgami
+     * (Stuttgart ST4 vs ST3, Platin P115 vs P113), więc ostatnie słowo
+     * zawsze należy do człowieka.
+     */
+    if (count($pozycje) < 5 && strlen($qn) >= 3) {
+        $wszystko = $conn->query(
+            "SELECT id, brand, model, brand_norm, model_norm, products, projects, active
+             FROM wheel_dict" . ($tylkoAktywne ? " WHERE active = 1" : "")
+        );
+
+        $kandydaci = [];
+        // Im dłuższe zapytanie, tym więcej wybaczamy — ale nigdy więcej niż 3.
+        $prog = strlen($qn) >= 8 ? 3 : 2;
+
+        while ($w = $wszystko->fetch_assoc()) {
+            if (isset($juzMam[(int) $w['id']])) {
+                continue;
+            }
+
+            $pelny = $w['brand_norm'] . $w['model_norm'];
+
+            // Liczymy odległość i do całości, i do samego modelu — wpisujesz
+            // raz "forza titan", a raz samo "ttan".
+            $d = min(
+                levenshtein($qn, $pelny),
+                levenshtein($qn, $w['model_norm']),
+                levenshtein($qn, $w['brand_norm'])
+            );
+
+            if ($d <= $prog) {
+                $w['id']       = (int) $w['id'];
+                $w['products'] = (int) $w['products'];
+                $w['projects'] = (int) $w['projects'];
+                $w['active']   = (bool) $w['active'];
+                $w['label']    = $w['brand'] . ' ' . $w['model'];
+                $w['fuzzy']    = true;
+                $w['distance'] = $d;
+                $kandydaci[]   = $w;
+            }
+        }
+
+        usort($kandydaci, static function (array $a, array $b): int {
+            return [$a['distance'], -$a['products']] <=> [$b['distance'], -$b['products']];
+        });
+
+        foreach (array_slice($kandydaci, 0, 6) as $k) {
+            $pozycje[] = $k;
+        }
+    }
 
     echo json_encode(['query' => $q, 'normalized' => $qn, 'count' => count($pozycje), 'items' => $pozycje],
         JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
