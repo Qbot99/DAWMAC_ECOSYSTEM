@@ -84,3 +84,149 @@
   display: flex;
   flex-direction: column;
 }
+
+/* ---------- Dodawanie do galerii + wybór felgi ze słownika ---------- */
+
+#gallery-add-wheel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .75rem;
+}
+
+#gallery-add-wheel > *,
+#gallery-add-wheel .wheel-picker {
+  width: 100%;
+  max-width: 400px;
+}
+
+.gallery-add-msg {
+  max-width: 400px;
+  font-size: .9rem;
+  padding: .6rem .8rem;
+  border-radius: 4px;
+  border: 1px solid var(--wp-border);
+  background: var(--wp-bg);
+  text-align: left;
+}
+
+/* Panel bywa używany i w ciemnym, i w jasnym trybie systemu — kolory
+   trzymamy w zmiennych, żeby lista podpowiedzi nie zniknęła w tle. */
+.wheel-picker {
+  --wp-bg: #1b1b1b;
+  --wp-border: rgba(255, 255, 255, .18);
+  --wp-hover: rgba(100, 108, 255, .24);
+  --wp-meta: rgba(255, 255, 255, .55);
+  --wp-ok: #4ade80;
+  --wp-warn: #fbbf24;
+
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: .35rem;
+  text-align: left;
+}
+
+@media (prefers-color-scheme: light) {
+  .wheel-picker {
+    --wp-bg: #ffffff;
+    --wp-border: rgba(0, 0, 0, .2);
+    --wp-hover: rgba(100, 108, 255, .14);
+    --wp-meta: rgba(0, 0, 0, .58);
+    --wp-ok: #15803d;
+    --wp-warn: #b45309;
+  }
+}
+
+.wheel-picker > label {
+  font-size: .8rem;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  opacity: .65;
+}
+
+.wheel-picker > input {
+  width: 100%;
+}
+
+/* Lista musi unosić się nad formularzem, inaczej rozpycha stronę
+   przy każdym wpisanym znaku. */
+.wheel-picker-list {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 30;
+  margin: .25rem 0 0;
+  padding: 0;
+  list-style: none;
+  max-height: 17rem;
+  overflow-y: auto;
+  background: var(--wp-bg);
+  border: 1px solid var(--wp-border);
+  border-radius: 4px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .35);
+}
+
+.wheel-picker-list li {
+  display: flex;
+  flex-direction: column;
+  gap: .1rem;
+  padding: .5rem .7rem;
+  cursor: pointer;
+  border-bottom: 1px solid var(--wp-border);
+}
+
+.wheel-picker-list li:last-child { border-bottom: 0; }
+.wheel-picker-list li.active { background: var(--wp-hover); }
+
+.wheel-picker-label { font-weight: 600; }
+
+.wheel-picker-meta {
+  font-size: .78rem;
+  color: var(--wp-meta);
+  font-variant-numeric: tabular-nums;
+}
+
+.wheel-picker-info {
+  cursor: default !important;
+  font-size: .85rem;
+  color: var(--wp-meta);
+  gap: .4rem !important;
+}
+
+.wheel-picker-info button {
+  align-self: flex-start;
+  font-size: .8rem;
+  padding: .25rem .6rem;
+}
+
+.wheel-picker-chosen {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: .25rem;
+  width: 100%;
+  padding: .6rem .7rem;
+  border: 1px solid var(--wp-border);
+  border-left: 3px solid var(--wp-ok);
+  border-radius: 4px;
+  background: var(--wp-bg);
+}
+
+.wheel-picker-chosen.manual { border-left-color: var(--wp-warn); }
+
+.wheel-picker-hint {
+  font-size: .78rem;
+  color: var(--wp-meta);
+}
+
+.wheel-picker-hint.warn { color: var(--wp-warn); }
+
+.wheel-picker-chosen button {
+  align-self: flex-start;
+  font-size: .8rem;
+  padding: .25rem .6rem;
+  margin-top: .2rem;
+}

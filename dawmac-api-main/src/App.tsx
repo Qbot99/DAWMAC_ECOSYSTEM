@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import "./App.css";
-import LoginForm from "./components/Login";
+import LoginForm from "./components/login";
 import Forged_add_wheel from "./components/Forged_add_wheel";
 import Gallery_add_wheel from "./components/Gallery_add_wheel";
 import Gallery_edit_wheel from "./components/Gallery_edit_wheel";
