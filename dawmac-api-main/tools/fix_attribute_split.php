@@ -28,6 +28,17 @@
 /*
  * WP-CLI odrzuca w eval-file flagi, których samo nie zna, więc potwierdzenie
  * zapisu przyjmujemy jako zwykły trzeci argument.
+ *
+ * !!! PO KAŻDEJ ZMIANIE NAZW TERMINÓW pa_* URUCHOM REINDEKS !!!
+ *
+ *   wp dawmac reindex --skip-themes
+ *
+ * Wtyczka dawmac-filters trzyma płaski indeks zbudowany z atrybutów.
+ * Zmiana nazwy terminu bez reindeksu zostawia w nim stare wartości,
+ * przez co zapytanie strony sklepu rozwiązuje się do ZERA produktów
+ * i katalog robi się pusty. Objaw jest mylący: <main> pusty, a nagłówek,
+ * stopka i style renderują się normalnie, w logach nie ma żadnego błędu.
+ * Kosztowało to godzinę szukania i dwa niepotrzebne cofnięcia zmian.
  */
 $argumenty = array_values($args ?? []);
 

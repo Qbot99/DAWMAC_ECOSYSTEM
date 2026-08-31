@@ -17,6 +17,17 @@
  *
  * Potrzebne --skip-themes i podniesiona pamięć (motyw Astra wywraca się
  * na domyślnym limicie 128 MB).
+ *
+ * !!! PO KAŻDEJ ZMIANIE NAZW TERMINÓW pa_* URUCHOM REINDEKS !!!
+ *
+ *   wp dawmac reindex --skip-themes
+ *
+ * Wtyczka dawmac-filters trzyma płaski indeks zbudowany z atrybutów.
+ * Zmiana nazwy terminu bez reindeksu zostawia w nim stare wartości,
+ * przez co zapytanie strony sklepu rozwiązuje się do ZERA produktów
+ * i katalog robi się pusty. Objaw jest mylący: <main> pusty, a nagłówek,
+ * stopka i style renderują się normalnie, w logach nie ma żadnego błędu.
+ * Kosztowało to godzinę szukania i dwa niepotrzebne cofnięcia zmian.
  */
 
 $apply = (($args[0] ?? '') === 'apply');
