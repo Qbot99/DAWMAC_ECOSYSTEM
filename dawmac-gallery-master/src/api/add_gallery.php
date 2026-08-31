@@ -1,5 +1,6 @@
 <?php
 require 'db.php';
+require_once __DIR__ . '/lib/wheel_norm.php';
 
 $conn->query("SET NAMES 'utf8mb4'");
 $conn->query("SET CHARACTER SET 'utf8mb4'");
@@ -104,9 +105,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 
     // Wstawianie danych do `wheel`
-    $stmt = $conn->prepare("INSERT INTO wheel (brand, model, params) VALUES (?, ?, ?)");
+    // Ten panel jest dziś martwy (AuthPanel.js = 0 bajtów), ale gdyby kiedyś
+    // wrócił do życia, nie może wpisywać felg bez klucza dopasowania.
+    $brand_norm = dawmac_wheel_norm($response['wheel']['brand']);
+    $model_norm = dawmac_wheel_norm($response['wheel']['model']);
+
+    $stmt = $conn->prepare("INSERT INTO wheel (brand, model, params, brand_norm, model_norm) VALUES (?, ?, ?, ?, ?)");
     if ($stmt) {
-        $stmt->bind_param("sss", $response['wheel']['brand'], $response['wheel']['model'], $response['wheel']['params']);
+        $stmt->bind_param("sssss", $response['wheel']['brand'], $response['wheel']['model'], $response['wheel']['params'], $brand_norm, $model_norm);
         $stmt->execute();
         $wheel_id = $stmt->insert_id;
         $stmt->close();

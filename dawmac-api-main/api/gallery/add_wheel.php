@@ -1,5 +1,6 @@
 <?php
 require 'db.php';
+require_once __DIR__ . '/lib/wheel_norm.php';
 
 function convertToWebP($source, $destination, $quality = 80) {
     $info = getimagesize($source);
@@ -70,9 +71,15 @@ if (!empty($response['errors'])) {
 }
 
 // -------------------- DODAJ FELGĘ --------------------
-$stmt = $conn->prepare("INSERT INTO wheel (brand, model, params) VALUES (?, ?, ?)");
+// Kolumny *_norm to klucz dopasowania do produktów w sklepie. Liczymy je
+// przy zapisie, żeby nowe auto trafiało na karty produktów od razu i żeby
+// różnice w zapisie ("Japan Racing " vs "JAPAN RACING") przestały mieć znaczenie.
+$brand_norm = dawmac_wheel_norm($wheel_brand);
+$model_norm = dawmac_wheel_norm($wheel_model);
+
+$stmt = $conn->prepare("INSERT INTO wheel (brand, model, params, brand_norm, model_norm) VALUES (?, ?, ?, ?, ?)");
 if ($stmt) {
-    $stmt->bind_param("sss", $wheel_brand, $wheel_model, $wheel_params);
+    $stmt->bind_param("sssss", $wheel_brand, $wheel_model, $wheel_params, $brand_norm, $model_norm);
     $stmt->execute();
     $wheel_id = $stmt->insert_id;
     $stmt->close();
