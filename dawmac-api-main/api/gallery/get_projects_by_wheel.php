@@ -44,7 +44,9 @@ $sql = "SELECT
             w.model         AS wheel_model,
             w.params        AS params,
             cb.name         AS car_brand,
-            cm.name         AS car_model
+            cm.name         AS car_model,
+            p.youtube_url   AS youtube_url,
+            p.auction_url   AS auction_url
         FROM project p
         JOIN wheel w        ON p.wheel_id = w.id
         LEFT JOIN car_brand cb ON p.car_brand_id = cb.id
@@ -81,6 +83,8 @@ while ($row = $wynik->fetch_assoc()) {
         'car'        => $auto !== '' ? $auto : null,
         'wheel'      => trim(($row['wheel_brand'] ?? '') . ' ' . ($row['wheel_model'] ?? '')),
         'params'     => $row['params'] ?: null,
+        'youtube'    => $row['youtube_url'] ?: null,
+        'auction'    => $row['auction_url'] ?: null,
         'images'     => [],
     ];
 }

@@ -17,12 +17,14 @@ SELECT
     p.car_model_id,
     w.brand,
     w.model,
-    w.params
+    w.params,
+    p.youtube_url,
+    p.auction_url
 FROM project p
 LEFT JOIN project_images i ON p.id = i.project_id
 LEFT JOIN wheel w ON p.wheel_id = w.id
 WHERE p.id = $project_id
-GROUP BY p.id, p.car_brand_id, p.car_model_id, w.brand, w.model, w.params
+GROUP BY p.id, p.car_brand_id, p.car_model_id, w.brand, w.model, w.params, p.youtube_url, p.auction_url
 LIMIT 1
 
 ";

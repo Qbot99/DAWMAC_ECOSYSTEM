@@ -1,200 +1,197 @@
 import { useState, useEffect } from "react";
 import { useLoading } from "./loading/LoadingContext";
+import WheelPicker, { type WheelChoice } from "./WheelPicker";
 
-type CarBrand = {
-  id: number;
-  name: string;
-};
+type CarBrand = { id: number; name: string };
+type CarModel = { id: number; name: string; brand_id: number };
 
-type CarModel = {
-  id: number;
-  name: string;
-  brand_id: number;
-};
-
-type Project = {
-  id: number | null;
-  wheel_brand: string;
-  wheel_model: string;
-  wheel_params: string;
-  car_brand_id: number;
-  car_model_id: number;
+const PUSTA_FELGA: WheelChoice = {
+  brand: "",
+  model: "",
+  fromDict: false,
+  products: 0,
 };
 
 export default function Gallery_add_wheel() {
   const [carBrandList, setCarBrandList] = useState<CarBrand[]>([]);
   const [carModelList, setCarModelList] = useState<CarModel[]>([]);
   const [selectedCarBrand, setSelectedCarBrand] = useState<string>("");
-  const [project, setProject] = useState<Project>({
-    id: null,
-    wheel_brand: "",
-    wheel_model: "",
-    wheel_params: "",
-    car_brand_id: 0,
-    car_model_id: 0,
-  });
+  const [carModelId, setCarModelId] = useState<number>(0);
+
+  const [wheel, setWheel] = useState<WheelChoice>(PUSTA_FELGA);
+  const [params, setParams] = useState("");
+  const [youtubeUrl, setYoutubeUrl] = useState("");
+  const [auctionUrl, setAuctionUrl] = useState("");
+  const [komunikat, setKomunikat] = useState<string | null>(null);
+
   const { setLoading } = useLoading();
 
   useEffect(() => {
-    const fetchCarBrands = async () => {
+    (async () => {
       try {
         const res = await fetch(
           `${import.meta.env.VITE_DOMAIN}api/gallery/get_car_brands.php`
         );
-        if (!res.ok) throw new Error(`HTTP error! Status: ${res.status}`);
-
-        const data = await res.json();
-        setCarBrandList(data);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        setCarBrandList(await res.json());
       } catch (error) {
-        console.error("Error fetching car brands:", error);
+        console.error("Nie udało się pobrać marek aut:", error);
       }
-    };
-
-    fetchCarBrands();
+    })();
   }, []);
 
   useEffect(() => {
-    const fetchCarModels = async () => {
+    if (!selectedCarBrand) {
+      setCarModelList([]);
+      return;
+    }
+    (async () => {
       try {
         const res = await fetch(
-          `${
-            import.meta.env.VITE_DOMAIN
-          }api/gallery/get_car_models.php?car_brand_id=${selectedCarBrand}`
+          `${import.meta.env.VITE_DOMAIN}api/gallery/get_car_models.php?car_brand_id=${selectedCarBrand}`
         );
-        if (!res.ok)
-          throw new Error(`HTTP error! Status: ${res.status}
-          `);
-        const data = await res.json();
-        setCarModelList(data);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        setCarModelList(await res.json());
       } catch (error) {
-        console.error("Error fetching car models:", error);
+        console.error("Nie udało się pobrać modeli aut:", error);
       }
-    };
-    fetchCarModels();
+    })();
   }, [selectedCarBrand]);
 
-  function addWheels(project: Project) {
-    setLoading(true);
-    console.log(project);
+  function wyczysc() {
+    setWheel(PUSTA_FELGA);
+    setParams("");
+    setYoutubeUrl("");
+    setAuctionUrl("");
+    setCarModelId(0);
+    const input = document.getElementById("add-wheel-images") as HTMLInputElement | null;
+    if (input) input.value = "";
+  }
 
-    const input = document.getElementById(
-      "add-wheel-images"
-    ) as HTMLInputElement;
+  async function dodaj() {
+    const input = document.getElementById("add-wheel-images") as HTMLInputElement | null;
     const files = input?.files;
 
+    // Walidacja przed wysyłką — inaczej powstałby pusty projekt bez zdjęć,
+    // czyli dokładnie taki wpis, jakich mamy dziś 322 do posprzątania.
+    if (!selectedCarBrand) {
+      setKomunikat("Wybierz markę samochodu.");
+      return;
+    }
+    if (wheel.brand === "" && wheel.model === "") {
+      setKomunikat("Wybierz felgę.");
+      return;
+    }
     if (!files || files.length === 0) {
-      console.log("Nie wybrano żadnych plików.");
-      setLoading(false);
+      setKomunikat("Dodaj przynajmniej jedno zdjęcie.");
       return;
     }
 
+    setKomunikat(null);
+    setLoading(true);
+
     const formData = new FormData();
-    formData.append("car_brand_id", String(project.car_brand_id));
-    formData.append("car_model_id", String(project.car_model_id));
-    formData.append("wheel_brand", project.wheel_brand ?? "");
-    formData.append("wheel_model", project.wheel_model ?? "");
-    formData.append("wheel_params", project.wheel_params ?? "");
+    formData.append("car_brand_id", selectedCarBrand);
+    formData.append("car_model_id", String(carModelId));
+    formData.append("wheel_brand", wheel.brand);
+    formData.append("wheel_model", wheel.model);
+    formData.append("wheel_params", params);
+    formData.append("youtube_url", youtubeUrl.trim());
+    formData.append("auction_url", auctionUrl.trim());
     for (let i = 0; i < files.length; i++) {
       formData.append("images[]", files[i]);
     }
 
-    fetch(import.meta.env.VITE_DOMAIN + "api/gallery/add_wheel.php", {
-      method: "POST",
-      body: formData,
-    })
-      .then((res) => {
-        console.log("Dodano felgę:", project);
-        setLoading(false);
-        return res.json();
-      })
-      .then((data) => {
-        console.log("Response:", data);
-      })
-      .catch((err) => {
-        console.log("Nie udało się dodać felgi:", project);
-        console.error("Error:", err);
-        setLoading(false);
-      });
+    try {
+      const res = await fetch(
+        `${import.meta.env.VITE_DOMAIN}api/gallery/add_wheel.php`,
+        { method: "POST", body: formData }
+      );
+      const data = await res.json();
+
+      if (data?.errors?.length) {
+        setKomunikat("Zapisano z błędami: " + data.errors.join(" | "));
+      } else {
+        setKomunikat(
+          wheel.fromDict && wheel.products > 0
+            ? `Dodano. Zdjęcia trafią na ${wheel.products} kart produktów.`
+            : "Dodano. Felga spoza sklepu — wpis czeka na liście roboczej."
+        );
+        wyczysc();
+      }
+    } catch (err) {
+      console.error("Nie udało się dodać:", err);
+      setKomunikat("Nie udało się zapisać. Spróbuj ponownie.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
-    <>
-      <div id="gallery-add-wheel">
-        <h2>Dodaj felgę</h2>
+    <div id="gallery-add-wheel">
+      <h2>Dodaj auto do galerii</h2>
 
-        <select
-          name="car_brand"
-          id="car_brand"
-          onChange={(e) => {
-            setSelectedCarBrand(e.target.value);
-            setProject({
-              ...project,
-              car_brand_id: Number(e.target.value),
-            });
-          }}
-        >
-          <option value="">Wybierz markę samochodu</option>
-          {carBrandList.map((brand) => (
-            <option key={brand.id} value={brand.id}>
-              {brand.name}
-            </option>
-          ))}
-        </select>
-        <select
-          name="car_model"
-          id="car_model"
-          onChange={(e) =>
-            setProject({
-              ...project,
-              car_model_id: Number(e.target.value),
-            })
-          }
-        >
-          <option value="">Wybierz model samochodu</option>
-          {carModelList.map((model) => (
-            <option key={model.id} value={model.id}>
-              {model.name}
-            </option>
-          ))}
-        </select>
-        <input
-          type="text"
-          placeholder="Marka felgi"
-          onChange={(e) =>
-            setProject({
-              ...project,
-              wheel_brand: e.target.value,
-            })
-          }
-        />
-        <input
-          type="text"
-          placeholder="Model felgi"
-          onChange={(e) =>
-            setProject({
-              ...project,
-              wheel_model: e.target.value,
-            })
-          }
-        />
-        <input
-          type="text"
-          placeholder="Parametry felgi"
-          onChange={(e) =>
-            setProject({
-              ...project,
-              wheel_params: e.target.value,
-            })
-          }
-        />
-        <input
-          type="file"
-          name="add-wheel-images[]"
-          id="add-wheel-images"
-          multiple
-        />
-        <button onClick={() => addWheels(project)}>Dodaj</button>
-      </div>
-    </>
+      <select
+        name="car_brand"
+        id="car_brand"
+        value={selectedCarBrand}
+        onChange={(e) => {
+          setSelectedCarBrand(e.target.value);
+          setCarModelId(0);
+        }}
+      >
+        <option value="">Wybierz markę samochodu</option>
+        {carBrandList.map((brand) => (
+          <option key={brand.id} value={brand.id}>
+            {brand.name}
+          </option>
+        ))}
+      </select>
+
+      <select
+        name="car_model"
+        id="car_model"
+        value={carModelId || ""}
+        onChange={(e) => setCarModelId(Number(e.target.value))}
+      >
+        <option value="">Wybierz model samochodu</option>
+        {carModelList.map((model) => (
+          <option key={model.id} value={model.id}>
+            {model.name}
+          </option>
+        ))}
+      </select>
+
+      <WheelPicker value={wheel} onChange={setWheel} />
+
+      <input
+        type="text"
+        placeholder="Parametry, np. 19&quot; 8.5J ET42 5x112"
+        value={params}
+        onChange={(e) => setParams(e.target.value)}
+      />
+
+      <input
+        type="url"
+        placeholder="Link do filmu na YouTube (opcjonalnie)"
+        value={youtubeUrl}
+        onChange={(e) => setYoutubeUrl(e.target.value)}
+      />
+
+      <input
+        type="url"
+        placeholder="Link do aukcji (opcjonalnie)"
+        value={auctionUrl}
+        onChange={(e) => setAuctionUrl(e.target.value)}
+      />
+
+      <input type="file" name="add-wheel-images[]" id="add-wheel-images" multiple accept="image/*" />
+
+      <button type="button" onClick={dodaj}>
+        Dodaj
+      </button>
+
+      {komunikat && <p className="gallery-add-msg">{komunikat}</p>}
+    </div>
   );
 }

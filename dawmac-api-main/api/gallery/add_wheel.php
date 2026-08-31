@@ -1,6 +1,7 @@
 <?php
 require 'db.php';
 require_once __DIR__ . '/lib/wheel_norm.php';
+require_once __DIR__ . '/lib/media_url.php';
 
 function convertToWebP($source, $destination, $quality = 80) {
     $info = getimagesize($source);
@@ -61,6 +62,11 @@ $car_brand_id = trim($_POST["car_brand_id"] ?? '');
 $car_model_id = trim($_POST["car_model_id"] ?? '');
 $show_in_store = 1; // Możesz zmienić na $_POST["show_in_store"] ?? 1
 
+// Linki opcjonalne. Niepoprawny adres YouTube zapisujemy jako pusty zamiast
+// wstawiać na stronę odtwarzacz, który się nie uruchomi.
+$youtube_url = dawmac_youtube_url($_POST["youtube_url"] ?? '');
+$auction_url = dawmac_auction_url($_POST["auction_url"] ?? '');
+
 if ($car_brand_id === '' || !is_numeric($car_brand_id)) $response['errors'][] = "ID marki auta jest wymagane i musi być liczbą.";
 if (!isset($_FILES["images"]) || empty($_FILES["images"]["tmp_name"][0])) $response['errors'][] = "Pliki obrazków felg są wymagane.";
 
@@ -92,11 +98,11 @@ if ($stmt) {
 // -------------------- DODAJ PROJEKT --------------------
 $project_id = null;
 if ($car_model_id !== '' && is_numeric($car_model_id)) {
-    $stmt = $conn->prepare("INSERT INTO project (car_brand_id, car_model_id, wheel_id, show_in_store) VALUES (?, ?, ?, ?)");
-    $stmt->bind_param("iiii", $car_brand_id, $car_model_id, $wheel_id, $show_in_store);
+    $stmt = $conn->prepare("INSERT INTO project (car_brand_id, car_model_id, wheel_id, show_in_store, youtube_url, auction_url) VALUES (?, ?, ?, ?, ?, ?)");
+    $stmt->bind_param("iiiiss", $car_brand_id, $car_model_id, $wheel_id, $show_in_store, $youtube_url, $auction_url);
 } else {
-    $stmt = $conn->prepare("INSERT INTO project (car_brand_id, wheel_id, show_in_store) VALUES (?, ?, ?)");
-    $stmt->bind_param("iii", $car_brand_id, $wheel_id, $show_in_store);
+    $stmt = $conn->prepare("INSERT INTO project (car_brand_id, wheel_id, show_in_store, youtube_url, auction_url) VALUES (?, ?, ?, ?, ?)");
+    $stmt->bind_param("iiiss", $car_brand_id, $wheel_id, $show_in_store, $youtube_url, $auction_url);
 }
 
 if ($stmt) {
