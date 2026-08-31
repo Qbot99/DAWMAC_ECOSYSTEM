@@ -1,10 +1,12 @@
 /**
- * Karta produktu: okruszki na samej górze + gęstsze odstępy.
+ * Karta produktu: gęstsze odstępy. Bez okruszków.
  *
- * Poprzednia wersja robiła remove_action w pętli 1-30 i dodawała okruszki
- * przez woocommerce_before_main_content. Nie działało — Astra ma własny
- * system okruszków, a w podsumowaniu zostawał ukryty <nav> o zerowej
- * wysokości. Teraz wypisujemy je sami, jako pierwszą rzecz w treści.
+ * OKRUSZKI WYCIĘTE 2026-08-31. Na telefonie łamały się po jednym słowie
+ * w linii ("Strona / główna / Felgi / Forzza / Titan / 17" / 7.5J / ET40
+ * / 5x114.3 / Satin / Black") i zjadały pół ekranu nad zdjęciem. Nazwa
+ * produktu jest długa z natury, więc w wąskiej kolumnie nie dało się tego
+ * uratować stylami — ścieżka poszła w całości. Zostały same remove_action,
+ * żeby WooCommerce ani motyw nie wstawiły jej z powrotem.
  *
  * Odstępy: cena miała 56 px marginesu pod spodem, a WooCommerce zostawiał
  * pusty <p> z kolejnymi 25 px. Na telefonie dawało to dwa ekrany pustki
@@ -23,30 +25,7 @@ add_action( 'wp', function () {
 	remove_action( 'woocommerce_before_single_product', 'woocommerce_breadcrumb', 20 );
 	remove_action( 'woocommerce_before_main_content', 'woocommerce_breadcrumb', 20 );
 
-	add_action( 'woocommerce_before_main_content', 'dawmac_okruszki_na_gorze', 1 );
-	add_action( 'astra_primary_content_top', 'dawmac_okruszki_na_gorze', 1 );
-
 }, 99 );
-
-function dawmac_okruszki_na_gorze() {
-
-	// Oba haki mogą wystrzelić na tym samym widoku — wypisujemy raz.
-	static $juz = false;
-
-	if ( $juz || ! function_exists( 'woocommerce_breadcrumb' ) ) {
-		return;
-	}
-
-	$juz = true;
-
-	echo '<div class="dm-okruszki">';
-	woocommerce_breadcrumb( array(
-		'delimiter'   => ' / ',
-		'wrap_before' => '<nav class="woocommerce-breadcrumb dm-okruszki-nav">',
-		'wrap_after'  => '</nav>',
-	) );
-	echo '</div>';
-}
 
 add_action( 'wp_head', function () {
 
@@ -55,12 +34,10 @@ add_action( 'wp_head', function () {
 	}
 
 	echo '<style id="dm-produkt-odstepy">
-.dm-okruszki { margin: 0 0 10px; font-size: .82rem; line-height: 1.4; }
-.dm-okruszki .dm-okruszki-nav { margin: 0; padding: 0; }
-
-/* Kopie okruszkow w innych miejscach - precz. */
-.single-product .summary > .woocommerce-breadcrumb,
-.single-product .entry-summary > .woocommerce-breadcrumb { display: none !important; }
+/* Okruszki na karcie produktu - w kazdej postaci, takze wlasne Astry. */
+.single-product .woocommerce-breadcrumb,
+.single-product .ast-breadcrumbs-wrapper,
+.single-product .dm-okruszki { display: none !important; }
 
 /* Cena miala 56 px pod spodem - to byla najwieksza dziura. */
 .single-product .summary .price,
