@@ -91,9 +91,13 @@ class Dawmac_Galeria_Admin {
 					<tr>
 						<th scope="row">Ile zdjęć</th>
 						<td>
-							<input type="number" min="1" max="24" class="small-text"
+							<input type="number" min="0" max="60" class="small-text"
 								name="<?php echo esc_attr( Dawmac_Galeria_Produkt::OPT_ILE ); ?>"
-								value="<?php echo esc_attr( (string) Dawmac_Galeria_Produkt::ile() ); ?>">
+								value="<?php echo esc_attr( (string) (int) get_option( Dawmac_Galeria_Produkt::OPT_ILE, 24 ) ); ?>">
+							<p class="description">
+								0 = wszystkie, jakie galeria ma dla tej felgi (do 60).
+								Przy pasku poziomym liczba zdjęć nie wydłuża strony.
+							</p>
 						</td>
 					</tr>
 					<tr>

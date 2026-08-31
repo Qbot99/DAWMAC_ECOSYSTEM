@@ -45,10 +45,18 @@ class Dawmac_Galeria_Produkt {
 		return in_array( $m, [ 'zakladka', 'pod_zdjeciami', 'pod_cena', 'pod_opisem', 'nie' ], true ) ? $m : 'zakladka';
 	}
 
+	/**
+	 * Ile zdjęć pokazać. 0 = wszystkie, jakie galeria ma dla tej felgi.
+	 *
+	 * Przy pasku przewijanym w poziomie liczba zdjęć nie kosztuje wysokości
+	 * strony, więc obcinanie do kilkunastu nie ma sensu — Forzza Titan ma
+	 * w galerii 31 aut, a pokazywaliśmy 16. Górna granica 60 pochodzi
+	 * z endpointu galerii.
+	 */
 	public static function ile(): int {
-		$n = (int) get_option( self::OPT_ILE, 8 );
+		$n = (int) get_option( self::OPT_ILE, 24 );
 
-		return $n > 0 ? min( $n, 24 ) : 8;
+		return $n > 0 ? min( $n, 60 ) : 60;
 	}
 
 	public static function podepnij(): void {
