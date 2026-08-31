@@ -4,6 +4,65 @@ require 'db_config.php';
 // Ścieżka działa tak samo na serwerze (public_html/ios/) jak i w repo.
 require_once __DIR__ . '/../api/gallery/lib/wheel_norm.php';
 
+/**
+ * Zmniejsza zdjęcie do miniatury o zadanej szerokości, zachowując format.
+ * Zdjęcie węższe niż miniatura jest kopiowane bez powiększania.
+ * Błąd nie przerywa wgrywania — brak miniatury da się dorobić później
+ * narzędziem tools/make_thumbnails.php.
+ */
+function dawmac_zrob_miniature(string $zrodlo, string $cel, int $szerokosc = 700): bool
+{
+    $info = @getimagesize($zrodlo);
+    if ($info === false) {
+        return false;
+    }
+
+    [$w, $h] = $info;
+    if ($w <= 0 || $h <= 0) {
+        return false;
+    }
+
+    $obraz = match ($info['mime']) {
+        'image/jpeg' => @imagecreatefromjpeg($zrodlo),
+        'image/png'  => @imagecreatefrompng($zrodlo),
+        'image/webp' => @imagecreatefromwebp($zrodlo),
+        'image/gif'  => @imagecreatefromgif($zrodlo),
+        default      => null,
+    };
+
+    if (!$obraz) {
+        return false;
+    }
+
+    if ($w <= $szerokosc) {
+        imagedestroy($obraz);
+        return @copy($zrodlo, $cel);
+    }
+
+    $noweH = (int) round($szerokosc * $h / $w);
+    $mini  = imagecreatetruecolor($szerokosc, $noweH);
+
+    if (in_array($info['mime'], ['image/png', 'image/webp'], true)) {
+        imagealphablending($mini, false);
+        imagesavealpha($mini, true);
+    }
+
+    imagecopyresampled($mini, $obraz, 0, 0, 0, 0, $szerokosc, $noweH, $w, $h);
+
+    $ok = match ($info['mime']) {
+        'image/jpeg' => @imagejpeg($mini, $cel, 82),
+        'image/png'  => @imagepng($mini, $cel, 6),
+        'image/webp' => @imagewebp($mini, $cel, 82),
+        'image/gif'  => @imagegif($mini, $cel),
+        default      => false,
+    };
+
+    imagedestroy($obraz);
+    imagedestroy($mini);
+
+    return (bool) $ok;
+}
+
 header('Content-Type: application/json; charset=utf-8');
 
 $action = $_GET['action'] ?? '';
@@ -167,6 +226,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $dbPath = 'images/' . $fileName;
 
             if (move_uploaded_file($_FILES['photo']['tmp_name'], $targetPath)) {
+                /*
+                 * Miniatura. Panel webowy tworzył ją od zawsze, ten endpoint nie —
+                 * a ponieważ większość zdjęć idzie z telefonu, front galerii przez
+                 * miesiące serwował pliki po ~400 KB zamiast po ~30 KB (ma fallback
+                 * onerror na pełny plik, więc nikt tego nie zauważył).
+                 */
+                dawmac_zrob_miniature($targetPath, $uploadDir . 'thumb700_' . $fileName, 700);
+
                 // Przy dodawaniu nowego zdjęcia is_primary jest domyślnie 0 (chyba że baza ma inaczej ustawione default)
                 // Nie musimy tu nic zmieniać
                 $stmtImg = $pdo_gallery->prepare("INSERT INTO project_images (project_id, image_url) VALUES (?, ?)");
