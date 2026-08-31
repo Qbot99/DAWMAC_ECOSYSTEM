@@ -35,12 +35,21 @@ while ($d = $res->fetch_assoc()) {
     $sklejone[$d['brand_norm'] . $d['model_norm']] = $d;
 }
 
-/* Felgi oznaczone jako nieprowadzone przez sklep — nie należą na listę. */
+/*
+ * Wykluczenia. Wpis z model_norm = '*' wyłącza CAŁĄ markę — tak trzymamy
+ * felgi kute: mają osobną bazę, osobny sklep i własny system nazw, więc
+ * dopasowywanie ich do katalogu dawmac.pl nie ma sensu.
+ */
 $pominiete = [];
+$pominieteMarki = [];
 $res = @$conn->query("SELECT brand_norm, model_norm FROM wheel_ignored");
 if ($res) {
     while ($i = $res->fetch_assoc()) {
-        $pominiete[$i['brand_norm'] . "\x1f" . $i['model_norm']] = true;
+        if ($i['model_norm'] === '*') {
+            $pominieteMarki[$i['brand_norm']] = true;
+        } else {
+            $pominiete[$i['brand_norm'] . "\x1f" . $i['model_norm']] = true;
+        }
     }
 }
 
@@ -60,7 +69,7 @@ while ($g = $res->fetch_assoc()) {
     $bn = $g['brand_norm'];
     $mn = $g['model_norm'];
 
-    if (isset($pominiete[$bn . "\x1f" . $mn])) {
+    if (isset($pominieteMarki[$bn]) || isset($pominiete[$bn . "\x1f" . $mn])) {
         continue;
     }
 

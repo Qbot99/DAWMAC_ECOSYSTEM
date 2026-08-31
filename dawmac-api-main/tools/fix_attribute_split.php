@@ -93,7 +93,9 @@ $doZmiany = [];
 $pomijane = [];
 
 foreach ($modele as $m) {
-    if (!str_starts_with($m->name, $czlon . ' ')) {
+    // Porównanie bez rozróżniania wielkości liter — sklep zapisuje ten sam
+    // człon raz jako "Wheels FF-ONE", a raz "WHEELS FF-ONE".
+    if (mb_stripos($m->name, $czlon . ' ') !== 0) {
         continue;
     }
 
@@ -114,7 +116,7 @@ foreach ($modele as $m) {
         continue;
     }
 
-    $nowa = trim(substr($m->name, strlen($czlon) + 1));
+    $nowa = trim(mb_substr($m->name, mb_strlen($czlon) + 1));
 
     if ($nowa === '') {
         $pomijane[] = $m->name . ' (po obcięciu zostałaby pusta nazwa)';
