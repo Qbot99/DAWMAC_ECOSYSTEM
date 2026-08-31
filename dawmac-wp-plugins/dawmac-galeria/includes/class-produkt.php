@@ -80,7 +80,10 @@ class Dawmac_Galeria_Produkt {
 
 		$zakladki['dawmac_galeria'] = [
 			'title'    => sprintf( 'Na autach klientów (%d)', count( $projekty ) ),
-			'priority' => 25,
+			// Zaraz pod opisem: WooCommerce daje opisowi 10, informacjom
+			// dodatkowym 20, opiniom 30. Zdjęcia klientów są ciekawsze niż
+			// tabelka parametrów, więc wchodzą przed nią.
+			'priority' => 15,
 			'callback' => static function () use ( $projekty ): void {
 				// Nagłówek renderujemy ZAWSZE, także w trybie zakładki.
 				// Motyw tego sklepu ukrywa nawigację zakładek i wypisuje panele
