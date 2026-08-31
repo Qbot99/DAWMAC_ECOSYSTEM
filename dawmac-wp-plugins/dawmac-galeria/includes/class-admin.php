@@ -41,7 +41,7 @@ class Dawmac_Galeria_Admin {
 		register_setting( self::GROUP, Dawmac_Galeria_Produkt::OPT_MIEJSCE, [
 			'type' => 'string',
 			'sanitize_callback' => static fn( $v ): string =>
-				in_array( $v, [ 'zakladka', 'pod_opisem', 'nie' ], true ) ? $v : 'zakladka',
+				in_array( $v, [ 'zakladka', 'pod_cena', 'pod_opisem', 'nie' ], true ) ? $v : 'zakladka',
 			'default' => 'zakladka',
 		] );
 		register_setting( self::GROUP, Dawmac_Galeria_Produkt::OPT_ILE, [
@@ -68,6 +68,9 @@ class Dawmac_Galeria_Admin {
 							<select name="<?php echo esc_attr( Dawmac_Galeria_Produkt::OPT_MIEJSCE ); ?>">
 								<option value="zakladka" <?php selected( Dawmac_Galeria_Produkt::miejsce(), 'zakladka' ); ?>>
 									jako zakładka obok opisu (zalecane)
+								</option>
+								<option value="pod_cena" <?php selected( Dawmac_Galeria_Produkt::miejsce(), 'pod_cena' ); ?>>
+									zaraz pod ceną, nad opisem (najlepiej widoczne)
 								</option>
 								<option value="pod_opisem" <?php selected( Dawmac_Galeria_Produkt::miejsce(), 'pod_opisem' ); ?>>
 									sekcją pod opisem produktu

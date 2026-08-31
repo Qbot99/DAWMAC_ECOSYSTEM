@@ -42,7 +42,7 @@ class Dawmac_Galeria_Produkt {
 	public static function miejsce(): string {
 		$m = (string) get_option( self::OPT_MIEJSCE, 'zakladka' );
 
-		return in_array( $m, [ 'zakladka', 'pod_opisem', 'nie' ], true ) ? $m : 'zakladka';
+		return in_array( $m, [ 'zakladka', 'pod_cena', 'pod_opisem', 'nie' ], true ) ? $m : 'zakladka';
 	}
 
 	public static function ile(): int {
@@ -67,7 +67,20 @@ class Dawmac_Galeria_Produkt {
 			return;
 		}
 
-		// Pod opisem, przed produktami powiązanymi.
+		if ( 'pod_cena' === $miejsce ) {
+			/*
+			 * Zaraz pod ceną i formularzem, PRZED opisem i zakładkami
+			 * (WooCommerce wypisuje zakładki na tym haku z priorytetem 10).
+			 *
+			 * Przy pozycji "w zakładce" sekcja lądowała 2900 px w dół na
+			 * stronie mającej 8500 px — technicznie widoczna, praktycznie
+			 * nie do znalezienia.
+			 */
+			add_action( 'woocommerce_after_single_product_summary', [ __CLASS__, 'wypisz' ], 9 );
+			return;
+		}
+
+		// Pod opisem i zakładkami, przed produktami powiązanymi.
 		add_action( 'woocommerce_after_single_product_summary', [ __CLASS__, 'wypisz' ], 16 );
 	}
 
