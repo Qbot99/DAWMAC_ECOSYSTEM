@@ -57,4 +57,3 @@ function wstaw_formularz_dla_brakow() {
     }
     </style>';
 }
-
