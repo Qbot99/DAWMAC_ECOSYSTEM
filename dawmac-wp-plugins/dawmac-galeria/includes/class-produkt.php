@@ -202,6 +202,7 @@ class Dawmac_Galeria_Produkt {
 					$pelne     = Dawmac_Galeria_API::url_zdjecia( $pierwsze );
 					$auto      = trim( (string) ( $p['car'] ?? '' ) );
 					$parametry = trim( (string) ( $p['params'] ?? '' ) );
+					$film      = trim( (string) ( $p['youtube'] ?? '' ) );
 					$opis      = $auto !== '' ? $auto : 'Auto klienta';
 					?>
 					<figure class="dmg-kafel">
@@ -216,13 +217,31 @@ class Dawmac_Galeria_Produkt {
 								decoding="async"
 								onerror="this.onerror=null;this.src='<?php echo esc_url( $pelne ); ?>'">
 						</button>
-						<?php if ( '' !== $auto || '' !== $parametry ) : ?>
+						<?php if ( '' !== $auto || '' !== $parametry || '' !== $film ) : ?>
 							<figcaption class="dmg-podpis">
 								<?php if ( '' !== $auto ) : ?>
 									<strong><?php echo esc_html( $auto ); ?></strong>
 								<?php endif; ?>
 								<?php if ( '' !== $parametry ) : ?>
 									<span><?php echo esc_html( $parametry ); ?></span>
+								<?php endif; ?>
+								<?php if ( '' !== $film ) : ?>
+									<?php
+									/*
+									 * Świadomie ZWYKŁY ODNOŚNIK, nie osadzony odtwarzacz.
+									 * Iframe YouTube'a ciąga 1-2 MB skryptów na każdą kartę
+									 * produktu i jest blokowany przez Complianz do czasu
+									 * zgody na ciasteczka marketingowe. Link nie waży nic
+									 * i działa zawsze.
+									 */
+									?>
+									<a class="dmg-film"
+										href="<?php echo esc_url( $film ); ?>"
+										target="_blank"
+										rel="noopener nofollow"
+										aria-label="<?php echo esc_attr( 'Obejrzyj film na YouTube: ' . $opis ); ?>">
+										Zobacz film
+									</a>
 								<?php endif; ?>
 							</figcaption>
 						<?php endif; ?>

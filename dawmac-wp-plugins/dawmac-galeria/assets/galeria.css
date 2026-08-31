@@ -226,3 +226,30 @@ body.dmg-blokada { overflow: hidden; }
 @media (prefers-reduced-motion: reduce) {
 	.dmg-lightbox button { transition: none; }
 }
+
+/* Odnośnik do filmu na YouTube.
+   Świadomie link, nie osadzony odtwarzacz — iframe YouTube'a to 1-2 MB
+   skryptów na kartę produktu i blokada Complianz do czasu zgody. */
+.dmg-film {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	margin-top: 4px;
+	font-size: .76rem;
+	font-weight: 600;
+	color: #d10404;
+	text-decoration: none;
+}
+
+.dmg-film::before {
+	content: "";
+	width: 0;
+	height: 0;
+	border-style: solid;
+	border-width: 5px 0 5px 8px;
+	border-color: transparent transparent transparent #d10404;
+}
+
+.dmg-film:hover,
+.dmg-film:focus-visible { color: #ff1f1f; text-decoration: underline; }
+.dmg-film:hover::before { border-left-color: #ff1f1f; }
