@@ -1,25 +1,65 @@
 /* Siatka zdjęć klientów na karcie produktu + powiększenie po kliknięciu. */
 
-.dmg { margin: 1.5rem 0; }
+/* min-width: 0 jest konieczne: bez niego kontener flex/grid rodzica
+   rozciąga się do szerokości zawartości i pasek zamiast przewijać się
+   w środku rozpycha całą stronę w bok. */
+.dmg { margin: 1.5rem 0; width: 100%; max-width: 100%; min-width: 0; overflow: hidden; }
 
 .dmg-naglowek {
 	font-size: 1.15rem;
 	margin: 0 0 1rem;
 }
 
-.dmg-siatka {
-	display: grid;
-	/* Na telefonie dwie kolumny: 12 kafelków w jednej kolumnie dawało
-	   blisko 4000 px i sekcja wyglądała jak pusta przestrzeń, zanim
-	   leniwe ładowanie doczytało zdjęcia. */
-	grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-	gap: 12px;
-	margin: 0;
-}
 
-.dmg-kafel { margin: 0; }
 
 /* Miniatura jest przyciskiem, ale nie ma wyglądać jak przycisk. */
+/*
+ * Pasek przewijany w poziomie, zamiast siatki.
+ *
+ * Siatka z 12 kafelkami zajmowała na telefonie 1200-3900 px i spychała
+ * treść produktu w dół. Pasek pokazuje tyle samo zdjęć na jednym ekranie
+ * i czyta się jak galeria, a nie jak druga strona produktu.
+ */
+.dmg-siatka {
+	display: flex;
+	width: 100%;
+	max-width: 100%;
+	min-width: 0;
+	gap: 12px;
+	margin: 0;
+	padding: 0 0 10px;
+	overflow-x: auto;
+	overflow-y: hidden;
+	scroll-snap-type: x proximity;
+	-webkit-overflow-scrolling: touch;
+	scrollbar-width: thin;
+	scrollbar-color: #d10404 rgba(255, 255, 255, .12);
+}
+
+.dmg-siatka::-webkit-scrollbar { height: 6px; }
+.dmg-siatka::-webkit-scrollbar-track { background: rgba(255, 255, 255, .1); border-radius: 3px; }
+.dmg-siatka::-webkit-scrollbar-thumb { background: #d10404; border-radius: 3px; }
+
+.dmg-kafel {
+	flex: 0 0 auto;
+	width: 190px;
+	margin: 0;
+	scroll-snap-align: start;
+}
+
+@media (max-width: 782px) {
+	.dmg-kafel { width: 150px; }
+	.dmg-podpis { font-size: .76rem; }
+	.dmg-podpis span { font-size: .72rem; }
+}
+
+/* Podpowiedź, że pasek się przewija — znika po dojechaniu do końca. */
+.dmg-przewin {
+	font-size: .76rem;
+	opacity: .6;
+	margin: 0 0 8px;
+}
+
 .dmg-klik {
 	display: block;
 	width: 100%;
@@ -138,12 +178,3 @@ body.dmg-blokada { overflow: hidden; }
 	color: #fff;
 }
 
-/* Na wąskich ekranach wymuszamy dwie kolumny.
-   auto-fill nie wystarczy: sekcja ląduje w kolumnie o szerokości ~300 px,
-   więc przy minimum 150 px + odstęp mieściła się tylko jedna, a 12 kafelków
-   dawało prawie 3400 px wysokości i wyglądało jak pusta przestrzeń. */
-@media (max-width: 782px) {
-	.dmg-siatka { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-	.dmg-podpis { font-size: .76rem; }
-	.dmg-podpis span { font-size: .72rem; }
-}

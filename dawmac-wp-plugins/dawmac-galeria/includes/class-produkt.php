@@ -42,7 +42,7 @@ class Dawmac_Galeria_Produkt {
 	public static function miejsce(): string {
 		$m = (string) get_option( self::OPT_MIEJSCE, 'zakladka' );
 
-		return in_array( $m, [ 'zakladka', 'pod_cena', 'pod_opisem', 'nie' ], true ) ? $m : 'zakladka';
+		return in_array( $m, [ 'zakladka', 'pod_zdjeciami', 'pod_cena', 'pod_opisem', 'nie' ], true ) ? $m : 'zakladka';
 	}
 
 	public static function ile(): int {
@@ -64,6 +64,15 @@ class Dawmac_Galeria_Produkt {
 
 		if ( 'zakladka' === $miejsce ) {
 			add_filter( 'woocommerce_product_tabs', [ __CLASS__, 'zakladka' ] );
+			return;
+		}
+
+		if ( 'pod_zdjeciami' === $miejsce ) {
+			/*
+			 * Zaraz pod zdjęciami produktu. WooCommerce wypisuje galerię
+			 * zdjęć na tym haku z priorytetem 20, więc wchodzimy na 21.
+			 */
+			add_action( 'woocommerce_before_single_product_summary', [ __CLASS__, 'wypisz' ], 21 );
 			return;
 		}
 
@@ -169,6 +178,8 @@ class Dawmac_Galeria_Produkt {
 					<span class="dmg-licznik"><?php echo (int) count( $projekty ); ?></span>
 				</h2>
 			<?php endif; ?>
+
+			<p class="dmg-przewin">Przesuń w bok, żeby zobaczyć więcej &rarr;</p>
 
 			<div class="dmg-siatka">
 				<?php foreach ( $projekty as $p ) : ?>
