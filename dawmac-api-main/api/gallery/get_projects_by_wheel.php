@@ -51,8 +51,14 @@ $sql = "SELECT
         JOIN wheel w        ON p.wheel_id = w.id
         LEFT JOIN car_brand cb ON p.car_brand_id = cb.id
         LEFT JOIN car_model cm ON p.car_model_id = cm.id
-        WHERE w.brand_norm = ?
-          AND w.model_norm = ?
+        WHERE (
+                (w.brand_norm = ? AND w.model_norm = ?)
+                -- Drugi warunek ratuje przypadki, w ktorych sklep i galeria
+                -- dziela nazwe w innym miejscu: sklep ma producenta OE
+                -- i model MS IFG10, galeria OEMS i IFG10. Po sklejeniu to ten
+                -- sam ciag znakow, wiec dopasowanie jest pewne, nie zgadywane.
+                OR CONCAT(w.brand_norm, w.model_norm) = ?
+              )
           AND p.show_in_store = 1
         ORDER BY p.id DESC
         LIMIT ?";
@@ -65,7 +71,8 @@ if (!$stmt) {
     exit();
 }
 
-$stmt->bind_param('ssi', $brand, $model, $limit);
+$sklejone = $brand . $model;
+$stmt->bind_param('sssi', $brand, $model, $sklejone, $limit);
 $stmt->execute();
 $wynik = $stmt->get_result();
 
