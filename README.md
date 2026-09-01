@@ -1,10 +1,25 @@
 # Dawmac Digital Ecosystem 🏎️
 
-> **Notice:** The source code for this enterprise ecosystem is stored in a private repository for security and proprietary business reasons.
-> 
+> Monorepo of the digital infrastructure behind [dawmac.pl](https://dawmac.pl) - a premium automotive wheel brand.
+> Each project lives in its own folder and can be developed independently.
+>
 > 🔗 **Main Platform:** [dawmac.pl](https://dawmac.pl/)  
 > 💎 **Forged Rims Showcase:** [forged.dawmacpolska.pl](https://forged.dawmacpolska.pl)  
 > 📸 **Professional Gallery:** [dawmac.pl/galeria/](https://dawmac.pl/galeria/)
+
+## Repository layout
+
+| Folder | What it is | Stack |
+|---|---|---|
+| `dawmac-api/` | Central REST API and media engine | PHP, MySQL |
+| `dawmac-app/` | Internal iOS app for warehouse workers | Swift, SwiftUI |
+| `dawmac-forged/` | forged.dawmacpolska.pl storefront | React, TypeScript, Vite |
+| `dawmac-gallery/` | Public photo gallery | Astro, React |
+| `dawmac-wp-plugins/` | WordPress plugins for the shop (`dawmac-filters`, `dawmac-galeria`) | PHP |
+| `dawmac-wp-snippets/` | Standalone WPCode snippets running on the shop | PHP |
+
+Product photos, builds and server statistics are **not** kept here - they live on the
+production servers. This repository holds source code and the data needed to rebuild it.
 
 ## Overview
 The **Dawmac Ecosystem** is a multi-platform digital infrastructure designed for a premium automotive brand specializing in high-end forged rims. The project bridges the gap between customer-facing luxury storefronts and internal worker productivity tools.
