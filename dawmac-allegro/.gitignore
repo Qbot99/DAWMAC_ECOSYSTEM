@@ -1,0 +1,12 @@
+# Sekrety Allegro API - nigdy do repo
+.env
+*.credentials.json
+tokens.json
+
+# Wyniki lokalnych podgladow szablonu
+tools/out/
+*.preview.html
+
+# Smieci systemowe
+.DS_Store
+Thumbs.db
