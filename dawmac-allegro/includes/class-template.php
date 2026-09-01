@@ -24,32 +24,31 @@ class Dawmac_Allegro_Template {
 
 	/** Etykiety parametrow w sekcji "Parametry" - kolejnosc ma znaczenie. */
 	const SPEC_LABELS = [
-		'producent'      => 'Producent',
-		'model'          => 'Model',
-		'srednica'       => 'Srednica',
-		'szerokosc'      => 'Szerokosc',
-		'rozstaw'        => 'Rozstaw srub',
-		'liczba_srub'    => 'Liczba srub',
-		'et'             => 'Odsadzenie ET',
-		'kolor'          => 'Kolor',
-		'sku'            => 'Indeks',
+		'producent'   => 'Producent',
+		'model'       => 'Model',
+		'srednica'    => 'Średnica',
+		'szerokosc'   => 'Szerokość',
+		'rozstaw'     => 'Rozstaw śrub',
+		'liczba_srub' => 'Liczba śrub',
+		'et'          => 'Odsadzenie ET',
+		'kolor'       => 'Kolor',
 	];
 
 	const SPEC_LABELS_TYRES = [
 		'producent'       => 'Producent',
 		'model'           => 'Model',
-		'szerokosc_opony' => 'Szerokosc',
+		'szerokosc_opony' => 'Szerokość',
 		'profil'          => 'Profil',
-		'srednica_opony'  => 'Srednica',
-		'sku'             => 'Indeks',
+		'srednica_opony'  => 'Średnica',
 	];
 
-	/** Jednostki doklejane do wartosci liczbowych. */
-	const SPEC_UNITS = [
-		'srednica'       => ' cali',
-		'szerokosc'      => ' cala',
-		'srednica_opony' => ' cali',
-	];
+	/**
+	 * Pola wymiarowe zapisujemy w calach z polskim przecinkiem: 19", 8,5".
+	 *
+	 * Doklejanie jednostki do surowej wartosci ze sklepu dawalo bzdury
+	 * w rodzaju '19" cali', bo sklep trzyma srednice juz z cudzyslowem.
+	 */
+	const SPEC_CALE = [ 'srednica', 'szerokosc', 'srednica_opony' ];
 
 	/**
 	 * Tematy, ktorych opis oferty poruszac nie moze - naleza do zakladek
@@ -142,6 +141,12 @@ class Dawmac_Allegro_Template {
 
 		$intro = Dawmac_Allegro_Text::plain( (string) ( $product['opis'] ?? '' ) );
 
+		// Opisy w rodzaju "Na magazynie" to notatka sklepowa, nie tresc
+		// dla kupujacego - pusty akapit wyglada lepiej niz taki.
+		if ( mb_strlen( $intro, 'UTF-8' ) < 40 ) {
+			$intro = '';
+		}
+
 		if ( '' !== $intro ) {
 			$limit = (int) ( $this->config['limits']['intro_chars'] ?? 900 );
 			$html .= '<p>' . $this->esc( Dawmac_Allegro_Text::truncate( $intro, $limit ) ) . '</p>';
@@ -203,10 +208,55 @@ class Dawmac_Allegro_Template {
 				continue;
 			}
 
-			$rows[ $label ] = $value . ( self::SPEC_UNITS[ $field ] ?? '' );
+			$rows[ $label ] = in_array( $field, self::SPEC_CALE, true )
+				? self::cale( $value )
+				: self::ladnie( $value );
 		}
 
 		return $rows;
+	}
+
+	/**
+	 * Wymiar w calach po polsku: '8.5J' -> '8,5"', '19"' -> '19"'.
+	 * Kilka wartosci (zestaw schodkowy) laczymy plusem: '8,5" + 10"'.
+	 */
+	private static function cale( string $value ): string {
+		$out = [];
+
+		foreach ( preg_split( '#\s*[/+]\s*#', $value ) ?: [ $value ] as $part ) {
+			$liczba = str_replace( ',', '.', preg_replace( '/[^0-9.,]/', '', $part ) ?? '' );
+
+			if ( '' === $liczba ) {
+				continue;
+			}
+
+			$out[] = str_replace( '.', ',', rtrim( rtrim( $liczba, '0' ), '.' ) ) . '"';
+		}
+
+		return $out ? implode( ' + ', $out ) : $value;
+	}
+
+	/**
+	 * Wartosc ze sklepu na tekst dla kupujacego. Sklep trzyma kategorie
+	 * w liczbie mnogiej ("Brazowe i zlote") - na ofercie ma stac kolor,
+	 * a nie nazwa polki w katalogu.
+	 */
+	private static function ladnie( string $value ): string {
+		$mapa = [
+			'białe'           => 'Biały',
+			'czarne'          => 'Czarny',
+			'srebrne'         => 'Srebrny',
+			'grafitowe'       => 'Grafitowy',
+			'szare'           => 'Szary',
+			'brązowe i złote' => 'Brązowy lub złoty',
+			'brązowe'         => 'Brązowy',
+			'złote'           => 'Złoty',
+			'niebieskie'      => 'Niebieski',
+			'zielone'         => 'Zielony',
+			'czerwone'        => 'Czerwony',
+		];
+
+		return $mapa[ mb_strtolower( trim( $value ), 'UTF-8' ) ] ?? $value;
 	}
 
 	/** Staly blok tekstowy z konfiguracji, jedna kolumna. */

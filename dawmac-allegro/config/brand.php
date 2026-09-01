@@ -58,12 +58,12 @@ return [
 			'title' => 'Co znajdziesz w zestawie',
 			'html'  => '
 				<ul>
-					<li>Komplet felg w rozmiarze podanym w parametrach oferty.</li>
-					<li>Felgi fabrycznie nowe, wolne od wad, z pelna dokumentacja.</li>
-					<li>Zdjecia w ofercie sa <b>zdjeciami rzeczywistego produktu</b>.</li>
-					<li>Srub, nakretek i pierscieni centrujacych <b>nie dolaczamy</b> - dobieramy je do konkretnego auta.</li>
+					<li><b>Komplet czterech felg</b> w rozmiarze podanym w parametrach oferty.</li>
+					<li>Felgi fabrycznie nowe, wolne od wad, z pełną dokumentacją.</li>
+					<li>Zdjęcia w ofercie przedstawiają <b>rzeczywisty produkt</b>, nie wizualizację.</li>
+					<li>Śrub, nakrętek i pierścieni centrujących <b>nie dołączamy</b> — dobiera się je do konkretnego auta.</li>
 				</ul>
-				<p>Przed zakupem sprawdz rozstaw srub, srednice otworu centralnego i odsadzenie ET w parametrach oferty. Jesli nie masz pewnosci co do dopasowania, napisz przez formularz kontaktu Allegro i podaj marke, model oraz rocznik auta.</p>
+				<p>Przed zakupem porównaj rozstaw śrub, średnicę otworu centralnego i odsadzenie ET z danymi swojego samochodu. Jeśli nie masz pewności co do dopasowania, napisz przez formularz kontaktu Allegro i podaj markę, model oraz rocznik auta — sprawdzimy to za Ciebie.</p>
 			',
 		],
 
@@ -71,9 +71,10 @@ return [
 			'title' => 'Dlaczego DAWMAC',
 			'html'  => '
 				<ul>
-					<li><b>Felgi to nasza jedyna specjalizacja</b> - nie handlujemy wszystkim po trochu.</li>
+					<li><b>Felgi to nasza jedyna specjalizacja</b> — nie handlujemy wszystkim po trochu.</li>
 					<li>Doradzamy w doborze rozmiaru do konkretnego modelu auta.</li>
 					<li>Felgi fabrycznie nowe, prosto od producenta.</li>
+					<li>Obsługa po polsku, bez pośredników.</li>
 				</ul>
 			',
 			'image' => 'banner_trust',
@@ -161,12 +162,12 @@ return [
 				'Concaver'     => 'f7a13193-9f21-4c59-9881-402b0b7e23b8',
 				'domyslny'     => 'be1f5f5c-4148-4e23-92ec-776bb3da6f27', // DAWMAC Polska jako importer
 			],
-			'bezpieczenstwo' => 'Felgi aluminiowe do samochodow osobowych.'
-				. "\n" . 'Przed zakupem sprawdz zgodnosc rozmiaru, rozstawu srub, srednicy otworu centralnego oraz odsadzenia ET z zaleceniami producenta pojazdu.'
-				. "\n" . 'Montaz powierz serwisowi dysponujacemu odpowiednim wyposazeniem.'
-				. "\n" . 'Stosuj sruby lub nakretki wlasciwego typu i dlugosci, dokrecane momentem podanym przez producenta pojazdu.'
-				. "\n" . 'Po przejechaniu pierwszych 50-100 km sprawdz moment dokrecenia.'
-				. "\n" . 'Nie uzywaj felg uszkodzonych, peknietych ani odksztalconych.',
+			'bezpieczenstwo' => 'Felgi aluminiowe do samochodów osobowych.'
+				. "\n" . 'Przed zakupem sprawdź zgodność rozmiaru, rozstawu śrub, średnicy otworu centralnego oraz odsadzenia ET z zaleceniami producenta pojazdu.'
+				. "\n" . 'Montaż powierz serwisowi dysponującemu odpowiednim wyposażeniem.'
+				. "\n" . 'Stosuj śruby lub nakrętki właściwego typu i długości, dokręcane momentem podanym przez producenta pojazdu.'
+				. "\n" . 'Po przejechaniu pierwszych 50-100 km sprawdź moment dokręcenia.'
+				. "\n" . 'Nie używaj felg uszkodzonych, pękniętych ani odkształconych.',
 		],
 
 		// Cennik dostawy per producent; 'domyslny' lapie reszte.
