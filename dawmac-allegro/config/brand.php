@@ -154,8 +154,12 @@ return [
 		 */
 		'gpsr' => [
 			'producenci' => [
+				// Concaver i Japan Racing to marki jednego producenta - JR Wheels.
+				// Oba wpisy maja te same dane teleadresowe, roznia sie nazwa,
+				// zeby kupujacy widzial na ofercie marke, ktora kupuje.
 				'Japan Racing' => '6ad4e7f5-c7d3-4c4f-97b3-100f7fb0cdf2',
-				'domyslny'     => 'be1f5f5c-4148-4e23-92ec-776bb3da6f27', // DAWMAC Polska
+				'Concaver'     => 'f7a13193-9f21-4c59-9881-402b0b7e23b8',
+				'domyslny'     => 'be1f5f5c-4148-4e23-92ec-776bb3da6f27', // DAWMAC Polska jako importer
 			],
 			'bezpieczenstwo' => 'Felgi aluminiowe do samochodow osobowych.'
 				. "\n" . 'Przed zakupem sprawdz zgodnosc rozmiaru, rozstawu srub, srednicy otworu centralnego oraz odsadzenia ET z zaleceniami producenta pojazdu.'
