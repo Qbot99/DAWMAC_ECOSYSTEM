@@ -35,8 +35,17 @@ class Dawmac_Allegro_Product_Data {
 		'pa_srednica_opony'   => 'srednica_opony',
 	];
 
-	/** Pola, w ktorych felga moze miec wiecej niz jedna wartosc (5x112/5x120). */
-	const MULTI_VALUE = [ 'rozstaw' ];
+	/**
+	 * Pola, w ktorych felga moze miec wiecej niz jedna wartosc.
+	 *
+	 * Rozstaw - felga wiercona pod dwa rozstawy (5x112/5x120).
+	 * Szerokosc i ET - zestaw schodkowy ma inny przod i tyl (8.5J + 10J).
+	 *
+	 * Zwijanie ich do pierwszej wartosci jest grozne: zestaw schodkowy
+	 * wygladalby wtedy na jednorodny i podpielibysmy pod oferte 4 felgi
+	 * przednie zamiast 2+2. Kupujacy dostalby co innego, niz zamowil.
+	 */
+	const MULTI_VALUE = [ 'rozstaw', 'szerokosc', 'et' ];
 
 	/** Slug kategorii opon - ten sam, ktorego uzywa dawmac-filters. */
 	const TYRES_CAT = 'opony';

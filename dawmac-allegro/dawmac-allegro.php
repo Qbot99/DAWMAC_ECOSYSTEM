@@ -24,6 +24,7 @@ require_once DAWMAC_ALLEGRO_DIR . 'includes/class-auth.php';
 require_once DAWMAC_ALLEGRO_DIR . 'includes/class-client.php';
 require_once DAWMAC_ALLEGRO_DIR . 'includes/class-images.php';
 require_once DAWMAC_ALLEGRO_DIR . 'includes/class-mapper.php';
+require_once DAWMAC_ALLEGRO_DIR . 'includes/class-catalog.php';
 require_once DAWMAC_ALLEGRO_DIR . 'includes/class-offer.php';
 require_once DAWMAC_ALLEGRO_DIR . 'includes/class-admin.php';
 

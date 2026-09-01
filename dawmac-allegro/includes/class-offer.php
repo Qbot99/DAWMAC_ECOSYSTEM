@@ -81,23 +81,7 @@ class Dawmac_Allegro_Offer {
 			// konczy sie bledem 422.
 			'parameters' => $m['oferta'],
 
-			'productSet' => [ [
-				'product' => [
-					'name'       => $tytul,
-					'category'   => [ 'id' => $o['kategoria'] ],
-					'parameters' => $m['produkt'],
-					'images'     => $zdjecia,
-				],
-				'quantity' => [ 'value' => 1 ],
-
-				// GPSR. Bez tych dwoch pol oferta powstaje, ale nie przechodzi
-				// walidacji i nie da sie jej opublikowac.
-				'responsibleProducer' => [ 'id' => self::producent_gpsr( $dane, $o ) ],
-				'safetyInformation'   => [
-					'type'        => 'TEXT',
-					'description' => $o['gpsr']['bezpieczenstwo'],
-				],
-			] ],
+			'productSet' => self::product_set( $dane, $m, $zdjecia, $tytul, $o ),
 
 			'description' => $opis,
 			'images'   => $zdjecia,
@@ -217,6 +201,59 @@ class Dawmac_Allegro_Offer {
 		$q = $product->get_stock_quantity();
 
 		return ( null === $q || $q < 1 ) ? 1 : (int) $q;
+	}
+
+	/**
+	 * productSet - dwie drogi.
+	 *
+	 * KATALOG: gdy wszystkie szerokosci maja odpowiednik w katalogu Allegro,
+	 * podpinamy sie pod gotowe pozycje. Oferta dziedziczy wtedy dane GPSR
+	 * i parametry produktu, i trafia na strone produktu w serwisie.
+	 * Pozycje katalogowe sa na POJEDYNCZA FELGE, wiec komplet to 1 pozycja
+	 * x 4 szt., a zestaw schodkowy 2 pozycje x 2 szt.
+	 *
+	 * WLASNY PRODUKT: gdy dopasowania brak albo jest niepelne. Wtedy musimy
+	 * podac wszystko sami, razem z GPSR - bez producenta odpowiedzialnego
+	 * i informacji o bezpieczenstwie oferta nie przejdzie walidacji.
+	 *
+	 * Niepelne dopasowanie celowo traktujemy jak brak: podpiecie polowy
+	 * zestawu schodkowego pod pozycje katalogowa oznacza, ze kupujacy widzi
+	 * na stronie produktu co innego, niz dostanie.
+	 */
+	private static function product_set( array $dane, array $m, array $zdjecia, string $tytul, array $o ): array {
+		$match = Dawmac_Allegro_Catalog::match( $dane );
+
+		if ( 'pelne' === $match['status'] && $match['productSet'] ) {
+			// Wbrew temu, czego mozna by oczekiwac, podpiecie pod pozycje
+			// katalogowa NIE dziedziczy danych GPSR - Allegro dalej zwraca
+			// RESPONSIBLE_PRODUCER_NOT_SPECIFIED. Dokladamy je do kazdej
+			// pozycji zestawu.
+			return array_map(
+				fn( array $poz ): array => $poz + self::gpsr( $dane, $o ),
+				$match['productSet']
+			);
+		}
+
+		return [ [
+			'product' => [
+				'name'       => $tytul,
+				'category'   => [ 'id' => $o['kategoria'] ],
+				'parameters' => $m['produkt'],
+				'images'     => $zdjecia,
+			],
+			'quantity' => [ 'value' => 1 ],
+		] + self::gpsr( $dane, $o ) ];
+	}
+
+	/** Pola GPSR doklejane do kazdej pozycji zestawu. */
+	private static function gpsr( array $dane, array $o ): array {
+		return [
+			'responsibleProducer' => [ 'id' => self::producent_gpsr( $dane, $o ) ],
+			'safetyInformation'   => [
+				'type'        => 'TEXT',
+				'description' => $o['gpsr']['bezpieczenstwo'],
+			],
+		];
 	}
 
 	/**
