@@ -130,6 +130,26 @@ ze skasowanym tokenem i wywalił połączenie.
 Access token żyje 12 godzin, refresh token 3 miesiące. Kod autoryzacyjny
 z ekranu zgody żyje **10 sekund**.
 
+## Uruchamianie na serwerze (dhosting)
+
+Domyślne PHP w konsoli to **5.4**, a WP-CLI dławi się limitem 128 MB.
+Obie rzeczy trzeba obejść przy każdej komendzie:
+
+```bash
+php81 -d memory_limit=768M /usr/bin/wp --path=~/dawmac.pl-aid9/public_html dawmac-allegro status
+```
+
+Wygodniej raz dopisać do `~/.bashrc`:
+
+```bash
+alias wpd='php81 -d memory_limit=768M /usr/bin/wp --path=/home/klient.dhosting.pl/dawmac/dawmac.pl-aid9/public_html'
+```
+
+Wtedy wystarczy `wpd dawmac-allegro status`.
+
+Sam `wp` bez tych przełączników pada — najpierw na PHP 5.4, potem na pamięci
+przy ładowaniu motywu Astra.
+
 ## Wymagania
 
 PHP 8.1+, WordPress 6.0+, WooCommerce. Podgląd i testy: samo PHP 8.1+.
