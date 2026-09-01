@@ -25,6 +25,12 @@ class Dawmac_Allegro_Text {
 	/** Znaczniki, ktore Allegro akceptuje w itemie TEXT. */
 	const ALLOWED = [ 'h1', 'h2', 'p', 'ul', 'ol', 'li', 'b' ];
 
+	/** Znacznik miejsca po wycietym namiarze - znak spoza tresci opisow. */
+	const MARK = "\x00";
+
+	/** Laczniki, ktore po wycieciu namiaru nie niosą juz nic. */
+	const CONNECTORS = '/\b(?:lokalizacja\s+magazynowa|kontakt\w*|zapraszamy(?:\s+na|\s+do)?|więcej\s+(?:na|informacji)|sprawdź(?:\s+na)?|odwiedź|nasz[aey]?\s+(?:stron\w*|sklep\w*)|tel|telefon|kom|e-?mail|mail|nr)\b\s*[:.\-]?\s*/iu';
+
 	/** Znaczniki blokowe - opis musi sie z nich skladac na najwyzszym poziomie. */
 	const BLOCKS = [ 'h1', 'h2', 'p', 'ul', 'ol' ];
 
@@ -38,6 +44,7 @@ class Dawmac_Allegro_Text {
 		$s = self::unformat_headings( $s );
 		$s = self::strip_contacts( $s );
 		$s = self::escape_stray_entities( $s );
+		$s = self::collapse_whitespace( $s );
 		$s = self::drop_empty_blocks( $s );
 		$s = self::ensure_block_wrapped( $s );
 
@@ -124,31 +131,147 @@ class Dawmac_Allegro_Text {
 	}
 
 	/**
-	 * Kontakt i linki poza Allegro. Wzorce sa celowo waskie, bo katalog felg
-	 * jest pelen ciagow, ktore szeroki regex telefoniczny zjadlby jako numer
-	 * (np. "225 45 17" to rozmiar opony, nie telefon).
+	 * Kontakt i linki poza Allegro.
+	 *
+	 * Usuwamy CALE ZDANIE, nie sam token. Wyciecie samego adresu zostawia
+	 * kikuty w rodzaju "Zapraszamy na ." albo "Kontakt: , tel." - zdanie,
+	 * ktore nioslo tylko namiar, po wycieciu namiaru nie niesie juz nic.
+	 *
+	 * Pracujemy na segmentach tekstu miedzy znacznikami, zeby usuwanie
+	 * nie rozjechalo struktury HTML.
 	 */
 	public static function strip_contacts( string $s ): string {
-		$patterns = [
-			// Pelne adresy URL.
-			'#\bhttps?://\S+#i',
-			'#\bwww\.[a-z0-9-]+(\.[a-z]{2,})+\S*#i',
-			// Gole domeny w popularnych TLD (dawmac.pl, sklep.com.pl).
-			'#\b[a-z0-9][a-z0-9-]*(?:\.[a-z0-9-]+)*\.(?:pl|com|eu|net|de|org|shop|store)\b#i',
-			// E-mail.
-			'#\b[\w.+-]+@[\w-]+(\.[\w-]+)+\b#i',
-			// Telefon: tylko formy jednoznacznie telefoniczne.
-			'#\+48[\s-]?\d{3}[\s-]?\d{3}[\s-]?\d{3}\b#',
-			'#\b\d{3}[\s-]\d{3}[\s-]\d{3}\b#',
-			'#\b(?:tel|tel\.|telefon|kom|kom\.)\s*:?\s*[\d\s-]{9,}#iu',
-		];
+		$parts = preg_split( '#(<[^>]*>)#', $s, -1, PREG_SPLIT_DELIM_CAPTURE );
 
-		$out = preg_replace( $patterns, '', $s );
+		if ( ! is_array( $parts ) ) {
+			return self::strip_contact_tokens( $s );
+		}
+
+		foreach ( $parts as $i => $part ) {
+			if ( '' === $part || '<' === $part[0] ) {
+				continue;
+			}
+
+			$parts[ $i ] = self::clean_segment( $part );
+		}
+
+		return implode( '', $parts );
+	}
+
+	/**
+	 * Kolejnosc: najpierw MASKUJEMY namiary, potem tniemy na zdania.
+	 *
+	 * Odwrotnie sie nie da - kropki siedza w srodku "dawmac.pl" i "tel.",
+	 * wiec podzial na zdania przed wycieciem rozjezdza sie na nich i zabiera
+	 * ze soba sasiedni tekst ("601 234 567 Lokalizacja magazynowa 42.L/NHB"
+	 * ladowalo w jednym zdaniu z numerem i znikalo w calosci).
+	 *
+	 * Po zamaskowaniu zdanie zostaje, jesli poza namiarem cokolwiek niesie.
+	 * "Zapraszamy na [x]" to sam lacznik - wypada. "[x] Lokalizacja
+	 * magazynowa" niesie tresc - zostaje bez wycietego fragmentu.
+	 */
+	private static function clean_segment( string $text ): string {
+		if ( ! self::has_contact( $text ) ) {
+			return $text;
+		}
+
+		$masked = preg_replace( self::contact_patterns(), self::MARK, $text );
+
+		if ( ! is_string( $masked ) ) {
+			return $text;
+		}
+
+		$sentences = preg_split( '/(?<=[.!?])\s+/u', $masked, -1, PREG_SPLIT_NO_EMPTY );
+
+		if ( ! is_array( $sentences ) ) {
+			return self::tidy( str_replace( self::MARK, ' ', $masked ) );
+		}
+
+		$kept = [];
+
+		foreach ( $sentences as $sentence ) {
+			if ( ! str_contains( $sentence, self::MARK ) ) {
+				$kept[] = $sentence;
+				continue;
+			}
+
+			$rest = self::tidy( str_replace( self::MARK, ' ', $sentence ) );
+			$rest = self::tidy( preg_replace( self::CONNECTORS, '', $rest ) ?? $rest );
+
+			// Co realnie zostalo poza namiarem i lacznikami.
+			$meat = preg_replace( '/[^\p{L}\p{N}]+/u', '', $rest ) ?? $rest;
+
+			if ( mb_strlen( $meat, 'UTF-8' ) >= 12 ) {
+				$kept[] = $rest;
+			}
+		}
+
+		$out = self::tidy( implode( ' ', $kept ) );
+
+		// Spacja z powrotem na brzegach, zeby sasiednie segmenty sie nie zlepily.
+		$lead  = preg_match( '/^\s/u', $text ) ? ' ' : '';
+		$trail = preg_match( '/\s$/u', $text ) ? ' ' : '';
+
+		return '' === $out ? '' : $lead . $out . $trail;
+	}
+
+	/** Sprzatanie po wycieciu: osierocone spacje i interpunkcja. */
+	private static function tidy( string $s ): string {
+		$s = preg_replace( '/\s{2,}/u', ' ', $s ) ?? $s;
+		$s = preg_replace( '/\s+([,.;:!?])/u', '$1', $s ) ?? $s;
+		$s = preg_replace( '/([,;:])\s*(?=[,.;:])/u', '', $s ) ?? $s;
+		$s = preg_replace( '/^[\s,.;:\-]+/u', '', $s ) ?? $s;
+
+		return trim( $s );
+	}
+
+	/**
+	 * Wzorce sa celowo waskie, bo katalog felg jest pelen ciagow, ktore
+	 * szeroki regex telefoniczny zjadlby jako numer ("225 45 17" to rozmiar
+	 * opony, nie telefon).
+	 *
+	 * @return string[]
+	 */
+	private static function contact_patterns(): array {
+		// KOLEJNOSC MA ZNACZENIE. Domena musi byc na koncu: puszczona przed
+		// mailem zjada "dawmac.pl" z "biuro@dawmac.pl" i zostawia "biuro@".
+		// Telefon z etykieta przed golym numerem z tego samego powodu.
+		return [
+			'#\bhttps?://\S+#i',                                      // pelny URL
+			'#\bwww\.[a-z0-9-]+(\.[a-z]{2,})+\S*#i',                   // www.cos.pl
+			'#\b[\w.+-]+@[\w-]+(\.[\w-]+)+#i',                        // e-mail
+			'#(?:tel|tel\.|telefon|kom|kom\.|nr)\s*:?\s*\+?[\d\s-]{9,}#iu', // telefon z etykieta
+			'#\+48[\s-]?\d{3}[\s-]?\d{3}[\s-]?\d{3}\b#',              // +48 xxx xxx xxx
+			'#\b\d{3}[\s-]\d{3}[\s-]\d{3}\b#',                        // xxx xxx xxx
+			'#\b[a-z0-9][a-z0-9-]*(?:\.[a-z0-9-]+)*\.(?:pl|com|eu|net|de|org|shop|store)\b#i', // gola domena
+			// Lokalizacja magazynowa ("42.L / NHB", "7.P/AB") - dane wewnetrzne.
+			// Siedza w opisach, bo szukarka dawmac-filters po nich szuka;
+			// na publicznej ofercie nie maja czego szukac.
+			'#\b\d{1,3}\.[A-Z]{1,2}\s*/\s*[A-Z]{2,4}\b#',
+		];
+	}
+
+	/** Czy fragment zawiera cokolwiek, co Allegro uzna za namiar poza serwisem. */
+	private static function has_contact( string $s ): bool {
+		foreach ( self::contact_patterns() as $pattern ) {
+			if ( preg_match( $pattern, $s ) ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/** Awaryjne wycinanie samych tokenow - gdy usuwanie zdan zabraloby zbyt duzo. */
+	private static function strip_contact_tokens( string $s ): string {
+		$out = preg_replace( self::contact_patterns(), '', $s );
 		$out = is_string( $out ) ? $out : $s;
 
-		// Po wycieciu zostaja osierocone spacje i interpunkcja.
+		// Po wycieciu zostaja osierocone spacje, interpunkcja i etykiety.
+		$out = preg_replace( '/\b(?:kontakt|tel|telefon|kom|e-?mail|mail)\s*[:.]?\s*(?=[,.;:]|$)/iu', '', $out ) ?? $out;
 		$out = preg_replace( '/\s{2,}/u', ' ', $out ) ?? $out;
 		$out = preg_replace( '/\s+([,.;:!?])/u', '$1', $out ) ?? $out;
+		$out = preg_replace( '/([,;:])\s*(?=[,.;:])/u', '', $out ) ?? $out;
 
 		return $out;
 	}
@@ -158,6 +281,17 @@ class Dawmac_Allegro_Text {
 	 */
 	private static function escape_stray_entities( string $s ): string {
 		return preg_replace( '/&(?!(?:[a-z][a-z0-9]{1,10}|#\d{1,6}|#x[0-9a-f]{1,5});)/i', '&amp;', $s ) ?? $s;
+	}
+
+	/**
+	 * Bloki w config/brand.php sa pisane z wcieciami dla czytelnosci -
+	 * do Allegro nie ma po co jechac dwadziescia spacji miedzy <ul> a <li>.
+	 */
+	private static function collapse_whitespace( string $s ): string {
+		$s = preg_replace( '/>\s+</u', '><', $s ) ?? $s;
+		$s = preg_replace( '/\s{2,}/u', ' ', $s ) ?? $s;
+
+		return trim( $s );
 	}
 
 	/**

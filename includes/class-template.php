@@ -296,12 +296,14 @@ class Dawmac_Allegro_Template {
 	 * i ciagi wielkich liter, wiec zostawiamy waski zestaw.
 	 */
 	public function build_offer_title( array $product ): string {
+		$tyres = 'opony' === ( $product['kategoria'] ?? 'felgi' );
+
 		$parts = array_filter( [
 			$product['producent'] ?? '',
 			$product['model'] ?? '',
 			$this->size_label( $product ),
-			$this->rozstaw_label( $product ),
-			isset( $product['et'] ) && '' !== (string) $product['et'] ? 'ET' . $product['et'] : '',
+			$tyres ? '' : $this->rozstaw_label( $product ),
+			! $tyres && isset( $product['et'] ) && '' !== (string) $product['et'] ? 'ET' . $product['et'] : '',
 		] );
 
 		$title = implode( ' ', array_map( 'strval', $parts ) );
@@ -313,8 +315,23 @@ class Dawmac_Allegro_Template {
 		return trim( mb_substr( trim( $title ), 0, $limit, 'UTF-8' ) );
 	}
 
-	/** "8.5x19" - rozmiar w formie, ktora kupujacy wpisuje w wyszukiwarke. */
+	/**
+	 * Rozmiar w formie, ktora kupujacy wpisuje w wyszukiwarke Allegro:
+	 * "8.5x19" dla felgi, "225/45 R17" dla opony.
+	 */
 	private function size_label( array $product ): string {
+		if ( 'opony' === ( $product['kategoria'] ?? 'felgi' ) ) {
+			$w = trim( (string) ( $product['szerokosc_opony'] ?? '' ) );
+			$p = trim( (string) ( $product['profil'] ?? '' ) );
+			$d = trim( (string) ( $product['srednica_opony'] ?? '' ) );
+
+			if ( '' === $w || '' === $d ) {
+				return '';
+			}
+
+			return '' !== $p ? "{$w}/{$p} R{$d}" : "{$w} R{$d}";
+		}
+
 		$w = trim( (string) ( $product['szerokosc'] ?? '' ) );
 		$d = trim( (string) ( $product['srednica'] ?? '' ) );
 
@@ -398,8 +415,15 @@ class Dawmac_Allegro_Template {
 					}
 				}
 
-				if ( preg_match( "#<(h1|h2)>[^<]*<#i", $content ) ) {
-					$errors[] = "Formatowanie w srodku h1/h2 ({$where}) - Allegro tego nie przyjmie.";
+				// Sprawdzamy TRESC naglowka, nie sam ciag - wzorzec typu
+				// "<h1>[^<]*<" lapie wlasny tag zamykajacy i krzyczy zawsze.
+				if ( preg_match_all( '#<(h1|h2)>(.*?)</\\1>#is', $content, $h ) ) {
+					foreach ( $h[2] as $inner ) {
+						if ( str_contains( $inner, '<' ) ) {
+							$errors[] = "Formatowanie w srodku h1/h2 ({$where}) - Allegro tego nie przyjmie.";
+							break;
+						}
+					}
 				}
 
 				if ( preg_match( '#https?://|www\.|@[a-z0-9-]+\.[a-z]{2,}#i', $content ) ) {
