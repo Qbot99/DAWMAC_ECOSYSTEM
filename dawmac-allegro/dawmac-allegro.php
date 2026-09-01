@@ -23,6 +23,7 @@ require_once DAWMAC_ALLEGRO_DIR . 'includes/class-product-data.php';
 require_once DAWMAC_ALLEGRO_DIR . 'includes/class-auth.php';
 require_once DAWMAC_ALLEGRO_DIR . 'includes/class-client.php';
 require_once DAWMAC_ALLEGRO_DIR . 'includes/class-images.php';
+require_once DAWMAC_ALLEGRO_DIR . 'includes/class-mapper.php';
 require_once DAWMAC_ALLEGRO_DIR . 'includes/class-admin.php';
 
 /**

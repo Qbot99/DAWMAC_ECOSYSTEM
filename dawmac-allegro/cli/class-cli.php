@@ -237,4 +237,141 @@ class Dawmac_Allegro_CLI {
 
 		WP_CLI\Utils\format_items( 'table', $rows, [ 'id', 'nazwa', 'typ', 'wymagany', 'jednostka', 'słownik' ] );
 	}
+
+	/**
+	 * Przejazd na sucho: co poleciałoby do Allegro dla wskazanych marek.
+	 *
+	 * Nic nie wystawia. Buduje parametry, tytuł i opis dla każdego produktu
+	 * na magazynie i pokazuje, co się nie mapuje - żeby problemy wyszły
+	 * tutaj, a nie przy 75 odrzuconych ofertach.
+	 *
+	 * ## OPTIONS
+	 *
+	 * <marki>
+	 * : Producenci po przecinku, np. "Japan Racing,Concaver".
+	 *
+	 * [--pelne]
+	 * : Wypisz każdy produkt, nie tylko te z problemami.
+	 *
+	 * ## EXAMPLES
+	 *
+	 *     wp dawmac-allegro sprawdz "Japan Racing,Concaver"
+	 */
+	public function sprawdz( array $args, array $flags ): void {
+		global $wpdb;
+
+		$marki = array_map( 'trim', explode( ',', (string) $args[0] ) );
+		$dict  = Dawmac_Allegro_Mapper::dictionary();
+
+		if ( is_wp_error( $dict ) ) {
+			WP_CLI::error( $dict->get_error_message() );
+		}
+
+		$ids = self::produkty_marek( $marki );
+
+		if ( ! $ids ) {
+			WP_CLI::error( 'Nie ma na magazynie produktów tych marek.' );
+		}
+
+		WP_CLI::line( sprintf( "Produktów na magazynie: %d\n", count( $ids ) ) );
+
+		$template  = dawmac_allegro_template();
+		$ok        = 0;
+		$problemy  = [];
+		$tytuly    = [ 'sklepowy' => 0, 'zbudowany' => 0, 'przycięty' => 0 ];
+		$dlugosci  = [];
+
+		foreach ( $ids as $pid ) {
+			$product = wc_get_product( $pid );
+
+			if ( ! $product ) {
+				continue;
+			}
+
+			$data = Dawmac_Allegro_Product_Data::from_wc( $product );
+			$m    = Dawmac_Allegro_Mapper::map( $data, $dict );
+
+			// Tytuł: sklepowy jest pisany przez człowieka i zawiera pełną
+			// konfigurację schodkową, więc ma pierwszeństwo, o ile się mieści.
+			$sklepowy = Dawmac_Allegro_Text::plain( $data['title'] );
+			$dl       = mb_strlen( $sklepowy, 'UTF-8' );
+			$dlugosci[] = $dl;
+
+			if ( $dl <= 75 ) {
+				$tytul = $sklepowy;
+				++$tytuly['sklepowy'];
+			} else {
+				$tytul = $template->build_offer_title( $data );
+				++$tytuly['zbudowany'];
+				if ( mb_strlen( $tytul, 'UTF-8' ) < 10 ) {
+					$m['problemy'][] = 'nie da się zbudować sensownego tytułu';
+				}
+			}
+
+			$desc     = $template->build( $data );
+			$bledyOpi = Dawmac_Allegro_Template::validate( $desc );
+			$wszystkie = array_merge( $m['problemy'], $bledyOpi );
+
+			if ( $wszystkie ) {
+				$problemy[ $pid ] = [ 'tytul' => $tytul, 'lista' => $wszystkie ];
+			} else {
+				++$ok;
+			}
+
+			if ( isset( $flags['pelne'] ) ) {
+				printf( "  #%-7d %-72s %d param.\n", $pid, mb_substr( $tytul, 0, 72 ), count( $m['parameters'] ) );
+			}
+		}
+
+		WP_CLI::line( str_repeat( '-', 76 ) );
+		WP_CLI::line( sprintf( 'Gotowych do wystawienia: %d z %d', $ok, count( $ids ) ) );
+		WP_CLI::line( sprintf( 'Tytuły: %d sklepowych mieści się w 75 znakach, %d trzeba budować',
+			$tytuly['sklepowy'], $tytuly['zbudowany'] ) );
+
+		if ( $dlugosci ) {
+			sort( $dlugosci );
+			WP_CLI::line( sprintf( 'Długość tytułu sklepowego: min %d, mediana %d, max %d',
+				$dlugosci[0], $dlugosci[ intdiv( count( $dlugosci ), 2 ) ], end( $dlugosci ) ) );
+		}
+
+		if ( ! $problemy ) {
+			WP_CLI::success( 'Wszystko mapuje się bez zastrzeżeń.' );
+			return;
+		}
+
+		WP_CLI::line( sprintf( "\nPROBLEMY (%d produktów):", count( $problemy ) ) );
+
+		// Grupujemy po treści problemu - 40 razy ten sam błąd to jedna decyzja,
+		// a nie czterdzieści.
+		$wg_typu = [];
+
+		foreach ( $problemy as $pid => $p ) {
+			foreach ( $p['lista'] as $tekst ) {
+				$wg_typu[ $tekst ][] = $pid;
+			}
+		}
+
+		arsort( $wg_typu );
+
+		foreach ( $wg_typu as $tekst => $lista ) {
+			printf( "  %3d x  %s\n", count( $lista ), $tekst );
+			printf( "         np. #%s\n", implode( ', #', array_slice( $lista, 0, 4 ) ) );
+		}
+	}
+
+	/** ID produktow danych marek, tylko te na magazynie. */
+	private static function produkty_marek( array $marki ): array {
+		global $wpdb;
+
+		$t  = $wpdb->prefix . 'dawmac_filter_index';
+		$in = implode( ',', array_fill( 0, count( $marki ), '%s' ) );
+
+		return array_map( 'intval', $wpdb->get_col( $wpdb->prepare(
+			"SELECT DISTINCT i.product_id FROM {$t} i
+			 JOIN {$t} s ON s.product_id = i.product_id AND s.attribute='stock' AND s.value_slug='instock'
+			 WHERE i.attribute='pa_producent' AND i.value_label IN ({$in})
+			 ORDER BY i.product_id",
+			...$marki
+		) ) );
+	}
 }
