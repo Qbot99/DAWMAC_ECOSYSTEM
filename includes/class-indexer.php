@@ -23,6 +23,16 @@ class Dawmac_Filters_Indexer {
 	const BATCH_SIZE = 500;
 
 	/**
+	 * Czy trwa przebieg masowy (pełny reindex).
+	 *
+	 * W trakcie NIE kasujemy cache list filtrów po każdej paczce - inaczej
+	 * przy przebiegu w ciągu dnia każdy gość trafiałby na zimny cache
+	 * i płacił kilka sekund za jego przeliczenie. Listy zostają lekko
+	 * nieaktualne przez te ~2 minuty, a na koniec rozgrzewamy je raz.
+	 */
+	private static bool $bulk = false;
+
+	/**
 	 * Pełny reindex wszystkich opublikowanych produktów.
 	 *
 	 * @param callable|null $progress Callback ( $done, $total ) do raportowania postępu (używa go WP-CLI).
@@ -45,12 +55,17 @@ class Dawmac_Filters_Indexer {
 		$rows      = 0;
 		$batches   = array_chunk( array_map( 'intval', $ids ), self::BATCH_SIZE );
 
-		foreach ( $batches as $batch ) {
-			$rows += self::index_batch( $batch );
-			$done += count( $batch );
-			if ( $progress ) {
-				$progress( $done, $total );
+		self::$bulk = true;
+		try {
+			foreach ( $batches as $batch ) {
+				$rows += self::index_batch( $batch );
+				$done += count( $batch );
+				if ( $progress ) {
+					$progress( $done, $total );
+				}
 			}
+		} finally {
+			self::$bulk = false;
 		}
 
 		// Rozgrzej cache list opcji do sidebara. Bez tego pierwsze wejście
@@ -163,6 +178,12 @@ class Dawmac_Filters_Indexer {
 	 * niczego nie duplikuje.
 	 */
 	public static function schedule_nightly(): void {
+		// Gdy reindeks pilnuje systemowy cron hostingu, nie planujemy nic
+		// po stronie WordPressa (opcja ustawiana przez: wp dawmac cron system).
+		if ( 'system' === get_option( 'dawmac_filters_cron_source' ) ) {
+			wp_clear_scheduled_hook( self::NIGHTLY_HOOK );
+			return;
+		}
 		if ( wp_next_scheduled( self::NIGHTLY_HOOK ) ) {
 			return;
 		}
@@ -187,6 +208,13 @@ class Dawmac_Filters_Indexer {
 	 * Reszta dzieje się w process_chunk(), które samo się wznawia.
 	 */
 	public static function run_nightly(): void {
+		// Gdy reindeks robi już systemowy cron, WP-Cron nie ma czego dokładać.
+		// Zabezpieczenie na wypadek, gdyby oba źródła były włączone naraz.
+		$last = get_option( self::LAST_OPTION );
+		if ( is_array( $last ) && ! empty( $last['finished'] ) && ( time() - (int) $last['finished'] ) < 6 * HOUR_IN_SECONDS ) {
+			return;
+		}
+
 		update_option( self::STATE_OPTION, [
 			'last_id'  => 0,
 			'products' => 0,
@@ -294,6 +322,13 @@ class Dawmac_Filters_Indexer {
 	 * Gdyby cron nie zdążył, endpoint i tak sam doliczy przy pierwszym odczycie.
 	 */
 	private static function invalidate_cache(): void {
+		// Przebieg masowy (pełny reindex, też ten porcjami z crona):
+		// nie ruszamy cache, żeby goście nie płacili za przeliczanie.
+		// Rozgrzejemy go raz, na końcu przebiegu.
+		if ( self::$bulk || false !== get_option( self::STATE_OPTION, false ) ) {
+			return;
+		}
+
 		delete_option( self::CACHE_OPTION );
 		delete_option( self::cache_key_for( 'opony' ) );
 
