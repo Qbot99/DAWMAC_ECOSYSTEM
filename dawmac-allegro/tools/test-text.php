@@ -236,6 +236,8 @@ echo "\nNAGLOWEK USER-AGENT (zly = zablokowany klucz API)\n";
 // Generator Allegro dopuszcza spacje w nazwie i wersje typu "v1.0"
 // albo "2026.06.24" - waski wzorzec odrzucalby poprawne naglowki.
 $agents = [
+	// Wartosc realnie wygenerowana przez narzedzie Allegro dla tej aplikacji.
+	'Dawmac-Sklep/1.0.0 (+https://dawmac.pl)'                    => true,
 	'Dawmac Sklep/1.0.0 (+https://dawmac.pl/integracja-allegro)' => true,
 	'DawmacSklep/1.0.0 (+https://dawmac.pl)'                     => true,
 	'DawmacSklep/v1.0 (+https://dawmac.pl)'                      => true,

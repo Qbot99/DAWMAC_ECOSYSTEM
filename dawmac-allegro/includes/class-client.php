@@ -33,8 +33,17 @@ class Dawmac_Allegro_Client {
 	 * naglowek jako czynnik bialej listy i zabrania go zmieniac po
 	 * wygenerowaniu (poza numerem wersji), dlatego wartosc z narzedzia
 	 * apps.developer.allegro.pl/user-agent ma pierwszenstwo nad tym domyslnym.
+	 *
+	 * Wartosc ponizej to DOKLADNIE ta wygenerowana dla zarejestrowanej
+	 * aplikacji "Dawmac Sklep" - generator zamienil spacje na myslnik.
+	 * Wersja jest podstawiana z DAWMAC_ALLEGRO_VERSION, bo to jedyny czlon,
+	 * ktory wolno zmieniac - dzieki temu podbicie wtyczki nie wymaga
+	 * pamietania o recznej aktualizacji naglowka.
+	 *
+	 * Nie wpisuj tu wymyslonej nazwy. Naglowek spoza bialej listy to nie
+	 * blad walidacji, tylko zablokowany klucz API.
 	 */
-	const DEFAULT_USER_AGENT = 'DawmacAllegro/%s (+https://dawmac.pl)';
+	const DEFAULT_USER_AGENT = 'Dawmac-Sklep/%s (+https://dawmac.pl)';
 
 	/** Ile razy powtarzamy przy 429 i 5xx, zanim odpuscimy. */
 	const MAX_RETRIES = 4;
