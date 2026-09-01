@@ -39,6 +39,14 @@ for (pn, mn), g in grupy.items():
         'forged': 'FORGED' in pn, 'nieznany': pn == '?',
         'v': [{'id': x['id'], 'z': 'yt', 't': x['t'], 'pewny': x['pewny']} for x in g['yt']]
            + [{'id': x['id'], 'z': 'fb' + x['typ'], 't': '', 'pewny': x['pewny']} for x in g['fb']]})
+# WYBOR ZRODLA: gdy ta sama felga ma filmiki w obu miejscach, na strone idzie
+# YouTube. Facebook zostaje tylko tam, gdzie na YT nic nie ma. Pelnej listy nie
+# kasujemy - pole "v" trzyma wszystko, "pokaz" tylko wybrane. Gdyby decyzja
+# kiedys sie zmienila, wystarczy przestawic wybor, nie zbierac danych od nowa.
+for m in modele:
+    m['zrodlo'] = 'yt' if m['yt'] else 'fb'
+    m['pokaz'] = [v for v in m['v'] if v['z'] == 'yt'] if m['yt'] else m['v']
+
 modele.sort(key=lambda x: (-x['n'], x['p'], x['m']))
 
 brakYT = [{'id': c[0], 't': c[4][:120]} for c in
@@ -69,3 +77,9 @@ print(f"modeli: {len(modele)}   filmikow: {sum(m['n'] for m in modele)} "
       f"(YT {d['stat']['ytZModelem']} + FB {d['stat']['fbZModelem']})")
 print(f"w pelni pewne: {pewnych}   czesciowo: {len(modele)-pewnych-zero}   "
       f"marka nigdzie nie padla: {zero}")
+pokaz = sum(len(m['pokaz']) for m in modele)
+oba = sum(1 for m in modele if m['yt'] and m['fb'])
+print(f"do pokazania na stronie: {pokaz} odnosnikow "
+      f"({sum(1 for m in modele for v in m['pokaz'] if v['z']=='yt')} YT + "
+      f"{sum(1 for m in modele for v in m['pokaz'] if v['z']!='yt')} FB); "
+      f"{oba} modeli ma oba zrodla, FB pominiety")
