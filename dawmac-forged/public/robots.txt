@@ -1,4 +1,0 @@
-User-agent: *
-Allow: /
-
-Sitemap: https://forged.dawmacpolska.pl/sitemap.php
