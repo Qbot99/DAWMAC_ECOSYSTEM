@@ -97,9 +97,22 @@ class Dawmac_Allegro_Auth {
 		return ! empty( $t['refresh_token'] );
 	}
 
-	/** URL zwrotny - strona ustawien wtyczki. Musi byc 1:1 z tym w apps.developer. */
+	/**
+	 * URL zwrotny - strona ustawien wtyczki. Musi zgadzac sie co do znaku
+	 * z adresem podanym przy rejestracji aplikacji.
+	 *
+	 * Dokumentacja Allegro wylicza, co jest w redirect_uri zabronione (adresy
+	 * wewnetrzne, loopback, fragmenty URI), ale o parametrach query milczy.
+	 * OAuth2 je dopuszcza i to typowy wzorzec w WordPressie, wiec zostaje.
+	 * Filtr jest po to, zeby podmiana na czysta sciezke - gdyby Allegro
+	 * grymasilo - nie wymagala edycji kodu. Serwis przyjmuje kilka adresow
+	 * zwrotnych na aplikacje, wiec zapasowy mozna zarejestrowac od razu.
+	 */
 	public static function redirect_uri(): string {
-		return admin_url( 'admin.php?page=dawmac-allegro' );
+		return (string) apply_filters(
+			'dawmac_allegro_redirect_uri',
+			admin_url( 'admin.php?page=dawmac-allegro' )
+		);
 	}
 
 	/**
