@@ -1,3 +1,33 @@
+# Dawmac Forged
+
+Strona forged.dawmacpolska.pl - React + TypeScript + Vite.
+
+## Budowanie i wdrożenie
+
+```bash
+npm ci
+npm run build     # wynik ląduje w dist/ (nie trafia do repo)
+./deploy.sh       # build + wysyłka na serwer
+```
+
+## Co siedzi w public/
+
+Vite kopiuje ten katalog do builda bez zmian, więc trzymamy tu wszystko,
+co ma wylądować na serwerze obok aplikacji:
+
+| Plik | Do czego |
+|---|---|
+| `.htaccess` | przepisywanie adresów, kierowanie botów do bot.php |
+| `bot.php` | podglądy linków na Facebooku, WhatsAppie, Twitterze |
+| `resize.php` | skalowanie zdjęć w locie |
+
+## Czego tu nie ma
+
+`dist/` (build) i duże pliki statyczne (PDF oferty, wideo) - te drugie
+mieszkają wyłącznie na serwerze, a deploy.sh ich nie kasuje.
+
+---
+
 # React + TypeScript + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
