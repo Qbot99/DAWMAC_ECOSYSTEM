@@ -473,8 +473,15 @@ class Dawmac_Allegro_CLI {
 			}
 
 			++$ok;
-			printf( "  %-5s #%-7d oferta %s  %s\n", 'ACTIVE' === $status ? 'ŻYWA' : 'szkic',
-				$pid, $wynik, mb_substr( $b['offer']['name'], 0, 44 ) );
+
+			// Stan czytamy z odpowiedzi Allegro, nie z tego, o co prosilismy.
+			// Nowe oferty powstaja jako INACTIVE niezaleznie od przeslanego
+			// publication.status - aktywuje je dopiero osobna komenda.
+			$stan = Dawmac_Allegro_Client::get( "/sale/product-offers/{$wynik}" );
+			$real = is_wp_error( $stan ) ? '?' : ( $stan['publication']['status'] ?? '?' );
+
+			printf( "  %-8s #%-7d oferta %s  %s\n", $real, $pid, $wynik,
+				mb_substr( $b['offer']['name'], 0, 42 ) );
 		}
 
 		WP_CLI::line( str_repeat( '-', 76 ) );
@@ -507,5 +514,115 @@ class Dawmac_Allegro_CLI {
 		}
 
 		WP_CLI::success( 'Powiązania zapisane. "wystaw" pominie te produkty.' );
+	}
+
+	/**
+	 * Aktywuje oferty utworzone przez wtyczke.
+	 *
+	 * Allegro tworzy nowe oferty jako INACTIVE niezaleznie od przeslanego
+	 * publication.status - publikacja idzie osobnym zasobem komend.
+	 *
+	 * ## OPTIONS
+	 *
+	 * [<marki>]
+	 * : Producenci po przecinku. Bez tego - wszystkie szkice wtyczki.
+	 *
+	 * [--limit=<n>]
+	 * : Aktywuj najwyzej tyle ofert.
+	 *
+	 * [--wylacz]
+	 * : Zamiast aktywowac - zakoncz oferty (ACTIVATE -> END).
+	 *
+	 * ## EXAMPLES
+	 *
+	 *     wp dawmac-allegro aktywuj "Concaver" --limit=10
+	 *     wp dawmac-allegro aktywuj --wylacz
+	 */
+	public function aktywuj( array $args, array $flags ): void {
+		global $wpdb;
+
+		$akcja = isset( $flags['wylacz'] ) ? 'END' : 'ACTIVATE';
+		$limit = isset( $flags['limit'] ) ? (int) $flags['limit'] : 0;
+
+		$ids = isset( $args[0] )
+			? self::produkty_marek( array_map( 'trim', explode( ',', (string) $args[0] ) ) )
+			: array_map( 'intval', $wpdb->get_col( "SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key='" . Dawmac_Allegro_Offer::META_OFFER . "'" ) );
+
+		$oferty = [];
+
+		foreach ( $ids as $pid ) {
+			$oid = Dawmac_Allegro_Offer::offer_id( $pid );
+
+			if ( ! $oid ) {
+				continue;
+			}
+
+			$stan = Dawmac_Allegro_Client::get( "/sale/product-offers/{$oid}" );
+
+			if ( is_wp_error( $stan ) ) {
+				continue;
+			}
+
+			$obecny = $stan['publication']['status'] ?? '';
+
+			// Nie ruszamy tego, co juz jest w docelowym stanie.
+			if ( ( 'ACTIVATE' === $akcja && 'ACTIVE' === $obecny ) || ( 'END' === $akcja && 'ENDED' === $obecny ) ) {
+				continue;
+			}
+
+			$bledy = $stan['validation']['errors'] ?? [];
+
+			if ( 'ACTIVATE' === $akcja && $bledy ) {
+				printf( "  POMIJAM #%-7d %s — %s\n", $pid, $oid, implode( '; ', array_column( $bledy, 'code' ) ) );
+				continue;
+			}
+
+			$oferty[] = [ 'pid' => $pid, 'id' => $oid ];
+		}
+
+		if ( $limit > 0 ) {
+			$oferty = array_slice( $oferty, 0, $limit );
+		}
+
+		if ( ! $oferty ) {
+			WP_CLI::warning( 'Nie ma czego zmieniać.' );
+			return;
+		}
+
+		WP_CLI::line( sprintf( '%s %d ofert...', 'ACTIVATE' === $akcja ? 'Aktywuję' : 'Kończę', count( $oferty ) ) );
+
+		$command = wp_generate_uuid4();
+
+		$r = Dawmac_Allegro_Client::put( "/sale/offer-publication-commands/{$command}", [
+			'publication'   => [ 'action' => $akcja ],
+			'offerCriteria' => [ [
+				'offers' => array_map( static fn( array $o ): array => [ 'id' => $o['id'] ], $oferty ),
+				'type'   => 'CONTAINS_OFFERS',
+			] ],
+		] );
+
+		if ( is_wp_error( $r ) ) {
+			WP_CLI::error( $r->get_error_message() );
+		}
+
+		// Komenda jest asynchroniczna - dopytujemy o wynik.
+		for ( $i = 0; $i < 12; $i++ ) {
+			sleep( 3 );
+
+			$st = Dawmac_Allegro_Client::get( "/sale/offer-publication-commands/{$command}/status" );
+
+			if ( is_wp_error( $st ) ) {
+				continue;
+			}
+
+            $t = $st['taskCount'] ?? [];
+			printf( "  gotowe %d / %d   (błędy: %d)\n", (int) ( $t['success'] ?? 0 ), (int) ( $t['total'] ?? 0 ), (int) ( $t['failed'] ?? 0 ) );
+
+			if ( ( $t['success'] ?? 0 ) + ( $t['failed'] ?? 0 ) >= ( $t['total'] ?? 0 ) ) {
+				break;
+			}
+		}
+
+		WP_CLI::success( 'Komenda wykonana. Sprawdź "wp dawmac-allegro status".' );
 	}
 }

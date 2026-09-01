@@ -44,7 +44,14 @@ class Dawmac_Allegro_Offer {
 		$problemy = array_merge( $problemy, $m['problemy'] );
 
 		// 2. Zdjecia - musza lezec na serwerach Allegro, takze te w opisie.
-		$zdjecia = Dawmac_Allegro_Images::product_images( $dane['gallery'] ?? [] );
+		//
+		// Limit 16 zdjec na oferte obejmuje TAKZE grafiki uzyte w opisie,
+		// nie tylko galerie. Szablon wstawia banery, wiec galeria dostaje
+		// tyle, ile po nich zostaje - inaczej Allegro odrzuca cala oferte
+		// bledem "Mozesz dodac maksymalnie 16 zdjec".
+		$zdjecia = Dawmac_Allegro_Images::product_images(
+			array_slice( $dane['gallery'] ?? [], 0, self::limit_galerii( $config ) )
+		);
 
 		if ( ! $zdjecia ) {
 			$problemy[] = 'nie udało się wgrać żadnego zdjęcia produktu';
@@ -243,6 +250,25 @@ class Dawmac_Allegro_Offer {
 			],
 			'quantity' => [ 'value' => 1 ],
 		] + self::gpsr( $dane, $o ) ];
+	}
+
+	/**
+	 * Ile zdjec produktu zmiesci sie w galerii.
+	 *
+	 * Allegro liczy razem galerie i grafiki opisu, a limit to 16. Odejmujemy
+	 * banery szablonu, ktore realnie zostaly wgrane - te niewgrane i tak
+	 * nie trafia do opisu, wiec nie zajmuja miejsca.
+	 */
+	private static function limit_galerii( array $config ): int {
+		$banery = 0;
+
+		foreach ( array_keys( (array) ( $config['images'] ?? [] ) ) as $klucz ) {
+			if ( Dawmac_Allegro_Images::template_image( (string) $klucz ) ) {
+				++$banery;
+			}
+		}
+
+		return max( 1, 16 - $banery );
 	}
 
 	/** Pola GPSR doklejane do kazdej pozycji zestawu. */
