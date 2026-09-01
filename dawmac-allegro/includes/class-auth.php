@@ -248,6 +248,8 @@ class Dawmac_Allegro_Auth {
 			'headers' => [
 				'Authorization' => 'Basic ' . base64_encode( $c['client_id'] . ':' . $c['client_secret'] ),
 				'Content-Type'  => 'application/x-www-form-urlencoded',
+				// Wymagany tak samo jak przy zwyklych zadaniach do API.
+				'User-Agent'    => Dawmac_Allegro_Client::user_agent(),
 			],
 			'body'    => $body,
 		] );

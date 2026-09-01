@@ -80,6 +80,19 @@ class Dawmac_Allegro_Admin {
 				], 'no' );
 			}
 
+			$agent = trim( sanitize_text_field( wp_unslash( $_POST['user_agent'] ?? '' ) ) );
+
+			// Zly ksztalt naglowka konczy sie zablokowaniem klucza API,
+			// wiec nie zapisujemy go w ciemno.
+			if ( '' !== $agent && ! Dawmac_Allegro_Client::valid_user_agent( $agent ) ) {
+				self::redirect_with(
+					'Nie zapisałem nagłówka User-Agent - zły format. Wymagany: Nazwa/Wersja (+https://adres). '
+					. 'Wygeneruj go na apps.developer.allegro.pl/user-agent i wklej bez zmian.'
+				);
+			}
+
+			update_option( Dawmac_Allegro_Client::OPT_USER_AGENT, $agent, 'no' );
+
 			self::redirect_with( 'Zapisano.' );
 		}
 
@@ -159,6 +172,17 @@ class Dawmac_Allegro_Admin {
 			$locked
 				? 'Wartości pochodzą ze stałych w wp-config.php.'
 				: 'Bezpieczniej trzymać to w wp-config.php jako DAWMAC_ALLEGRO_CLIENT_ID i DAWMAC_ALLEGRO_CLIENT_SECRET.'
+		);
+
+		printf(
+			'<tr><th scope="row">User-Agent</th><td><input type="text" class="large-text code" name="user_agent" value="%s" placeholder="%s">'
+			. '<p class="description"><b>Obowiązkowy przy każdym żądaniu - jego brak kończy się zablokowaniem klucza API.</b><br>'
+			. 'Wygeneruj na <code>apps.developer.allegro.pl/user-agent</code> i wklej bez zmian. '
+			. 'Allegro używa go jako czynnika białej listy i zabrania modyfikować (poza numerem wersji).<br>'
+			. 'Puste pole = wartość zapasowa <code>%s</code>.</p></td></tr>',
+			esc_attr( (string) get_option( Dawmac_Allegro_Client::OPT_USER_AGENT, '' ) ),
+			esc_attr( 'NazwaAplikacji/1.0.0 (+https://dawmac.pl/info)' ),
+			esc_html( Dawmac_Allegro_Client::user_agent() )
 		);
 
 		echo '<tr><th scope="row">Redirect URI</th><td><code>' . esc_html( Dawmac_Allegro_Auth::redirect_uri() )

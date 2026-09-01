@@ -22,6 +22,20 @@ class Dawmac_Allegro_Client {
 
 	const CONTENT_TYPE = 'application/vnd.allegro.public.v1+json';
 
+	/** Gdzie trzymamy nagłówek wygenerowany narzędziem Allegro. */
+	const OPT_USER_AGENT = 'dawmac_allegro_user_agent';
+
+	/**
+	 * Zapasowy User-Agent w wymaganym formacie: Nazwa/Wersja (+URL).
+	 *
+	 * Wlasny, jednoznaczny User-Agent jest OBOWIAZKOWY przy kazdym zadaniu -
+	 * jego brak konczy sie zablokowaniem klucza API. Allegro traktuje ten
+	 * naglowek jako czynnik bialej listy i zabrania go zmieniac po
+	 * wygenerowaniu (poza numerem wersji), dlatego wartosc z narzedzia
+	 * apps.developer.allegro.pl/user-agent ma pierwszenstwo nad tym domyslnym.
+	 */
+	const DEFAULT_USER_AGENT = 'DawmacAllegro/%s (+https://dawmac.pl)';
+
 	/** Ile razy powtarzamy przy 429 i 5xx, zanim odpuscimy. */
 	const MAX_RETRIES = 4;
 
@@ -90,9 +104,14 @@ class Dawmac_Allegro_Client {
 				'method'  => $method,
 				'timeout' => (int) ( $options['timeout'] ?? 30 ),
 				'headers' => array_merge( [
-					'Authorization' => 'Bearer ' . $token,
-					'Accept'        => self::CONTENT_TYPE,
-					'Content-Type'  => self::CONTENT_TYPE,
+					'Authorization'   => 'Bearer ' . $token,
+					'Accept'          => self::CONTENT_TYPE,
+					'Content-Type'    => self::CONTENT_TYPE,
+					// Obowiazkowy - bez niego Allegro blokuje klucz API.
+					'User-Agent'      => self::user_agent(),
+					// Opcjonalny, ale dzieki niemu komunikaty bledow wracaja
+					// po polsku i mozna je pokazac wprost w panelu.
+					'Accept-Language' => 'pl-PL',
 				], $options['headers'] ?? [] ),
 			];
 
@@ -187,6 +206,32 @@ class Dawmac_Allegro_Client {
 		}
 
 		return $out;
+	}
+
+	/**
+	 * Naglowek identyfikujacy aplikacje. Kolejnosc: stala w wp-config.php,
+	 * wartosc zapisana w panelu, na koncu wbudowany zapasowy.
+	 */
+	public static function user_agent(): string {
+		if ( defined( 'DAWMAC_ALLEGRO_USER_AGENT' ) ) {
+			return (string) DAWMAC_ALLEGRO_USER_AGENT;
+		}
+
+		$stored = trim( (string) get_option( self::OPT_USER_AGENT, '' ) );
+
+		if ( '' !== $stored ) {
+			return $stored;
+		}
+
+		return sprintf( self::DEFAULT_USER_AGENT, DAWMAC_ALLEGRO_VERSION );
+	}
+
+	/**
+	 * Czy wartosc ma ksztalt, ktorego wymaga Allegro: Nazwa/Wersja (+URL).
+	 * Sprawdzamy w panelu, zeby literowka nie skonczyla sie blokada klucza.
+	 */
+	public static function valid_user_agent( string $value ): bool {
+		return (bool) preg_match( '#^\S+/\d+(\.\d+)*\s+\(\+https?://\S+\)$#', trim( $value ) );
 	}
 
 	/** 1s, 2s, 4s, 8s - z gornym ograniczeniem. */
