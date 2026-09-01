@@ -21,12 +21,15 @@ require_once DAWMAC_GALERIA_DIR . 'includes/class-norm.php';
 require_once DAWMAC_GALERIA_DIR . 'includes/class-api.php';
 require_once DAWMAC_GALERIA_DIR . 'includes/class-produkt.php';
 require_once DAWMAC_GALERIA_DIR . 'includes/class-admin.php';
+require_once DAWMAC_GALERIA_DIR . 'includes/class-sync.php';
 
 Dawmac_Galeria_Produkt::init();
 Dawmac_Galeria_Admin::init();
+Dawmac_Galeria_Sync::init();
 
 /**
  * Odinstalowanie nie zostawia śmieci: kasujemy ustawienia i cache.
  * Zdjęcia i tak nie są nasze — leżą w galerii.
  */
 register_deactivation_hook( __FILE__, [ 'Dawmac_Galeria_API', 'wyczysc_cache' ] );
+register_deactivation_hook( __FILE__, [ 'Dawmac_Galeria_Sync', 'odplanuj' ] );

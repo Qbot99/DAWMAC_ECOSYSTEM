@@ -12,11 +12,13 @@ class Dawmac_Galeria_Admin {
 	const PAGE  = 'dawmac-galeria';
 	const GROUP = 'dawmac_galeria';
 	const ACTION_CACHE = 'dawmac_galeria_wyczysc';
+	const ACTION_SYNC  = 'dawmac_galeria_sync';
 
 	public static function init(): void {
 		add_action( 'admin_menu', [ __CLASS__, 'menu' ] );
 		add_action( 'admin_init', [ __CLASS__, 'ustawienia' ] );
 		add_action( 'admin_post_' . self::ACTION_CACHE, [ __CLASS__, 'wyczysc' ] );
+		add_action( 'admin_post_' . self::ACTION_SYNC, [ __CLASS__, 'synchronizuj' ] );
 	}
 
 	public static function menu(): void {
@@ -135,11 +137,68 @@ class Dawmac_Galeria_Admin {
 			</form>
 
 			<hr>
+			<h2>Słownik felg</h2>
+			<p>Przenosi pary producent+model ze sklepu do galerii, żeby panel
+				podpowiadał je przy dodawaniu zdjęć. Chodzi raz na dobę.</p>
+			<?php
+			$nast = wp_next_scheduled( Dawmac_Galeria_Sync::HOOK );
+			$log  = Dawmac_Galeria_Sync::ostatni();
+			?>
+			<table class="widefat" style="max-width:760px">
+				<tbody>
+				<tr>
+					<td style="width:170px"><strong>Następne odświeżenie</strong></td>
+					<td><?php echo $nast
+						? esc_html( wp_date( 'j M Y, H:i', $nast ) )
+						: '<span style="color:#b32d2e">nie zaplanowane</span>'; ?></td>
+				</tr>
+				<tr>
+					<td><strong>Ostatnie</strong></td>
+					<td><?php
+						if ( ! $log ) {
+							echo 'jeszcze nie było';
+						} else {
+							printf(
+								'%s — %s',
+								esc_html( $log['kiedy'] ?? '?' ),
+								! empty( $log['ok'] )
+									? '<span style="color:#1a7f37">OK</span>'
+									: '<span style="color:#b32d2e">błąd</span>'
+							);
+							if ( ! empty( $log['tekst'] ) ) {
+								echo '<pre style="margin:6px 0 0;padding:8px;background:#f6f7f7;'
+									. 'overflow:auto;max-height:180px">'
+									. esc_html( $log['tekst'] ) . '</pre>';
+							}
+						}
+					?></td>
+				</tr>
+				</tbody>
+			</table>
+			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+				<input type="hidden" name="action" value="<?php echo esc_attr( self::ACTION_SYNC ); ?>">
+				<?php wp_nonce_field( self::ACTION_SYNC ); ?>
+				<?php submit_button( 'Odśwież słownik teraz', 'secondary', 'submit', false ); ?>
+			</form>
+
+			<hr>
 			<h2>Wstawienie ręczne</h2>
 			<p>Gdybyś chciał sekcję w konkretnym miejscu szablonu:</p>
 			<p><code>[dawmac_galeria_produktu ile="8"]</code></p>
 		</div>
 		<?php
+	}
+
+	public static function synchronizuj(): void {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( 'Brak uprawnień.' );
+		}
+
+		check_admin_referer( self::ACTION_SYNC );
+		Dawmac_Galeria_Sync::uruchom();
+
+		wp_safe_redirect( add_query_arg( 'page', self::PAGE, admin_url( 'admin.php' ) ) );
+		exit;
 	}
 
 	public static function wyczysc(): void {
