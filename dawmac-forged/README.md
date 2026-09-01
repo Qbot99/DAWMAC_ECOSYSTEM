@@ -18,13 +18,21 @@ co ma wylądować na serwerze obok aplikacji:
 | Plik | Do czego |
 |---|---|
 | `.htaccess` | przepisywanie adresów, kierowanie botów do bot.php |
-| `bot.php` | podglądy linków na Facebooku, WhatsAppie, Twitterze |
-| `resize.php` | skalowanie zdjęć w locie |
+| `bot.php`, `bot2.php` | podglądy linków na Facebooku, WhatsAppie, Twitterze |
+| `send_form.php` | obsługa formularza kontaktowego |
+| `sitemap.php`, `sitemap2.php` | mapy witryny |
+| `robots.txt` | reguły dla robotów |
 
 ## Czego tu nie ma
 
-`dist/` (build) i duże pliki statyczne (PDF oferty, wideo) - te drugie
-mieszkają wyłącznie na serwerze, a deploy.sh ich nie kasuje.
+`dist/` - powstaje z builda.
+
+## Co żyje wyłącznie na serwerze
+
+Obok aplikacji leżą rzeczy, których build nie odtworzy i których nie ma
+w repo: druga wersja strony (`index2.html`, `assets2/`, `d2/` - 62 MB),
+sekwencja klatek `car-seq/` i generowany `sitemap-cache.xml`.
+Dlatego `deploy.sh` wysyła bez `--delete`.
 
 ---
 
