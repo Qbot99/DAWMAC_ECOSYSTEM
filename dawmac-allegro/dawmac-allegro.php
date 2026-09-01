@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       Dawmac Allegro
  * Description:       Wystawianie i synchronizacja ofert Allegro z katalogu WooCommerce - szablon firmowy, ceny, stany, zamówienia.
- * Version:           0.2.0
+ * Version:           1.0.0
  * Requires at least: 6.0
  * Requires PHP:      8.1
  * Author:            Hubert
@@ -13,7 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'DAWMAC_ALLEGRO_VERSION', '0.2.0' );
+define( 'DAWMAC_ALLEGRO_VERSION', '1.0.0' );
 define( 'DAWMAC_ALLEGRO_DIR', plugin_dir_path( __FILE__ ) );
 define( 'DAWMAC_ALLEGRO_URL', plugin_dir_url( __FILE__ ) );
 
