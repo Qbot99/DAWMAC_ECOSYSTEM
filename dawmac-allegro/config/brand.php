@@ -49,7 +49,8 @@ return [
 		'spec',          // parametry + zdjecie produktu, dwie kolumny
 		'fitment',       // co dostajesz w zestawie / dopasowanie
 		'about',         // o marce + grafika, dwie kolumny
-		'shipping',      // wysylka + gwarancja, dwie kolumny
+		'shipping',      // wysylka
+		'warranty',      // gwarancja i zwrot
 		'banner_bottom',
 	],
 
@@ -85,7 +86,7 @@ return [
 			'title' => 'Wysylka',
 			'html'  => '
 				<ul>
-					<li>Nadajemy w <b>24 godziny</b> w dni robocze od zaksiegowania wplaty. [SPRAWDZ]</li>
+					<li>Nadajemy w <b>48 godzin</b> w dni robocze od zaksiegowania wplaty.</li>
 					<li>Kazda felga pakowana osobno, komplet zabezpieczony na czas transportu.</li>
 					<li>Przewoznika i koszt wybierasz w sekcji dostawy tej oferty.</li>
 				</ul>
@@ -96,11 +97,74 @@ return [
 			'title' => 'Gwarancja i zwrot',
 			'html'  => '
 				<ul>
-					<li><b>24 miesiace gwarancji</b> na produkt. [SPRAWDZ]</li>
+					<li>Reklamacje i zwroty na zasadach zapisanych w warunkach tej oferty.</li>
 					<li><b>14 dni na zwrot</b> bez podawania przyczyny, na zasadach Allegro.</li>
 					<li>Zwrot przyjmujemy w stanie nienaruszonym - felgi po montazu na aucie nie podlegaja zwrotowi.</li>
 				</ul>
 			',
+		],
+	],
+
+	/**
+	 * Obudowa oferty - odwzorowana z oferty 14692637195, ktora juz dziala
+	 * na koncie. Nie wymyslamy wlasnych ustawien tam, gdzie sprzedawca ma
+	 * juz swoje: rozbieznosc w warunkach dostawy czy zwrotow miedzy ofertami
+	 * to pytania od kupujacych i ryzyko sporu.
+	 *
+	 * Identyfikatory pochodza z konta DawmacPolska i sa dla niego stale.
+	 */
+	'oferta' => [
+		'kategoria'      => '257711',   // Felgi > Do samochodow > Aluminiowe
+		'handling_time'  => 'PT48H',    // tyle deklaruje istniejaca oferta
+		'jednostka'      => 'SET',      // cena dotyczy kompletu, nie sztuki
+		'faktura'        => 'VAT',
+		'stawka_vat'     => '23.00',
+
+		'lokalizacja' => [
+			'countryCode' => 'PL',
+			'province'    => 'WIELKOPOLSKIE',
+			'city'        => 'Perzów',
+			'postCode'    => '63-642',
+		],
+
+		'po_sprzedazy' => [
+			'impliedWarranty' => 'ba786cbb-f803-4fcf-b4b3-0b6fc1b5c417',
+			'returnPolicy'    => '59d00829-42d7-4d44-a387-af963dfb122d',
+		],
+
+		/**
+		 * GPSR - bez tego oferta nie przejdzie walidacji:
+		 * RESPONSIBLE_PRODUCER_NOT_SPECIFIED i SAFETY_INFO_NOT_DEFINED.
+		 *
+		 * Identyfikatory z GET /sale/responsible-producers. Dla marek bez
+		 * wlasnego wpisu producentem odpowiedzialnym jest DAWMAC Polska -
+		 * jako importer wprowadzajacy towar na rynek UE, co jest zgodne
+		 * z rozporzadzeniem.
+		 *
+		 * >>> DO POTWIERDZENIA: tresc 'bezpieczenstwo' to informacja
+		 *     wymagana prawem. Napisalem ja rzeczowo, ale przejrzyj.
+		 *     Deklaracja NO_SAFETY_INFORMATION przy czesci odpowiadajacej
+		 *     za bezpieczenstwo jazdy byla by trudna do obrony.
+		 */
+		'gpsr' => [
+			'producenci' => [
+				'Japan Racing' => '6ad4e7f5-c7d3-4c4f-97b3-100f7fb0cdf2',
+				'domyslny'     => 'be1f5f5c-4148-4e23-92ec-776bb3da6f27', // DAWMAC Polska
+			],
+			'bezpieczenstwo' => 'Felgi aluminiowe do samochodow osobowych.'
+				. "\n" . 'Przed zakupem sprawdz zgodnosc rozmiaru, rozstawu srub, srednicy otworu centralnego oraz odsadzenia ET z zaleceniami producenta pojazdu.'
+				. "\n" . 'Montaz powierz serwisowi dysponujacemu odpowiednim wyposazeniem.'
+				. "\n" . 'Stosuj sruby lub nakretki wlasciwego typu i dlugosci, dokrecane momentem podanym przez producenta pojazdu.'
+				. "\n" . 'Po przejechaniu pierwszych 50-100 km sprawdz moment dokrecenia.'
+				. "\n" . 'Nie uzywaj felg uszkodzonych, peknietych ani odksztalconych.',
+		],
+
+		// Cennik dostawy per producent; 'domyslny' lapie reszte.
+		// Japan Racing i Concaver ida z wysylka 0 zl (ustalenie z 2026-09-01).
+		'cenniki_dostawy' => [
+			'Japan Racing' => '58445eb2-893e-4d75-95e8-dbe1e24d1c70', // "0zl"
+			'Concaver'     => '58445eb2-893e-4d75-95e8-dbe1e24d1c70', // "0zl"
+			'domyslny'     => '58445eb2-893e-4d75-95e8-dbe1e24d1c70',
 		],
 	],
 

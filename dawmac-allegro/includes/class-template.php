@@ -99,7 +99,7 @@ class Dawmac_Allegro_Template {
 			'spec'                        => $this->spec_section( $product ),
 			'fitment'                     => $this->text_block_section( 'fitment' ),
 			'about'                       => $this->about_section(),
-			'shipping'                    => $this->shipping_section(),
+			'shipping', 'warranty'        => $this->text_block_section( $key ),
 			default                       => null,
 		};
 	}
@@ -222,21 +222,6 @@ class Dawmac_Allegro_Template {
 		}
 
 		return [ 'items' => $items ];
-	}
-
-	/** Wysylka i gwarancja obok siebie - dwa bloki tekstowe w jednej sekcji. */
-	private function shipping_section(): ?array {
-		$items = [];
-
-		foreach ( [ 'shipping', 'warranty' ] as $name ) {
-			$content = $this->block_html( $name );
-
-			if ( $content ) {
-				$items[] = [ 'type' => 'TEXT', 'content' => $content ];
-			}
-		}
-
-		return $items ? [ 'items' => $items ] : null;
 	}
 
 	/** Naglowek h2 + tresc bloku, po sanitacji. */
@@ -385,6 +370,16 @@ class Dawmac_Allegro_Template {
 
 			if ( $n < 1 || $n > 2 ) {
 				$errors[] = sprintf( 'Sekcja %d ma %d itemow - dozwolone 1 albo 2.', $i + 1, $n );
+			}
+
+			// Allegro odrzuca sekcje zlozona z DWOCH itemow TEXT
+			// ("Uklad sekcji skladajacy sie z dwoch elementow typu TEXT
+			// nie jest dozwolony", HTTP 422). Dwie kolumny musza zawierac
+			// co najmniej jeden obrazek.
+			if ( 2 === $n
+				&& 'TEXT' === ( $items[0]['type'] ?? '' )
+				&& 'TEXT' === ( $items[1]['type'] ?? '' ) ) {
+				$errors[] = sprintf( 'Sekcja %d to dwa bloki TEXT obok siebie - Allegro tego nie przyjmie.', $i + 1 );
 			}
 
 			foreach ( $items as $j => $item ) {

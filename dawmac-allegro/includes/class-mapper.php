@@ -115,9 +115,19 @@ class Dawmac_Allegro_Mapper {
 	}
 
 	/**
-	 * Buduje tablice parametrow oferty.
+	 * Parametry opisujace OFERTE, nie produkt.
 	 *
-	 * @return array{parameters: array, problemy: string[]}
+	 * Allegro dzieli je na dwie grupy i pilnuje tego podzialu: wskazanie
+	 * producenta w sekcji "offer" konczy sie bledem 422. Stan i liczba sztuk
+	 * zaleza od konkretnej oferty, reszta opisuje sam produkt i trafia
+	 * do productSet.
+	 */
+	const PARAMETRY_OFERTY = [ self::P_STAN, self::P_LICZBA ];
+
+	/**
+	 * Buduje parametry, rozdzielone na te dla oferty i te dla produktu.
+	 *
+	 * @return array{parameters: array, oferta: array, produkt: array, problemy: string[]}
 	 */
 	public static function map( array $product, array $dict ): array {
 		$out      = [];
@@ -179,7 +189,22 @@ class Dawmac_Allegro_Mapper {
 			$out[] = [ 'id' => self::P_MODEL, 'values' => [ (string) $product['model'] ] ];
 		}
 
-		return [ 'parameters' => $out, 'problemy' => $problemy ];
+		$oferta = $produkt = [];
+
+		foreach ( $out as $p ) {
+			if ( in_array( $p['id'], self::PARAMETRY_OFERTY, true ) ) {
+				$oferta[] = $p;
+			} else {
+				$produkt[] = $p;
+			}
+		}
+
+		return [
+			'parameters' => $out,      // caly zestaw - do podgladu i kontroli
+			'oferta'     => $oferta,
+			'produkt'    => $produkt,
+			'problemy'   => $problemy,
+		];
 	}
 
 	/** Sklep trzyma '20"' - Allegro tak samo. Zostawiamy, tylko czyscimy. */

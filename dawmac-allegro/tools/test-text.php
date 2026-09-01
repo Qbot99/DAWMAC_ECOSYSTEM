@@ -227,6 +227,20 @@ $d2         = $bez_grafik->build( $felga );
 check( 'bez grafik opis dalej jest poprawny', [], Dawmac_Allegro_Template::validate( $d2 ) );
 check( 'bez grafik sekcji jest mniej', true, count( $d2['sections'] ) < count( $desc['sections'] ) );
 
+// Dwa bloki TEXT obok siebie - Allegro odrzuca to bledem 422.
+$dwa_teksty = [ 'sections' => [ [ 'items' => [
+	[ 'type' => 'TEXT', 'content' => '<p>Wysyłka</p>' ],
+	[ 'type' => 'TEXT', 'content' => '<p>Gwarancja</p>' ],
+] ] ] ];
+check( 'dwa TEXT w sekcji zlapane', 1, count( Dawmac_Allegro_Template::validate( $dwa_teksty ) ) );
+
+// TEXT + IMAGE jest poprawne.
+$tekst_obraz = [ 'sections' => [ [ 'items' => [
+	[ 'type' => 'TEXT', 'content' => '<p>Parametry</p>' ],
+	[ 'type' => 'IMAGE', 'url' => 'https://a.allegroimg.com/original/TEST/x' ],
+] ] ] ];
+check( 'TEXT + IMAGE przechodzi', [], Dawmac_Allegro_Template::validate( $tekst_obraz ) );
+
 // Walidator ma lapac obrazek spoza Allegro.
 $obcy = [ 'sections' => [ [ 'items' => [ [ 'type' => 'IMAGE', 'url' => 'https://dawmac.pl/foto.jpg' ] ] ] ] ];
 check( 'obcy obrazek zlapany', 1, count( Dawmac_Allegro_Template::validate( $obcy ) ) );

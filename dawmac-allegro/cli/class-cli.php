@@ -374,4 +374,138 @@ class Dawmac_Allegro_CLI {
 			...$marki
 		) ) );
 	}
+
+	/**
+	 * Wystawia oferty dla wskazanych marek.
+	 *
+	 * DOMYSLNIE JAKO SZKICE (INACTIVE) - oferta powstaje na koncie, ale nie
+	 * idzie na sprzedaz. Mozna ja obejrzec w panelu Allegro i dopiero wtedy
+	 * aktywowac. Publikacja od razu wymaga jawnego --aktywne.
+	 *
+	 * Produkty, ktore maja juz przypisana oferte, sa pomijane.
+	 *
+	 * ## OPTIONS
+	 *
+	 * <marki>
+	 * : Producenci po przecinku, np. "Japan Racing,Concaver".
+	 *
+	 * [--limit=<n>]
+	 * : Wystaw najwyzej tyle ofert. Bez tego - wszystkie.
+	 *
+	 * [--aktywne]
+	 * : Publikuj od razu jako ACTIVE zamiast szkicu.
+	 *
+	 * [--na-sucho]
+	 * : Pokaz co poleci, nic nie wysylaj.
+	 *
+	 * ## EXAMPLES
+	 *
+	 *     wp dawmac-allegro wystaw "Japan Racing,Concaver" --limit=1
+	 *     wp dawmac-allegro wystaw "Japan Racing,Concaver" --aktywne
+	 */
+	public function wystaw( array $args, array $flags ): void {
+		$marki  = array_map( 'trim', explode( ',', (string) $args[0] ) );
+		$limit  = isset( $flags['limit'] ) ? (int) $flags['limit'] : 0;
+		$status = isset( $flags['aktywne'] ) ? 'ACTIVE' : 'INACTIVE';
+		$sucho  = isset( $flags['na-sucho'] );
+
+		$dict = Dawmac_Allegro_Mapper::dictionary();
+
+		if ( is_wp_error( $dict ) ) {
+			WP_CLI::error( $dict->get_error_message() );
+		}
+
+		$ids = self::produkty_marek( $marki );
+		$doZrobienia = [];
+
+		foreach ( $ids as $pid ) {
+			if ( null === Dawmac_Allegro_Offer::offer_id( $pid ) ) {
+				$doZrobienia[] = $pid;
+			}
+		}
+
+		$pominiete = count( $ids ) - count( $doZrobienia );
+
+		if ( $limit > 0 ) {
+			$doZrobienia = array_slice( $doZrobienia, 0, $limit );
+		}
+
+		WP_CLI::line( sprintf( 'Na magazynie: %d   |   mają już ofertę: %d   |   do wystawienia teraz: %d',
+			count( $ids ), $pominiete, count( $doZrobienia ) ) );
+		WP_CLI::line( sprintf( 'Tryb: %s%s', 'ACTIVE' === $status ? 'PUBLIKACJA OD RAZU' : 'szkice (INACTIVE)',
+			$sucho ? ' — NA SUCHO, nic nie poleci' : '' ) );
+		WP_CLI::line( str_repeat( '-', 76 ) );
+
+		$ok = $bledy = 0;
+
+		foreach ( $doZrobienia as $pid ) {
+			$product = wc_get_product( $pid );
+
+			if ( ! $product ) {
+				continue;
+			}
+
+			$b = Dawmac_Allegro_Offer::build( $product, $dict, $status );
+
+			if ( $b['problemy'] ) {
+				++$bledy;
+				printf( "  BŁĄD  #%-7d %s\n", $pid, mb_substr( $product->get_name(), 0, 50 ) );
+				foreach ( $b['problemy'] as $x ) {
+					printf( "               %s\n", $x );
+				}
+				continue;
+			}
+
+			if ( $sucho ) {
+				printf( "  ok    #%-7d %-52s %s zł\n", $pid,
+					mb_substr( $b['offer']['name'], 0, 52 ),
+					$b['offer']['sellingMode']['price']['amount'] );
+				++$ok;
+				continue;
+			}
+
+			$wynik = Dawmac_Allegro_Offer::publish( $product, $dict, $status );
+
+			if ( is_wp_error( $wynik ) ) {
+				++$bledy;
+				printf( "  BŁĄD  #%-7d %s\n", $pid, $wynik->get_error_message() );
+				continue;
+			}
+
+			++$ok;
+			printf( "  %-5s #%-7d oferta %s  %s\n", 'ACTIVE' === $status ? 'ŻYWA' : 'szkic',
+				$pid, $wynik, mb_substr( $b['offer']['name'], 0, 44 ) );
+		}
+
+		WP_CLI::line( str_repeat( '-', 76 ) );
+		WP_CLI::line( sprintf( 'Gotowe: %d   |   błędy: %d', $ok, $bledy ) );
+	}
+
+	/**
+	 * Zapisuje powiazanie produktu z istniejaca juz oferta na Allegro.
+	 * Dzieki temu "wystaw" ich nie zdubluje.
+	 *
+	 * ## OPTIONS
+	 *
+	 * <pary>
+	 * : Pary "id_produktu:id_oferty" po przecinku.
+	 *
+	 * ## EXAMPLES
+	 *
+	 *     wp dawmac-allegro powiaz "188599:12111622209,188885:13527666030"
+	 */
+	public function powiaz( array $args ): void {
+		foreach ( explode( ',', (string) $args[0] ) as $para ) {
+			[ $pid, $oid ] = array_map( 'trim', explode( ':', $para ) + [ '', '' ] );
+
+			if ( ! $pid || ! $oid ) {
+				continue;
+			}
+
+			update_post_meta( (int) $pid, Dawmac_Allegro_Offer::META_OFFER, $oid );
+			printf( "  #%-8s -> oferta %s\n", $pid, $oid );
+		}
+
+		WP_CLI::success( 'Powiązania zapisane. "wystaw" pominie te produkty.' );
+	}
 }
