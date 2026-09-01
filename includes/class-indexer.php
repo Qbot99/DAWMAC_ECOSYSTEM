@@ -150,6 +150,136 @@ class Dawmac_Filters_Indexer {
 	const CACHE_OPTION = 'dawmac_filters_counters_cache';
 	const WARM_HOOK    = 'dawmac_filters_warm_cache';
 
+	// Nocne odświeżanie indeksu.
+	const NIGHTLY_HOOK  = 'dawmac_filters_nightly_reindex';
+	const CHUNK_HOOK    = 'dawmac_filters_reindex_chunk';
+	const STATE_OPTION  = 'dawmac_filters_reindex_state';
+	const LAST_OPTION   = 'dawmac_filters_last_reindex';
+	const CHUNK_SECONDS = 20;   // budżet czasu na jedno wywołanie crona
+
+	/**
+	 * Planuje nocny reindex na 03:30 czasu sklepu (raz dziennie).
+	 * Idempotentne - wywołanie przy aktywacji i przy każdym starcie
+	 * niczego nie duplikuje.
+	 */
+	public static function schedule_nightly(): void {
+		if ( wp_next_scheduled( self::NIGHTLY_HOOK ) ) {
+			return;
+		}
+		$tz   = function_exists( 'wp_timezone' ) ? wp_timezone() : new DateTimeZone( 'UTC' );
+		$now  = new DateTimeImmutable( 'now', $tz );
+		$next = $now->setTime( 3, 30, 0 );
+		if ( $next <= $now ) {
+			$next = $next->modify( '+1 day' );
+		}
+		wp_schedule_event( $next->getTimestamp(), 'daily', self::NIGHTLY_HOOK );
+	}
+
+	/** Sprzątanie przy deaktywacji wtyczki. */
+	public static function unschedule_nightly(): void {
+		wp_clear_scheduled_hook( self::NIGHTLY_HOOK );
+		wp_clear_scheduled_hook( self::CHUNK_HOOK );
+		delete_option( self::STATE_OPTION );
+	}
+
+	/**
+	 * Start nocnego przebiegu: zapisujemy stan i bierzemy pierwszą porcję.
+	 * Reszta dzieje się w process_chunk(), które samo się wznawia.
+	 */
+	public static function run_nightly(): void {
+		update_option( self::STATE_OPTION, [
+			'last_id'  => 0,
+			'products' => 0,
+			'rows'     => 0,
+			'started'  => time(),
+		], 'no' );
+		self::process_chunk();
+	}
+
+	/**
+	 * Jedna porcja reindeksu.
+	 *
+	 * Pełny przebieg to ponad 2 minuty pracy - za dużo jak na jedno
+	 * wywołanie crona z limitem czasu PHP. Dlatego pracujemy w porcjach
+	 * po BATCH_SIZE produktów, pilnujemy budżetu CHUNK_SECONDS i jeśli
+	 * czas się kończy, planujemy dokończenie za minutę.
+	 */
+	public static function process_chunk(): void {
+		global $wpdb;
+
+		$state = get_option( self::STATE_OPTION );
+		if ( ! is_array( $state ) ) {
+			return; // nic nie jest w toku
+		}
+
+		$start = microtime( true );
+
+		while ( true ) {
+			$ids = $wpdb->get_col( $wpdb->prepare(
+				"SELECT ID FROM {$wpdb->posts}
+				 WHERE post_type = 'product' AND post_status = 'publish' AND ID > %d
+				 ORDER BY ID ASC LIMIT %d",
+				(int) $state['last_id'],
+				self::BATCH_SIZE
+			) );
+
+			if ( empty( $ids ) ) {
+				self::finish_nightly( $state );
+				return;
+			}
+
+			$ids                = array_map( 'intval', $ids );
+			$state['rows']     += self::index_batch( $ids );
+			$state['products'] += count( $ids );
+			$state['last_id']   = (int) end( $ids );
+			update_option( self::STATE_OPTION, $state, 'no' );
+
+			if ( microtime( true ) - $start > self::CHUNK_SECONDS ) {
+				if ( ! wp_next_scheduled( self::CHUNK_HOOK ) ) {
+					wp_schedule_single_event( time() + 60, self::CHUNK_HOOK );
+				}
+				return;
+			}
+		}
+	}
+
+	/**
+	 * Domknięcie przebiegu: usuwamy z indeksu produkty, których już nie ma
+	 * (usunięte, w koszu, odpublikowane), rozgrzewamy listy filtrów
+	 * i zapisujemy raport z ostatniego reindeksu.
+	 */
+	private static function finish_nightly( array $state ): void {
+		global $wpdb;
+
+		$idx   = Dawmac_Filters_Schema::table_name();
+		$cards = Dawmac_Filters_Schema::cards_table_name();
+
+		$usuniete = (int) $wpdb->query(
+			"DELETE c FROM {$cards} c
+			 LEFT JOIN {$wpdb->posts} p
+			   ON p.ID = c.product_id AND p.post_type = 'product' AND p.post_status = 'publish'
+			 WHERE p.ID IS NULL"
+		);
+		$wpdb->query(
+			"DELETE i FROM {$idx} i
+			 LEFT JOIN {$cards} c ON c.product_id = i.product_id
+			 WHERE c.product_id IS NULL"
+		);
+
+		self::warm_counters_cache();
+
+		update_option( self::LAST_OPTION, [
+			'finished' => time(),
+			'products' => (int) $state['products'],
+			'rows'     => (int) $state['rows'],
+			'usuniete' => $usuniete,
+			'seconds'  => time() - (int) $state['started'],
+		], 'no' );
+
+		delete_option( self::STATE_OPTION );
+		wp_clear_scheduled_hook( self::CHUNK_HOOK );
+	}
+
 	/** Klucz cache list opcji dla kontekstu ('shop' | 'opony'). */
 	public static function cache_key_for( string $context ): string {
 		return 'shop' === $context || '' === $context

@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Dawmac Filters
  * Description: Błyskawiczne filtrowanie produktów WooCommerce oparte o płaską tabelę indeksową (zamiast wolnych meta_query).
- * Version:     0.1.20
+ * Version:     0.1.21
  * Author:      Hubert
  * Requires PHP: 8.1
  * Requires at least: 6.0
@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'DAWMAC_FILTERS_VERSION', '0.1.20' );
+define( 'DAWMAC_FILTERS_VERSION', '0.1.21' );
 define( 'DAWMAC_FILTERS_DIR', plugin_dir_path( __FILE__ ) );
 define( 'DAWMAC_FILTERS_URL', plugin_dir_url( __FILE__ ) );
 
@@ -50,6 +50,9 @@ function dawmac_filters_activate() {
 	// Wepnij widget filtrów do sidebara sklepu (idempotentne; obok wpisu FE,
 	// którego nie ruszamy - gdy FE aktywny, nasz widget renderuje pustkę).
 	Dawmac_Filters_Native::ensure_widget_placed();
+
+	// Zaplanuj nocne odświeżanie indeksu.
+	Dawmac_Filters_Indexer::schedule_nightly();
 }
 
 /**
@@ -75,3 +78,12 @@ add_action( 'transition_post_status', [ 'Dawmac_Filters_Indexer', 'on_status_cha
 // Rozgrzewanie cache list filtrów w tle (zaplanowane po edycji/usunięciu),
 // żeby to nie gość płacił za przeliczenie przy pierwszym wejściu.
 add_action( 'dawmac_filters_warm_cache', [ 'Dawmac_Filters_Indexer', 'warm_counters_cache' ] );
+
+// Nocne odświeżenie całego indeksu (03:30) - łapie zmiany, które ominęły
+// hooki: importy po SQL, edycje w bazie, zmiany hurtowe. Leci porcjami,
+// więc nie wywraca się na limicie czasu PHP.
+add_action( 'dawmac_filters_nightly_reindex', [ 'Dawmac_Filters_Indexer', 'run_nightly' ] );
+add_action( 'dawmac_filters_reindex_chunk', [ 'Dawmac_Filters_Indexer', 'process_chunk' ] );
+add_action( 'init', [ 'Dawmac_Filters_Indexer', 'schedule_nightly' ] );
+
+register_deactivation_hook( __FILE__, [ 'Dawmac_Filters_Indexer', 'unschedule_nightly' ] );
