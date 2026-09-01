@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Dawmac Filters
  * Description: Błyskawiczne filtrowanie produktów WooCommerce oparte o płaską tabelę indeksową (zamiast wolnych meta_query).
- * Version:     0.1.21
+ * Version:     0.1.22
  * Author:      Hubert
  * Requires PHP: 8.1
  * Requires at least: 6.0
@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'DAWMAC_FILTERS_VERSION', '0.1.21' );
+define( 'DAWMAC_FILTERS_VERSION', '0.1.22' );
 define( 'DAWMAC_FILTERS_DIR', plugin_dir_path( __FILE__ ) );
 define( 'DAWMAC_FILTERS_URL', plugin_dir_url( __FILE__ ) );
 

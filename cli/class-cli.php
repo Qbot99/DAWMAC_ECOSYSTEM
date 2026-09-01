@@ -105,6 +105,34 @@ class Dawmac_Filters_CLI {
 	}
 
 	/**
+	 * Skąd ma być uruchamiany nocny reindeks.
+	 *
+	 * ## OPTIONS
+	 *
+	 * <source>
+	 * : "system" gdy pilnuje tego cron hostingu, "wp" gdy WP-Cron.
+	 *
+	 * ## EXAMPLES
+	 *
+	 *     wp dawmac cron system
+	 *     wp dawmac cron wp
+	 */
+	public function cron( $args, $assoc_args ) {
+		$source = ( 'system' === ( $args[0] ?? '' ) ) ? 'system' : 'wp';
+		update_option( 'dawmac_filters_cron_source', $source );
+
+		if ( 'system' === $source ) {
+			Dawmac_Filters_Indexer::unschedule_nightly();
+			WP_CLI::success( 'Reindeks pilnuje cron hostingu. Zadania WP-Cron wyłączone.' );
+			return;
+		}
+
+		Dawmac_Filters_Indexer::schedule_nightly();
+		$next = wp_next_scheduled( Dawmac_Filters_Indexer::NIGHTLY_HOOK );
+		WP_CLI::success( 'Reindeks pilnuje WP-Cron. Najbliższy przebieg: ' . ( $next ? wp_date( 'j.m.Y H:i', $next ) : 'brak' ) );
+	}
+
+	/**
 	 * Statystyki indeksu: liczba produktów, wierszy i rozbicie po atrybutach.
 	 */
 	public function status( $args, $assoc_args ) {
