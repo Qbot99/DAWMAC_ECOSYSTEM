@@ -229,8 +229,8 @@ check( 'bez grafik sekcji jest mniej', true, count( $d2['sections'] ) < count( $
 
 // Dwa bloki TEXT obok siebie - Allegro odrzuca to bledem 422.
 $dwa_teksty = [ 'sections' => [ [ 'items' => [
-	[ 'type' => 'TEXT', 'content' => '<p>Wysyłka</p>' ],
-	[ 'type' => 'TEXT', 'content' => '<p>Gwarancja</p>' ],
+	[ 'type' => 'TEXT', 'content' => '<p>Parametry techniczne</p>' ],
+	[ 'type' => 'TEXT', 'content' => '<p>Dobór do auta</p>' ],
 ] ] ] ];
 check( 'dwa TEXT w sekcji zlapane', 1, count( Dawmac_Allegro_Template::validate( $dwa_teksty ) ) );
 
@@ -240,6 +240,36 @@ $tekst_obraz = [ 'sections' => [ [ 'items' => [
 	[ 'type' => 'IMAGE', 'url' => 'https://a.allegroimg.com/original/TEST/x' ],
 ] ] ] ];
 check( 'TEXT + IMAGE przechodzi', [], Dawmac_Allegro_Template::validate( $tekst_obraz ) );
+
+// Treści zastrzeżone dla zakładek oferty. Allegro odrzuciło ofertę
+// 18890951777 właśnie za nie, a kara idzie do zawieszenia konta.
+$zakazane = [
+	'wysyłka'    => '<p>Nadajemy w 48 godzin od zaksięgowania wpłaty.</p>',
+	'dostawa'    => '<p>Dostawa kurierem na terenie kraju.</p>',
+	'płatność'   => '<p>Możliwa płatność przelewem lub za pobraniem.</p>',
+	'zwrot'      => '<p>14 dni na zwrot bez podania przyczyny.</p>',
+	'reklamacja' => '<p>Reklamacje rozpatrujemy w 14 dni.</p>',
+	'gwarancja'  => '<p>Udzielamy 24 miesięcy gwarancji.</p>',
+	'paczkomat'  => '<p>Wysyłamy też do paczkomatu.</p>',
+];
+
+foreach ( $zakazane as $co => $html ) {
+	$d = [ 'sections' => [ [ 'items' => [ [ 'type' => 'TEXT', 'content' => $html ] ] ] ] ];
+	check( "zakazane w opisie: {$co}", true, count( Dawmac_Allegro_Template::validate( $d ) ) > 0 );
+}
+
+// Treść produktowa nie może wpadać w te wzorce.
+$dozwolone = [
+	'dostępność'  => '<p>Felga dostępna w rozmiarze 8.5x19.</p>',
+	'parametry'   => '<p>Rozstaw śrub 5x112, odsadzenie ET35.</p>',
+	'wykończenie' => '<p>Wykończenie szczotkowany brąz, malowane proszkowo.</p>',
+	'materiał'    => '<p>Kuta z bloku aluminium 6061-T6, waga 10,2 kg.</p>',
+];
+
+foreach ( $dozwolone as $co => $html ) {
+	$d = [ 'sections' => [ [ 'items' => [ [ 'type' => 'TEXT', 'content' => $html ] ] ] ] ];
+	check( "dozwolone w opisie: {$co}", [], Dawmac_Allegro_Template::validate( $d ) );
+}
 
 // Walidator ma lapac obrazek spoza Allegro.
 $obcy = [ 'sections' => [ [ 'items' => [ [ 'type' => 'IMAGE', 'url' => 'https://dawmac.pl/foto.jpg' ] ] ] ] ];

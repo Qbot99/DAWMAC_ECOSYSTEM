@@ -49,8 +49,6 @@ return [
 		'spec',          // parametry + zdjecie produktu, dwie kolumny
 		'fitment',       // co dostajesz w zestawie / dopasowanie
 		'about',         // o marce + grafika, dwie kolumny
-		'shipping',      // wysylka
-		'warranty',      // gwarancja i zwrot
 		'banner_bottom',
 	],
 
@@ -74,14 +72,22 @@ return [
 			'html'  => '
 				<ul>
 					<li><b>Felgi to nasza jedyna specjalizacja</b> - nie handlujemy wszystkim po trochu.</li>
-					<li>Wlasny magazyn - pozycje wystawione jako dostepne mamy fizycznie na miejscu.</li>
 					<li>Doradzamy w doborze rozmiaru do konkretnego modelu auta.</li>
-					<li>Obsluga po polsku, bez posrednikow i dropshippingu z zagranicy.</li>
+					<li>Felgi fabrycznie nowe, prosto od producenta.</li>
 				</ul>
 			',
 			'image' => 'banner_trust',
 		],
 
+		/**
+		 * ZAKAZANE W OPISIE. Allegro odrzucilo oferte z tymi sekcjami:
+		 * "Usun z opisu przedmiotu dane dotyczace wysylki, dostawy, platnosci"
+		 * oraz "W opisie oferty umieszczasz informacje dotyczace zwrotu towaru".
+		 * Te tresci naleza wylacznie do zakladek Dostawa i platnosc oraz Zwroty.
+		 * Kara: usuniecie oferty, a nawet zawieszenie konta.
+		 *
+		 * Bloki zostawione dla pamieci - NIE dopisuj ich z powrotem do 'layout'.
+		 */
 		'shipping' => [
 			'title' => 'Wysylka',
 			'html'  => '

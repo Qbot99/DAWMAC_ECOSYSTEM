@@ -51,6 +51,17 @@ class Dawmac_Allegro_Template {
 		'srednica_opony' => ' cali',
 	];
 
+	/**
+	 * Tematy, ktorych opis oferty poruszac nie moze - naleza do zakladek
+	 * Dostawa i platnosc oraz Zwroty. Wzorce sa waskie, zeby nie lapac
+	 * zwyklych slow: "dostawa" tak, ale "dostepny" juz nie.
+	 */
+	const ZAKAZANE = [
+		'Wysyłka i dostawa' => '/\b(wysy[łl]k\w*|wysy[łl]amy|nadajemy|dostaw\w*|przesy[łl]k\w*|kurier\w*|paczkomat\w*|paczk\w*)\b/iu',
+		'Płatności'         => '/\b(p[łl]atno[śs]\w*|przelew\w*|za pobraniem|faktur\w*|raty)\b/iu',
+		'Zwroty i gwarancja'=> '/\b(zwrot\w*|zwraca\w*|reklamacj\w*|gwarancj\w*|r[ęe]kojmi\w*|odst[ąa]pieni\w*)\b/iu',
+	];
+
 	private array $config;
 
 	/** @var callable(string):?string Klucz grafiki -> URL po stronie Allegro. */
@@ -423,6 +434,21 @@ class Dawmac_Allegro_Template {
 
 				if ( preg_match( '#https?://|www\.|@[a-z0-9-]+\.[a-z]{2,}#i', $content ) ) {
 					$errors[] = "Link lub adres e-mail w tresci ({$where}) - oferta zostanie odrzucona.";
+				}
+
+				// Tresci zastrzezone dla zakladek oferty. Allegro odrzucilo
+				// oferte 18890951777 wlasnie za to: "Usun z opisu przedmiotu
+				// dane dotyczace wysylki, dostawy, platnosci" oraz "W opisie
+				// oferty umieszczasz informacje dotyczace zwrotu towaru".
+				// Kara idzie do zawieszenia konta, wiec blokujemy u siebie.
+				foreach ( self::ZAKAZANE as $etykieta => $wzorzec ) {
+					if ( preg_match( $wzorzec, $content ) ) {
+						$errors[] = sprintf(
+							'%s w opisie (%s) - te informacje moga byc tylko w zakladkach oferty.',
+							$etykieta,
+							$where
+						);
+					}
 				}
 			}
 		}
