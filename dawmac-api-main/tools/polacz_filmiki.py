@@ -27,6 +27,34 @@ for l in io.open('fb_per_model.tsv', encoding='utf-8'):
         vid, typ, kod = poz.split(':')
         grupy[(pn, mn)]['fb'].append({'id': vid, 'typ': typ, 'pewny': kod == 'A'})
 
+# Poprawki naniesione recznie po przejrzeniu listy. Klucz to id filmiku,
+# zeby poprawka przetrwala kolejne przeliczenie.
+RECZNE = {}
+try:
+    for l in io.open('poprawki_recznie.tsv', encoding='utf-8'):
+        if l.startswith('#') or not l.strip(): continue
+        c = l.rstrip('\n').split('\t')
+        if len(c) >= 3: RECZNE[c[0]] = (c[1], c[2])
+except FileNotFoundError:
+    pass
+if RECZNE:
+    przeniesione = {}
+    for k in list(grupy):
+        for zr in ('yt', 'fb'):
+            zostaw = []
+            for x in grupy[k][zr]:
+                if x['id'] in RECZNE:
+                    p, m = RECZNE[x['id']]
+                    x['pewny'] = True
+                    przeniesione.setdefault((norm(p), norm(m)), {'yt': [], 'fb': []})[zr].append(x)
+                else:
+                    zostaw.append(x)
+            grupy[k][zr] = zostaw
+    for k, v in przeniesione.items():
+        grupy[k]['yt'] += v['yt']; grupy[k]['fb'] += v['fb']
+    grupy = {k: v for k, v in grupy.items() if v['yt'] or v['fb']}
+    print(f"poprawek recznych: {len(RECZNE)}")
+
 modele = []
 for (pn, mn), g in grupy.items():
     modele.append({
