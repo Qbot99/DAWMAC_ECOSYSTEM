@@ -205,6 +205,31 @@ class Dawmac_Filters_Admin {
 
 		echo '</div>';
 
+		// Stan indeksu i nocnego odświeżania.
+		$last = get_option( Dawmac_Filters_Indexer::LAST_OPTION );
+		$next = wp_next_scheduled( Dawmac_Filters_Indexer::NIGHTLY_HOOK );
+		$fmt  = static fn( $ts ) => wp_date( 'j.m.Y H:i', (int) $ts );
+
+		echo '<div style="background:#fff;border:1px solid #ccd0d4;padding:14px 18px;margin:18px 0;max-width:720px">';
+		echo '<h3 style="margin-top:0">Indeks produktów</h3><p style="margin:0">';
+		if ( is_array( $last ) && ! empty( $last['finished'] ) ) {
+			printf(
+				'Ostatnie odświeżenie: <strong>%s</strong> (%d produktów, %d wierszy, %d s)',
+				esc_html( $fmt( $last['finished'] ) ),
+				(int) $last['products'],
+				(int) $last['rows'],
+				(int) $last['seconds']
+			);
+			if ( ! empty( $last['usuniete'] ) ) {
+				printf( ', usunięto nieaktualnych: %d', (int) $last['usuniete'] );
+			}
+		} else {
+			echo 'Nocne odświeżanie jeszcze się nie wykonało.';
+		}
+		echo '<br>Następne zaplanowane: <strong>' . ( $next ? esc_html( $fmt( $next ) ) : 'brak' ) . '</strong>';
+		echo '<br><span style="color:#666">Indeks aktualizuje się też na bieżąco przy każdym zapisie produktu; nocny przebieg łapie zmiany zrobione poza panelem (importy, edycje w bazie).</span>';
+		echo '</p></div>';
+
 		echo '<p style="margin-top:22px;max-width:720px;color:#555">'
 			. 'Przełącznik jest też w górnym pasku (⇄) - działa z każdej strony wp-admin. '
 			. 'Nic nie jest usuwane: przełączamy tylko, który silnik filtrów jest aktywny. '
