@@ -1,0 +1,12 @@
+# systemowe
+.DS_Store
+Thumbs.db
+
+# lokalne / robocze
+*.log
+*.sql
+*.sql.gz
+node_modules/
+vendor/
+.idea/
+.vscode/
