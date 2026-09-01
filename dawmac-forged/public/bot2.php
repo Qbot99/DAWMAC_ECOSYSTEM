@@ -9,23 +9,7 @@ $description = "Ekskluzywne felgi kute na zamówienie - Forged Mono, Duo, Trio i
 $image = "https://forged.dawmacpolska.pl/monoblock.jpeg";
 $url = "https://forged.dawmacpolska.pl" . $uri;
 
-// v3: katalog D2 Forged — zdjęcia leżą lokalnie w /d2/wheels/NAZWA.webp,
-// więc OG nie potrzebuje API: wystarczy sprawdzić, czy plik istnieje.
-if (preg_match('/^\/d2\/wheel\/([a-zA-Z0-9\-]+)/', $uri, $m)) {
-    $model = strtoupper($m[1]);
-    $file = __DIR__ . '/d2/wheels/' . $model . '.webp';
-    $title = "D2 Forged | Felga " . $model;
-    $description = "Felga kuta D2 Forged " . $model . " — rozmiary 18-22\", komplet od 21 250 zł. Katalog Dawmac.";
-    if (file_exists($file)) {
-        $image = "https://forged.dawmacpolska.pl/d2/wheels/" . $model . ".webp";
-    }
-} elseif (preg_match('/^\/d2(\/|$|\?)/', $uri)) {
-    $title = "D2 Forged | Katalog 600+ felg kutych";
-    $description = "Ponad 600 wzorów felg kutych D2 Forged w rozmiarach 18-22 cale. Oficjalny katalog Dawmac.";
-    if (file_exists(__DIR__ . '/d2/wheels/CS-387.webp')) {
-        $image = "https://forged.dawmacpolska.pl/d2/wheels/CS-387.webp";
-    }
-} elseif (preg_match('/^\/wheel\/([a-zA-Z0-9_\-%\.]+)/', $uri, $matches)) {
+if (preg_match('/^\/wheel\/([a-zA-Z0-9_\-%\.]+)/', $uri, $matches)) {
     $rimName = urldecode($matches[1]);
     $title = "Dawmac Forged | Felga " . strtoupper($rimName);
 
