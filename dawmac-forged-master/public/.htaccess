@@ -1,5 +1,9 @@
 RewriteEngine On
 RewriteBase /
+
+RewriteCond %{HTTP_USER_AGENT} (facebookexternalhit|WhatsApp|Twitterbot|Pinterest|LinkedInBot|Slackbot|TelegramBot) [NC]
+RewriteRule ^(.*)$ /bot.php [L]
+
 RewriteRule ^index\.html$ - [L]
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
