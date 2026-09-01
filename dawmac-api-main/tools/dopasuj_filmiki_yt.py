@@ -76,6 +76,9 @@ CZLON_FIRMOWY = {'WHEELS', 'WHEEL', 'RACING', 'FORGED', 'PERFORMANCE',
 stop |= {'CONTINENTAL', 'SPORTCONTACT', 'VENTUS', 'RAINSPORT', 'PILOT',
          'PZERO', 'CROSSCLIMATE', 'PRIMACY', 'EAGLE', 'TURANZA'}
 
+WERSJE_AUT = {'M2','M3','M4','M5','M6','M8','S1','S3','S4','S5','S6','S8',
+              'GT3','GT4','GTS','RS','R8','GTI','GTD','AMG','C63','E63','S63'}
+
 MIN_PROD, MIN_MODEL = 2, 2
 
 def kandydaci(tytul):
@@ -132,6 +135,13 @@ def dopasuj(tytul):
         if najlepszy is None or len(m) > len(najlepszy):
             najlepszy = m
     if najlepszy:
+        # Bez zakotwiczenia w marce odrzucamy oznaczenia wersji aut i gole
+        # liczby. "AUDI s4" dawalo Quantum44 S4, "Porsche 911 GT3 RS" dawalo
+        # Rota GT3, a rozstaw srub "5x112/120" dawal model OEMS 120.
+        if najlepszy in WERSJE_AUT:
+            return ('', '', 'brak')
+        if re.fullmatch(r'\d{1,3}', najlepszy) and not re.search(r'\bmodel\b', tytul, re.I):
+            return ('', '', 'brak')
         p = next(iter(model_do_producentow[najlepszy]))
         return (producent_po_normie[p], nazwa_modelu[najlepszy], 'sam model')
 
