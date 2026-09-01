@@ -52,6 +52,18 @@ class Dawmac_Allegro_Client {
 	}
 
 	/**
+	 * Wysylka surowych bajtow (wgrywanie pliku graficznego).
+	 * Content-Type musi byc typem obrazka, nie wersjonowanym JSON-em.
+	 */
+	public static function post_binary( string $path, string $bytes, string $mime ) {
+		return self::request( 'POST', $path, [
+			'raw_body' => $bytes,
+			'headers'  => [ 'Content-Type' => $mime ],
+			'timeout'  => 60,
+		] );
+	}
+
+	/**
 	 * @param string $method  GET/POST/PUT/PATCH/DELETE
 	 * @param string $path    Sciezka od korzenia API, np. /sale/offers
 	 * @param array  $options query, body, headers, timeout
@@ -84,7 +96,11 @@ class Dawmac_Allegro_Client {
 				], $options['headers'] ?? [] ),
 			];
 
-			if ( isset( $options['body'] ) ) {
+			// raw_body idzie bajt w bajt - tak wgrywamy pliki graficzne,
+			// gdzie tresc to same dane obrazka, a nie JSON.
+			if ( isset( $options['raw_body'] ) ) {
+				$args['body'] = $options['raw_body'];
+			} elseif ( isset( $options['body'] ) ) {
 				$args['body'] = wp_json_encode( $options['body'] );
 			}
 

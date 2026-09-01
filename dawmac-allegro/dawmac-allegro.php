@@ -22,6 +22,7 @@ require_once DAWMAC_ALLEGRO_DIR . 'includes/class-template.php';
 require_once DAWMAC_ALLEGRO_DIR . 'includes/class-product-data.php';
 require_once DAWMAC_ALLEGRO_DIR . 'includes/class-auth.php';
 require_once DAWMAC_ALLEGRO_DIR . 'includes/class-client.php';
+require_once DAWMAC_ALLEGRO_DIR . 'includes/class-images.php';
 require_once DAWMAC_ALLEGRO_DIR . 'includes/class-admin.php';
 
 /**
@@ -48,11 +49,7 @@ function dawmac_allegro_config(): array {
 function dawmac_allegro_template(): Dawmac_Allegro_Template {
 	return new Dawmac_Allegro_Template(
 		dawmac_allegro_config(),
-		static function ( string $key ): ?string {
-			$cache = get_option( 'dawmac_allegro_images', [] );
-
-			return isset( $cache[ $key ] ) ? (string) $cache[ $key ] : null;
-		}
+		static fn( string $key ): ?string => Dawmac_Allegro_Images::template_image( $key )
 	);
 }
 
@@ -67,3 +64,9 @@ add_action( 'plugins_loaded', static function (): void {
 
 	Dawmac_Allegro_Admin::init();
 } );
+
+// Komendy konsolowe - w stylu dawmac-filters, do odpalania z hostingu.
+if ( defined( 'WP_CLI' ) && WP_CLI ) {
+	require_once DAWMAC_ALLEGRO_DIR . 'cli/class-cli.php';
+	WP_CLI::add_command( 'dawmac-allegro', 'Dawmac_Allegro_CLI' );
+}
