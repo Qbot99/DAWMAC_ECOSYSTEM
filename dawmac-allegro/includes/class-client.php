@@ -14,7 +14,7 @@
  * wprost do pokazania w panelu - message bywa techniczne.
  */
 
-if ( ! defined( 'ABSPATH' ) ) {
+if ( defined( 'ABSPATH' ) && ! defined( 'DAWMAC_ALLEGRO_VERSION' ) ) {
 	exit;
 }
 
@@ -229,9 +229,17 @@ class Dawmac_Allegro_Client {
 	/**
 	 * Czy wartosc ma ksztalt, ktorego wymaga Allegro: Nazwa/Wersja (+URL).
 	 * Sprawdzamy w panelu, zeby literowka nie skonczyla sie blokada klucza.
+	 *
+	 * Wzorzec jest CELOWO luzny w dwoch miejscach, bo generator Allegro
+	 * dopuszcza wiecej, niz podpowiada intuicja:
+	 *  - nazwa aplikacji moze zawierac spacje ("Dawmac Sklep/1.0.0 ..."),
+	 *  - wersja nie musi byc liczba - formularz podaje "1.0.0, 2026.06.24
+	 *    lub v1.0" jako rownorzedne przyklady.
+	 * Waski wzorzec odrzucalby poprawny, wygenerowany naglowek. Rozpoznajemy
+	 * wiec to, co jednoznaczne: czlon z ukosnikiem i koncowka (+adres).
 	 */
 	public static function valid_user_agent( string $value ): bool {
-		return (bool) preg_match( '#^\S+/\d+(\.\d+)*\s+\(\+https?://\S+\)$#', trim( $value ) );
+		return (bool) preg_match( '#^.+/\S+\s+\(\+https?://\S+\)$#', trim( $value ) );
 	}
 
 	/** 1s, 2s, 4s, 8s - z gornym ograniczeniem. */

@@ -13,6 +13,7 @@ declare( strict_types=1 );
 
 require __DIR__ . '/../includes/class-text.php';
 require __DIR__ . '/../includes/class-template.php';
+require __DIR__ . '/../includes/class-client.php';
 
 $pass = 0;
 $fail = 0;
@@ -229,6 +230,32 @@ check( 'bez grafik sekcji jest mniej', true, count( $d2['sections'] ) < count( $
 // Walidator ma lapac obrazek spoza Allegro.
 $obcy = [ 'sections' => [ [ 'items' => [ [ 'type' => 'IMAGE', 'url' => 'https://dawmac.pl/foto.jpg' ] ] ] ] ];
 check( 'obcy obrazek zlapany', 1, count( Dawmac_Allegro_Template::validate( $obcy ) ) );
+
+echo "\nNAGLOWEK USER-AGENT (zly = zablokowany klucz API)\n";
+
+// Generator Allegro dopuszcza spacje w nazwie i wersje typu "v1.0"
+// albo "2026.06.24" - waski wzorzec odrzucalby poprawne naglowki.
+$agents = [
+	'Dawmac Sklep/1.0.0 (+https://dawmac.pl/integracja-allegro)' => true,
+	'DawmacSklep/1.0.0 (+https://dawmac.pl)'                     => true,
+	'DawmacSklep/v1.0 (+https://dawmac.pl)'                      => true,
+	'DawmacSklep/2026.06.24 (+https://dawmac.pl)'                => true,
+	'DawmacSklep/1.0.0 (+http://dawmac.pl)'                      => true,
+	'Mozilla/5.0'                                                => false,
+	'DawmacSklep'                                                => false,
+	'DawmacSklep/1.0.0'                                          => false,
+	'DawmacSklep (+https://dawmac.pl)'                           => false,
+	'WordPress/6.4; https://dawmac.pl'                           => false,
+	''                                                           => false,
+];
+
+foreach ( $agents as $value => $want ) {
+	check(
+		sprintf( 'user-agent %s', '' === $value ? '(pusty)' : $value ),
+		$want,
+		Dawmac_Allegro_Client::valid_user_agent( (string) $value )
+	);
+}
 
 echo "\n";
 printf( "%d przeszlo, %d bledow\n", $pass, $fail );
