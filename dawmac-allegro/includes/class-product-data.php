@@ -43,9 +43,9 @@ class Dawmac_Allegro_Product_Data {
 	 * Pola, w ktorych felga moze miec wiecej niz jedna wartosc.
 	 *
 	 * Rozstaw - felga wiercona pod dwa rozstawy (5x112/5x120).
-	 * Szerokosc i ET - zestaw schodkowy ma inny przod i tyl (8.5J + 10J).
+	 * Szerokosc i ET - zestaw mieszany ma inny przod i tyl (8.5J + 10J).
 	 *
-	 * Zwijanie ich do pierwszej wartosci jest grozne: zestaw schodkowy
+	 * Zwijanie ich do pierwszej wartosci jest grozne: zestaw mieszany
 	 * wygladalby wtedy na jednorodny i podpielibysmy pod oferte 4 felgi
 	 * przednie zamiast 2+2. Kupujacy dostalby co innego, niz zamowil.
 	 */

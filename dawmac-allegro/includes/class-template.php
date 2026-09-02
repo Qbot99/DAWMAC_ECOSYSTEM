@@ -203,7 +203,7 @@ class Dawmac_Allegro_Template {
 			$value = $product[ $field ] ?? null;
 
 			if ( is_array( $value ) ) {
-				// Plus, nie ukosnik: zestaw schodkowy to felga przednia ORAZ
+				// Plus, nie ukosnik: zestaw mieszany to felga przednia ORAZ
 				// tylna, a nie wybor miedzy nimi. Szerokosci lacza sie tak samo,
 				// wiec "8,5" + 10"" czyta sie w parze z "ET 25 + 43".
 				$value = implode( ' + ', array_filter( array_map( 'strval', $value ) ) );
@@ -225,10 +225,10 @@ class Dawmac_Allegro_Template {
 
 	/**
 	 * Wymiar w calach po polsku: '8.5J' -> '8,5"', '19"' -> '19"'.
-	 * Kilka wartosci (zestaw schodkowy) laczymy plusem: '8,5" + 10"'.
+	 * Kilka wartosci (zestaw mieszany) laczymy plusem: '8,5" + 10"'.
 	 */
 	/**
-	 * Zdanie o zestawie schodkowym z rozkladem na osie.
+	 * Zdanie o zestawie mieszanym z rozkladem na osie.
 	 *
 	 * W parametrach Allegro moze stac tylko jedno odsadzenie i jedna
 	 * szerokosc, wiec bez tego zdania kupujacy nie wiedzialby, ze tylna
@@ -264,7 +264,7 @@ class Dawmac_Allegro_Template {
 			);
 		}
 
-		return '<p>To <b>zestaw schodkowy</b> — felgi przednie i tylne różnią się '
+		return '<p>To <b>zestaw mieszany</b> — felgi przednie i tylne różnią się '
 			. 'wymiarem: ' . implode( ', ', $opis ) . '. W parametrach oferty Allegro '
 			. 'pozwala podać tylko jedną szerokość i jedno odsadzenie, więc stoi tam '
 			. 'felga przednia. Komplet zawiera cztery felgi w konfiguracji podanej wyżej.</p>';

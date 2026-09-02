@@ -12,9 +12,9 @@
  *
  * USTALENIA HANDLOWE zaszyte w tej klasie:
  *  - cena w sklepie dotyczy KOMPLETU 4 SZTUK,
- *  - przy zestawach schodkowych (8.5J + 10J) w parametr idzie szerokosc
+ *  - przy zestawach mieszanych (8.5J + 10J) w parametr idzie szerokosc
  *    PRZEDNIA, czyli wezsza; pelna konfiguracja trafia do tytulu i opisu,
- *  - przy schodkowych ET pomijamy zamiast wybierac jedno z dwoch -
+ *  - przy mieszanych ET pomijamy zamiast wybierac jedno z dwoch -
  *    ten parametr nie jest wymagany, wiec polprawda jest gorsza niz brak.
  */
 
@@ -154,7 +154,7 @@ class Dawmac_Allegro_Mapper {
 	 */
 	/**
 	 * @param array $nadpisz Szerokosc i ET dla jednej pozycji zestawu.
-	 *                       Przy zestawie schodkowym kazda pozycja opisuje
+	 *                       Przy zestawie mieszanym kazda pozycja opisuje
 	 *                       inna felge, wiec nie da sie ich wyliczyc z produktu.
 	 */
 	public static function map( array $product, array $dict, array $nadpisz = [] ): array {
@@ -289,12 +289,12 @@ class Dawmac_Allegro_Mapper {
 	 * Sklep: '8.5J'. Allegro: '8.5"'. Litera J to oznaczenie obrzeza felgi,
 	 * nie czesc rozmiaru - stad 0% dopasowania przed normalizacja.
 	 *
-	 * Przy zestawie schodkowym bierzemy WEZSZA, czyli przednia.
+	 * Przy zestawie mieszanym bierzemy WEZSZA, czyli przednia.
 	 */
 	/**
 	 * Rozklada komplet na pozycje: [szerokosc, ET, ile sztuk].
 	 *
-	 * Komplet jednorodny to jedna pozycja x4. Zestaw schodkowy to dwie
+	 * Komplet jednorodny to jedna pozycja x4. Zestaw mieszany to dwie
 	 * pozycje po dwie felgi - wezsza z nizszym ET z przodu, szersza z tylu.
 	 * Bez tego rozbicia oferta opisywalaby tylko przednia felge, a kupujacy
 	 * nie wiedzialby, co dostanie na tylna os.
@@ -339,7 +339,7 @@ class Dawmac_Allegro_Mapper {
 			] ];
 		}
 
-		// Zestaw schodkowy. ET-y laczymy z szerokosciami po kolei; gdy liczby
+		// Zestaw mieszany. ET-y laczymy z szerokosciami po kolei; gdy liczby
 		// sie nie zgadzaja, zostawiamy ET pusty zamiast zgadywac.
 		$pary = count( $ety ) === count( $szer );
 		$out  = [];
@@ -388,14 +388,14 @@ class Dawmac_Allegro_Mapper {
 	}
 
 	/**
-	 * Przy zestawie schodkowym sa dwa ET. Parametr przyjmuje jedno,
+	 * Przy zestawie mieszanym sa dwa ET. Parametr przyjmuje jedno,
 	 * a nie jest wymagany - wiec zamiast wybierac polprawde, pomijamy go.
 	 * Pelna konfiguracja i tak idzie do tytulu oraz listy parametrow w opisie.
 	 */
 	/**
 	 * ET do parametru Allegro - zawsze jedna wartosc.
 	 *
-	 * Przy zestawie schodkowym podajemy odsadzenie PRZEDNIEJ felgi, spojnie
+	 * Przy zestawie mieszanym podajemy odsadzenie PRZEDNIEJ felgi, spojnie
 	 * z szerokoscia, ktora idzie w tym samym parametrze. Zostawianie pola
 	 * pustego wypychalo oferte z filtrow wyszukiwarki - kupujacy szukajacy
 	 * po ET nie widzial jej wcale. Pelny rozklad obu osi stoi w opisie.

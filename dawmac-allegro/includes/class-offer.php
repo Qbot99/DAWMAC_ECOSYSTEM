@@ -66,7 +66,7 @@ class Dawmac_Allegro_Offer {
 		$problemy = array_merge( $problemy, Dawmac_Allegro_Template::validate( $opis ) );
 
 		// 4. Tytul. Sklepowy jest pisany przez czlowieka i zawiera pelna
-		//    konfiguracje schodkowa, wiec ma pierwszenstwo, o ile sie miesci.
+		//    konfiguracje mieszana, wiec ma pierwszenstwo, o ile sie miesci.
 		$tytul = self::tytul( $dane, $template );
 
 		if ( '' === $tytul ) {
@@ -298,7 +298,7 @@ class Dawmac_Allegro_Offer {
 
 	/**
 	 * Tytul oferty. Sklepowy ma pierwszenstwo - zawiera pelna konfiguracje
-	 * schodkowa ("8.5J ET25 + 10J ET43"), ktorej parametry Allegro nie udzwigna.
+	 * mieszana ("8.5J ET25 + 10J ET43"), ktorej parametry Allegro nie udzwigna.
 	 */
 	private static function tytul( array $dane, Dawmac_Allegro_Template $template ): string {
 		$sklepowy = Dawmac_Allegro_Text::plain( (string) ( $dane['title'] ?? '' ) );
@@ -328,14 +328,14 @@ class Dawmac_Allegro_Offer {
 	 * podpinamy sie pod gotowe pozycje. Oferta dziedziczy wtedy dane GPSR
 	 * i parametry produktu, i trafia na strone produktu w serwisie.
 	 * Pozycje katalogowe sa na POJEDYNCZA FELGE, wiec komplet to 1 pozycja
-	 * x 4 szt., a zestaw schodkowy 2 pozycje x 2 szt.
+	 * x 4 szt., a zestaw mieszany 2 pozycje x 2 szt.
 	 *
 	 * WLASNY PRODUKT: gdy dopasowania brak albo jest niepelne. Wtedy musimy
 	 * podac wszystko sami, razem z GPSR - bez producenta odpowiedzialnego
 	 * i informacji o bezpieczenstwie oferta nie przejdzie walidacji.
 	 *
 	 * Niepelne dopasowanie celowo traktujemy jak brak: podpiecie polowy
-	 * zestawu schodkowego pod pozycje katalogowa oznacza, ze kupujacy widzi
+	 * zestawu mieszanego pod pozycje katalogowa oznacza, ze kupujacy widzi
 	 * na stronie produktu co innego, niz dostanie.
 	 */
 	private static function product_set( array $dane, array $m, array $zdjecia, string $tytul, array $o, array $dict ): array {
@@ -354,7 +354,7 @@ class Dawmac_Allegro_Offer {
 
 		// Wlasny produkt: ZAWSZE jedna pozycja na caly komplet.
 		//
-		// Rozbicie zestawu schodkowego na dwie pozycje bylo pierwsza proba,
+		// Rozbicie zestawu mieszanego na dwie pozycje bylo pierwsza proba,
 		// ale Allegro odmawia: "Mozesz zmieniac wartosci parametrow tylko
 		// pierwszego produktu w zestawie. Parametry pozostalych produktow
 		// pobieramy z Katalogu". Druga felga musialaby wiec istniec w katalogu,

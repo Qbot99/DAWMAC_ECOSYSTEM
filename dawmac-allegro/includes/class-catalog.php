@@ -10,7 +10,7 @@
  * ("Felga aluminiowa Concaver CVR1 9.5\" x 20\" 5x112 ET 20"), nie na komplet.
  * Dlatego:
  *   - komplet jednorodny  = 1 pozycja katalogowa x 4 szt.,
- *   - zestaw schodkowy    = 2 pozycje (przod i tyl) x 2 szt. kazda.
+ *   - zestaw mieszany    = 2 pozycje (przod i tyl) x 2 szt. kazda.
  *
  * Dopasowanie jest zachowawcze: model, srednica, szerokosc i rozstaw musza
  * zgadzac sie co do wartosci. Wolimy wystawic wlasny produkt niz podpiac
@@ -60,7 +60,7 @@ class Dawmac_Allegro_Catalog {
 
 		$kandydaci = self::szukaj( $dane );
 
-		// Przy zestawie schodkowym szerokosci i ET-y ida parami: wezsza felga
+		// Przy zestawie mieszanym szerokosci i ET-y ida parami: wezsza felga
 		// ma nizsze odsadzenie. Gdy liczby sie nie zgadzaja, nie zgadujemy -
 		// ET zostaje pusty i dopasowanie oprze sie na reszcie cech.
 		$ety = self::odsadzenia( $dane );
@@ -87,7 +87,7 @@ class Dawmac_Allegro_Catalog {
 
 		if ( 'pelne' === $wynik['status'] ) {
 			// Komplet dzielimy rowno miedzy znalezione pozycje: 4 przy jednej
-			// szerokosci, 2+2 przy schodkowym.
+			// szerokosci, 2+2 przy mieszanym.
 			$na_pozycje = intdiv( self::NA_KOMPLET, $ile );
 
 			foreach ( $wynik['trafienia'] as $hit ) {
