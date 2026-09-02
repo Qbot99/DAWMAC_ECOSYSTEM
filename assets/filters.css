@@ -13,6 +13,20 @@
 	--df-radius: 8px;
 	display: block;
 }
+.dawmac-licznik {
+	padding: 10px 4px 12px;
+	font-size: 13px;
+	color: var(--df-muted);
+	letter-spacing: .04em;
+	text-transform: uppercase;
+}
+.dawmac-licznik strong {
+	color: var(--df-text);
+	font-size: 17px;
+	font-weight: 800;
+	letter-spacing: 0;
+}
+
 .dawmac-native .dawmac-more { width: 100%; margin: 10px 0 8px; }
 .dawmac-native .dawmac-clear { width: 100%; }
 
