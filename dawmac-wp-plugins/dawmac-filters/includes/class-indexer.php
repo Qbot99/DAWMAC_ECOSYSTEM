@@ -94,7 +94,9 @@ class Dawmac_Filters_Indexer {
 		// Felgi (cały katalog).
 		$attrs    = array_keys( Dawmac_Filters_Frontend::ATTRIBUTES );
 		$counters = Dawmac_Filters_Query::get_counters( [], $attrs );
-		update_option( self::cache_key_for( 'shop' ), wp_json_encode( $counters ), 'no' );
+		$json     = wp_json_encode( $counters );
+		update_option( self::cache_key_for( 'shop' ), $json, 'no' );
+		update_option( self::backup_key_for( 'shop' ), $json, 'no' );
 
 		// Opony: listy liczone TYLKO wśród opon - inaczej w filtrze
 		// producenta wylądowałoby 150 marek felg zamiast 10 marek opon.
@@ -103,7 +105,9 @@ class Dawmac_Filters_Indexer {
 			[ 'product_cat' => [ Dawmac_Filters_Native::TYRES_CAT ] ],
 			$tyre_attrs
 		);
-		update_option( self::cache_key_for( Dawmac_Filters_Native::TYRES_CAT ), wp_json_encode( $tyre_counters ), 'no' );
+		$tyre_json = wp_json_encode( $tyre_counters );
+		update_option( self::cache_key_for( Dawmac_Filters_Native::TYRES_CAT ), $tyre_json, 'no' );
+		update_option( self::backup_key_for( Dawmac_Filters_Native::TYRES_CAT ), $tyre_json, 'no' );
 
 		// Właśnie rozgrzaliśmy - skasuj ewentualny zaplanowany warm, żeby
 		// nie liczyć drugi raz (np. po pełnym reindeksie, który woła to wprost).
@@ -309,6 +313,19 @@ class Dawmac_Filters_Indexer {
 	}
 
 	/** Klucz cache list opcji dla kontekstu ('shop' | 'opony'). */
+	/**
+	 * Klucz kopii zapasowej list filtrów.
+	 *
+	 * Kopia jest pisana razem z głównym cache i NIKT jej nie kasuje. Kiedy
+	 * główny wpis zniknie (import trzymający w pamięci starą wersję wtyczki,
+	 * czyszczenie bazy, cokolwiek), sidebar renderuje się z kopii w kilka
+	 * milisekund, zamiast liczyć listy od zera przy pierwszym wejściu -
+	 * co pod obciążeniem potrafiło zająć kilkanaście sekund.
+	 */
+	public static function backup_key_for( string $context ): string {
+		return self::cache_key_for( $context ) . '_zapas';
+	}
+
 	public static function cache_key_for( string $context ): string {
 		return 'shop' === $context || '' === $context
 			? self::CACHE_OPTION
@@ -316,24 +333,26 @@ class Dawmac_Filters_Indexer {
 	}
 
 	/**
-	 * Unieważnia cache list filtrów NATYCHMIAST (poprawność), a przeliczenie
-	 * zleca w tle przez WP-Cron - z debounce, żeby seria zapisów (import CSV,
-	 * masowa edycja) zaplanowała rozgrzanie tylko RAZ, a nie tysiąc razy.
-	 * Gdyby cron nie zdążył, endpoint i tak sam doliczy przy pierwszym odczycie.
+	 * Zleca odświeżenie list filtrów po zapisie produktu.
+	 *
+	 * Stare listy ZOSTAJĄ na miejscu i dalej są serwowane, dopóki nie policzy
+	 * się nowa wersja. Wcześniej kasowaliśmy je od razu i pierwszy gość po
+	 * każdym zapisie płacił pełne przeliczenie (~1,5 s). Przy imporcie CSV,
+	 * gdzie produkt zapisuje się co kilka sekund, trafiało to praktycznie
+	 * w każde wejście na sklep - strona renderowała się kilkanaście sekund.
+	 *
+	 * Kosztem jest to, że nowa wartość atrybutu (np. świeża marka) pojawi się
+	 * na liście z opóźnieniem do minuty, kiedy cron przeliczy listy w tle.
 	 */
 	private static function invalidate_cache(): void {
 		// Przebieg masowy (pełny reindex, też ten porcjami z crona):
-		// nie ruszamy cache, żeby goście nie płacili za przeliczanie.
-		// Rozgrzejemy go raz, na końcu przebiegu.
+		// rozgrzewamy raz, na końcu przebiegu.
 		if ( self::$bulk || false !== get_option( self::STATE_OPTION, false ) ) {
 			return;
 		}
 
-		delete_option( self::CACHE_OPTION );
-		delete_option( self::cache_key_for( 'opony' ) );
-
 		if ( function_exists( 'wp_next_scheduled' ) && ! wp_next_scheduled( self::WARM_HOOK ) ) {
-			// +60 s: okno na skleszczenie wielu zapisów w jedno przeliczenie.
+			// +60 s: okno na sklejenie serii zapisów w jedno przeliczenie.
 			wp_schedule_single_event( time() + 60, self::WARM_HOOK );
 		}
 	}

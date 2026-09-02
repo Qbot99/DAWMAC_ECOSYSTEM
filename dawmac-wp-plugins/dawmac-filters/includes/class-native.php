@@ -393,6 +393,24 @@ class Dawmac_Filters_Native {
 				return $decoded;
 			}
 		}
+		// Główny wpis zniknął. Zanim policzymy listy od zera (kilka sekund pod
+		// obciążeniem, płaci za to pierwszy gość), sięgamy po kopię zapasową
+		// i zlecamy odświeżenie w tle. Listy mogą być chwilę nieaktualne,
+		// ale strona zostaje szybka.
+		$zapas = $wpdb->get_var( $wpdb->prepare(
+			"SELECT option_value FROM {$wpdb->options} WHERE option_name = %s LIMIT 1",
+			Dawmac_Filters_Indexer::backup_key_for( $context )
+		) );
+		if ( $zapas ) {
+			$decoded = json_decode( $zapas, true );
+			if ( is_array( $decoded ) ) {
+				if ( function_exists( 'wp_next_scheduled' ) && ! wp_next_scheduled( 'dawmac_filters_warm_cache' ) ) {
+					wp_schedule_single_event( time() + 30, 'dawmac_filters_warm_cache' );
+				}
+				return $decoded;
+			}
+		}
+
 		if ( class_exists( 'Dawmac_Filters_Indexer' ) ) {
 			Dawmac_Filters_Indexer::warm_counters_cache();
 			$fresh   = $wpdb->get_var( $wpdb->prepare(
