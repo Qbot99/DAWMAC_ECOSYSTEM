@@ -54,7 +54,14 @@
     ],
     "dodatki": {
       "chrom": 1900,
-      "plywajacy_kapsel": 800
+      "plywajacy_kapsel": 800,
+      "aluminium_szczotkowane": 1200,
+      "polerowany_front": 1200,
+      "dwa_kolory": 1600,
+      "duze_aluminiowe_kapsle": 1200,
+      "grawerunek": 800,
+      "extreme_deep_concave": 1200,
+      "electroplating_and_polishing": 2200
     },
     "ceny_poczta_lotnicza": [
       {
