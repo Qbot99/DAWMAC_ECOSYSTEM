@@ -40,6 +40,28 @@ class Dawmac_Allegro_Mapper {
 	const P_KOLOR     = '250589';
 	const P_MODEL     = '237206';
 	const P_KOD       = '224017';
+	const P_WYKONCZ   = '202913';
+
+	/**
+	 * Wykonczenie ze sklepu na slownik Allegro. Klucz to slowo z tytulu,
+	 * wartosc - pozycja slownika 202913, ktora trzeba trafic co do znaku.
+	 *
+	 * Kolejnosc ma znaczenie: bardziej szczegolowe wzorce ida pierwsze,
+	 * zeby "bronze matt" nie zlapalo sie na samo "bronze".
+	 */
+	const WYKONCZENIA = [
+		'bronze matt'   => 'BRONZE MATT',
+		'matt bronze'   => 'BRONZE MATT',
+		'bronze'        => 'BRONZE',
+		'hyper silver'  => 'HS - hyper silver',
+		'gun metal'     => 'GM - gun metal',
+		'matt black'    => 'BM - czarny mat',
+		'black matt'    => 'BM - czarny mat',
+		'gold'          => 'GOLD - złote',
+		'silver'        => 'SI - srebrne',
+		'black'         => 'BL - czarne',
+		'white'         => 'W - białe',
+	];
 
 	/**
 	 * Kolory: sklep trzyma liczbe mnoga rodzaju nijakiego ("Czarne"),
@@ -185,6 +207,12 @@ class Dawmac_Allegro_Mapper {
 			$out[] = [ 'id' => self::P_KOD, 'values' => [ $kod ] ];
 		}
 
+		$wyk = self::wykonczenie( $product, $dict );
+
+		if ( null !== $wyk ) {
+			$out[] = [ 'id' => self::P_WYKONCZ, 'valuesIds' => [ $wyk ] ];
+		}
+
 		if ( ! empty( $product['model'] ) ) {
 			$out[] = [ 'id' => self::P_MODEL, 'values' => [ (string) $product['model'] ] ];
 		}
@@ -205,6 +233,33 @@ class Dawmac_Allegro_Mapper {
 			'produkt'    => $produkt,
 			'problemy'   => $problemy,
 		];
+	}
+
+	/**
+	 * Wykonczenie na ID ze slownika Allegro. Gdy nie ma pewnego trafienia,
+	 * zwracamy null - parametr nie jest wymagany, a zgadniete wykonczenie
+	 * jest gorsze niz jego brak.
+	 */
+	private static function wykonczenie( array $product, array $dict ): ?string {
+		$tekst = mb_strtolower( trim( (string) ( $product['wykonczenie'] ?? '' ) ), 'UTF-8' );
+
+		if ( '' === $tekst ) {
+			return null;
+		}
+
+		foreach ( self::WYKONCZENIA as $szukaj => $wartosc ) {
+			if ( ! str_contains( $tekst, $szukaj ) ) {
+				continue;
+			}
+
+			$id = $dict[ self::P_WYKONCZ ]['wartosci'][ self::norm( $wartosc ) ] ?? null;
+
+			if ( null !== $id ) {
+				return $id;
+			}
+		}
+
+		return null;
 	}
 
 	/** Sklep trzyma '20"' - Allegro tak samo. Zostawiamy, tylko czyscimy. */

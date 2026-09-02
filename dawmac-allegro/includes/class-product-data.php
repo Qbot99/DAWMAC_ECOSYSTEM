@@ -83,6 +83,7 @@ class Dawmac_Allegro_Product_Data {
 		}
 
 		$data['liczba_srub'] = self::bolt_count( $data['rozstaw'] ?? null );
+		$data['wykonczenie'] = self::finish( $data );
 
 		return $data;
 	}
@@ -186,6 +187,51 @@ class Dawmac_Allegro_Product_Data {
 		$n = (int) $m[1];
 
 		return ( $n >= 3 && $n <= 8 ) ? $n : null;
+	}
+
+	/**
+	 * Wykonczenie felgi z tytulu produktu: "Brushed Bronze", "Matt Black".
+	 *
+	 * Atrybut pa_kategoria-koloru trzyma polke w katalogu sklepu ("Brazowe
+	 * i zlote"), a nie nazwe wykonczenia - na ofercie wyglada to jak pomylka.
+	 * Prawdziwa nazwa siedzi w tytule, wiec zdejmujemy z niego czesc
+	 * techniczna, a to, co zostaje, jest wykonczeniem.
+	 */
+	public static function finish( array $data ): string {
+		$tytul = (string) ( $data['title'] ?? '' );
+
+		if ( '' === $tytul ) {
+			return '';
+		}
+
+		$do_wyciecia = array_filter( [
+			$data['producent'] ?? '',
+			$data['model'] ?? '',
+		], static fn( $v ): bool => is_string( $v ) && '' !== trim( $v ) );
+
+		foreach ( $do_wyciecia as $czesc ) {
+			$tytul = preg_replace( '/' . preg_quote( (string) $czesc, '/' ) . '/iu', ' ', $tytul ) ?? $tytul;
+		}
+
+		$wzorce = [
+			'/\bET\s*-?\d{1,3}\b/iu',            // ET35, ET-5
+			'/\b\d{1,2}(?:[.,]\d)?\s*J\b/iu',      // 8.5J
+			'/\b\d{1,2}(?:[.,]\d)?\s*x\s*\d{2}\b/iu', // 8.5x19
+			// Caly ciag rozstawow naraz: "5x112/114.3" musi zniknac w calosci,
+			// inaczej po wycieciu "5x112" zostaje samo "114.3".
+			'/\b\d\s*x\s*\d{2,3}(?:[.,]\d)?(?:\s*\/\s*\d{2,3}(?:[.,]\d)?)*/iu',
+			'/\b\d{2}\s*["\x27]{1,2}/u',           // 19 cali zapisane " albo ''
+			'/\b\d{1,2}[.,]\d\b/u',              // luzna 10.5 po ucieciu J
+			'/\bBLANK\b/iu',
+			'/[\/+]/u',
+		];
+
+		$tytul = preg_replace( $wzorce, ' ', $tytul ) ?? $tytul;
+		$tytul = preg_replace( '/\s+/u', ' ', $tytul ) ?? $tytul;
+		$tytul = trim( $tytul, " \t\n\r-,." );
+
+		// Same cyfry albo jeden znak to nie jest nazwa wykonczenia.
+		return preg_match( '/\p{L}{3,}/u', $tytul ) ? $tytul : '';
 	}
 
 	/**

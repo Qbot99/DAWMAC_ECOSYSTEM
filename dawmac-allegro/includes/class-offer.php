@@ -159,16 +159,28 @@ class Dawmac_Allegro_Offer {
 		// Produkt z przypisana oferta aktualizujemy zamiast tworzyc druga.
 		$istniejaca = self::offer_id( $product->get_id() );
 
-		if ( $istniejaca ) {
-			// Statusu publikacji przy aktualizacji NIE ruszamy. Allegro odrzuca
-			// proba przestawienia zywej oferty na szkic ("Wystawionej i aktywnej
-			// oferty..."), a poza tym decyzja o tym, co jest na sprzedazy,
-			// nalezy do sprzedawcy - nie do aktualizacji opisu.
-			unset( $b['offer']['publication'] );
+		$response = self::wyslij( $b['offer'], $istniejaca );
 
-			$response = Dawmac_Allegro_Client::patch( "/sale/product-offers/{$istniejaca}", $b['offer'] );
-		} else {
-			$response = Dawmac_Allegro_Client::post( '/sale/product-offers', $b['offer'] );
+		// Allegro potrafi samo rozpoznac produkt w katalogu i odmowic, bo nasz
+		// "Kod producenta" rozni sie od katalogowego:
+		//
+		//   "Produkt juz istnieje w Katalogu... wartosc parametru Kod producenta
+		//    w ofercie to `CVR5` i rozni sie od wartosci w produkcie z naszego
+		//    katalogu `CVR52090P5H2872BBZ`. Aby wystawic oferte, zmien wartosc na..."
+		//
+		// To lepsze dopasowanie niz nasze po nazwie - serwis porownuje pelne
+		// parametry, nie tekst. Bierzemy podpowiedz i ponawiamy raz.
+		if ( is_wp_error( $response ) ) {
+			$kod = self::kod_z_bledu( $response );
+
+			// PODPOWIEDZI NIE PRZYJMUJEMY NA SLOWO. Allegro dopasowuje po
+			// rozmiarze i ET, a wykonczenia nie sprawdza - podsunelo nam
+			// wariant "Double Tinted Black" dla felgi "Brushed Bronze".
+			// Rozmiar sie zgadzal, kupujacy dostalby inny kolor.
+			if ( null !== $kod && self::kod_pasuje( $kod, $b['dane'] ) ) {
+				self::podmien_kod( $b['offer'], $kod );
+				$response = self::wyslij( $b['offer'], $istniejaca );
+			}
 		}
 
 		if ( is_wp_error( $response ) ) {
@@ -185,6 +197,138 @@ class Dawmac_Allegro_Offer {
 		update_post_meta( $product->get_id(), self::META_HASH, self::hash( $b['offer'] ) );
 
 		return $id;
+	}
+
+	/**
+	 * Wysyla oferte: PATCH gdy juz istnieje, POST gdy nowa.
+	 *
+	 * Statusu publikacji przy aktualizacji NIE ruszamy - Allegro odrzuca proba
+	 * przestawienia zywej oferty na szkic, a poza tym decyzja o tym, co jest
+	 * na sprzedazy, nalezy do sprzedawcy, nie do aktualizacji opisu.
+	 */
+	private static function wyslij( array $offer, ?string $istniejaca ) {
+		if ( $istniejaca ) {
+			unset( $offer['publication'] );
+
+			return Dawmac_Allegro_Client::patch( "/sale/product-offers/{$istniejaca}", $offer );
+		}
+
+		return Dawmac_Allegro_Client::post( '/sale/product-offers', $offer );
+	}
+
+	/**
+	 * Czy produkt katalogowy o tym kodzie ma to samo wykonczenie co nasz.
+	 *
+	 * Kody producenta felg koncza sie skrotem wykonczenia (BBZ - brushed
+	 * bronze, DTB - double tinted black, MB - matt black). Zamiast zgadywac
+	 * ze skrotu, pytamy katalog o produkt i porownujemy parametr Wykonczenie.
+	 * Gdy nie da sie tego potwierdzic - odmawiamy. Wlasny produkt w katalogu
+	 * jest gorszy dla widocznosci, ale nie klamie o towarze.
+	 */
+	private static function kod_pasuje( string $kod, array $dane ): bool {
+		$nasze = mb_strtolower( trim( (string) ( $dane['wykonczenie'] ?? '' ) ), 'UTF-8' );
+
+		if ( '' === $nasze ) {
+			return false;
+		}
+
+		$r = Dawmac_Allegro_Client::get( '/sale/products', [
+			'phrase'      => $kod,
+			'category.id' => Dawmac_Allegro_Mapper::CATEGORY_WHEELS,
+			'limit'       => 5,
+		] );
+
+		if ( is_wp_error( $r ) ) {
+			return false;
+		}
+
+		foreach ( $r['products'] ?? [] as $p ) {
+			foreach ( $p['parameters'] ?? [] as $par ) {
+				if ( Dawmac_Allegro_Mapper::P_KOD !== (string) ( $par['id'] ?? '' ) ) {
+					continue;
+				}
+
+				if ( trim( (string) ( $par['values'][0] ?? '' ) ) !== $kod ) {
+					continue 2;   // to nie ten produkt
+				}
+			}
+
+			// Znalezlismy produkt o tym kodzie - porownujemy wykonczenie.
+			foreach ( $p['parameters'] ?? [] as $par ) {
+				if ( Dawmac_Allegro_Mapper::P_WYKONCZ !== (string) ( $par['id'] ?? '' ) ) {
+					continue;
+				}
+
+				$ich = mb_strtolower( (string) ( $par['values'][0] ?? '' ), 'UTF-8' );
+
+				return self::to_samo_wykonczenie( $nasze, $ich );
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Czy dwa opisy wykonczenia mowia o tym samym. Nasze jest po angielsku
+	 * ("Brushed Bronze"), katalogowe po polsku z kodem ("BLDTF - czarny +
+	 * podwojnie przyciemniany front"), wiec porownujemy przez slowa kluczowe.
+	 */
+	private static function to_samo_wykonczenie( string $nasze, string $ich ): bool {
+		$grupy = [
+			'bronze'   => [ 'bronze', 'brąz', 'braz' ],
+			'black'    => [ 'black', 'czarn' ],
+			'silver'   => [ 'silver', 'srebr' ],
+			'gold'     => [ 'gold', 'złot', 'zlot' ],
+			'graphite' => [ 'graphite', 'grafit', 'gun metal' ],
+			'white'    => [ 'white', 'biał', 'bial' ],
+			'titanium' => [ 'titanium', 'tytan' ],
+			'red'      => [ 'red', 'czerwon' ],
+		];
+
+		$grupa = static function ( string $t ) use ( $grupy ): ?string {
+			foreach ( $grupy as $nazwa => $slowa ) {
+				foreach ( $slowa as $s ) {
+					if ( str_contains( $t, $s ) ) {
+						return $nazwa;
+					}
+				}
+			}
+
+			return null;
+		};
+
+		$a = $grupa( $nasze );
+		$b = $grupa( $ich );
+
+		return null !== $a && $a === $b;
+	}
+
+	/** Kod producenta podpowiedziany przez Allegro w tresci bledu. */
+	private static function kod_z_bledu( WP_Error $e ): ?string {
+		if ( ! preg_match( '/zmie[nń] warto[śs][cć] na\s*`([^`]+)`/iu', $e->get_error_message(), $m ) ) {
+			return null;
+		}
+
+		$kod = trim( $m[1] );
+
+		return '' !== $kod ? $kod : null;
+	}
+
+	/** Podmienia "Kod producenta" w parametrach produktu. */
+	private static function podmien_kod( array &$offer, string $kod ): void {
+		foreach ( $offer['productSet'] as &$poz ) {
+			if ( ! isset( $poz['product']['parameters'] ) ) {
+				continue;
+			}
+
+			foreach ( $poz['product']['parameters'] as &$par ) {
+				if ( Dawmac_Allegro_Mapper::P_KOD === ( $par['id'] ?? '' ) ) {
+					$par['values'] = [ $kod ];
+				}
+			}
+			unset( $par );
+		}
+		unset( $poz );
 	}
 
 	/** ID oferty przypisanej do produktu albo null. */

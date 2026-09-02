@@ -60,8 +60,17 @@ class Dawmac_Allegro_Catalog {
 
 		$kandydaci = self::szukaj( $dane );
 
+		// Przy zestawie schodkowym szerokosci i ET-y ida parami: wezsza felga
+		// ma nizsze odsadzenie. Gdy liczby sie nie zgadzaja, nie zgadujemy -
+		// ET zostaje pusty i dopasowanie oprze sie na reszcie cech.
+		$ety = self::odsadzenia( $dane );
+		$pary = ( count( $ety ) === count( $szerokosci ) ) ? array_combine(
+			array_map( 'strval', $szerokosci ),
+			$ety
+		) : [];
+
 		foreach ( $szerokosci as $w ) {
-			$hit = self::wybierz( $kandydaci, $dane, $w );
+			$hit = self::wybierz( $kandydaci, $dane, $w, $pary[ (string) $w ] ?? null );
 
 			if ( $hit ) {
 				$wynik['trafienia'][ (string) $w ] = $hit;
@@ -119,17 +128,30 @@ class Dawmac_Allegro_Catalog {
 
 		foreach ( $r['products'] ?? [] as $p ) {
 			$out[] = [
-				'id'    => (string) ( $p['id'] ?? '' ),
-				'nazwa' => (string) ( $p['name'] ?? '' ),
-				'k'     => self::klucz( (string) ( $p['name'] ?? '' ) ),
+				'id'          => (string) ( $p['id'] ?? '' ),
+				'nazwa'       => (string) ( $p['name'] ?? '' ),
+				'k'           => self::klucz( (string) ( $p['name'] ?? '' ) ),
+				'wykonczenie' => self::wykonczenie_produktu( $p ),
 			];
 		}
 
 		return $out;
 	}
 
-	/** Pierwszy kandydat zgodny co do modelu, srednicy, szerokosci i rozstawu. */
-	private static function wybierz( array $kandydaci, array $dane, float $szerokosc ): ?array {
+	/**
+	 * Pierwszy kandydat zgodny co do modelu, srednicy, szerokosci, rozstawu
+	 * ORAZ odsadzenia.
+	 *
+	 * ET jest cecha ROZROZNIAJACA felge, nie doprecyzowaniem. Pominiecie go
+	 * w dopasowaniu podpielo oferte CVR7 8.5x19 ET35 pod pozycje katalogowa
+	 * "CVR7 8.5\" x 19\" 5x112 ET 45" - tytul i opis szly z danych sklepu,
+	 * a parametry i kolor z cudzej felgi. Kupujacy widzial na stronie produktu
+	 * co innego, niz zamawial.
+	 *
+	 * Gdy nazwa katalogowa nie podaje ET, przepuszczamy - pozycja jest wtedy
+	 * ogolna. Gdy podaje i rozni sie od naszego, odrzucamy.
+	 */
+	private static function wybierz( array $kandydaci, array $dane, float $szerokosc, ?int $et = null ): ?array {
 		$model    = self::norm_model( (string) ( $dane['model'] ?? '' ) );
 		$srednica = self::srednica( $dane );
 		$rozstaw  = self::norm_rozstaw( self::rozstaw( $dane ) );
@@ -152,7 +174,100 @@ class Dawmac_Allegro_Catalog {
 				continue;
 			}
 
+			if ( null !== $et && null !== $c['k']['et'] && $c['k']['et'] !== $et ) {
+				continue;
+			}
+
+			// WYKONCZENIE. Nazwy katalogowe go nie podaja - "Felga aluminiowa
+			// Concaver CVR7 8.5\" x 19\" 5x112 ET 35" jest wariantem Double
+			// Tinted Black, choc po nazwie tego nie widac. Dopasowanie po samej
+			// nazwie podpielo brazowa felge pod czarna. Porownujemy wiec
+			// parametry, a bez pewnosci - odmawiamy.
+			if ( ! self::zgodne_wykonczenie( $c, $dane ) ) {
+				continue;
+			}
+
 			return [ 'id' => $c['id'], 'nazwa' => $c['nazwa'] ];
+		}
+
+		return null;
+	}
+
+	/**
+	 * Wykonczenie produktu katalogowego. Gdy odpowiedz wyszukiwarki go nie
+	 * niesie, dopytujemy o szczegoly - to jedno zapytanie wiecej, ale bez
+	 * niego nie da sie odroznic wariantow kolorystycznych.
+	 */
+	private static function wykonczenie_produktu( array $p ): ?string {
+		$szukaj = static function ( array $parametry ): ?string {
+			foreach ( $parametry as $par ) {
+				if ( Dawmac_Allegro_Mapper::P_WYKONCZ === (string) ( $par['id'] ?? '' ) ) {
+					$v = trim( (string) ( $par['values'][0] ?? '' ) );
+
+					return '' !== $v ? $v : null;
+				}
+			}
+
+			return null;
+		};
+
+		$z_listy = $szukaj( $p['parameters'] ?? [] );
+
+		if ( null !== $z_listy ) {
+			return $z_listy;
+		}
+
+		$id = (string) ( $p['id'] ?? '' );
+
+		if ( '' === $id ) {
+			return null;
+		}
+
+		$d = Dawmac_Allegro_Client::get( "/sale/products/{$id}" );
+
+		return is_wp_error( $d ) ? null : $szukaj( $d['parameters'] ?? [] );
+	}
+
+	/**
+	 * Czy kandydat ma to samo wykonczenie co nasz produkt.
+	 *
+	 * Nasze jest po angielsku ("Brushed Bronze"), katalogowe po polsku
+	 * z kodem ("BLDTF - czarny + podwojnie przyciemniany front"), wiec
+	 * porownujemy przez grupy barw. Brak pewnosci = brak dopasowania:
+	 * wlasny produkt jest gorszy dla widocznosci, ale nie klamie o towarze.
+	 */
+	private static function zgodne_wykonczenie( array $kandydat, array $dane ): bool {
+		$nasze = mb_strtolower( trim( (string) ( $dane['wykonczenie'] ?? '' ) ), 'UTF-8' );
+		$ich   = mb_strtolower( trim( (string) ( $kandydat['wykonczenie'] ?? '' ) ), 'UTF-8' );
+
+		if ( '' === $nasze || '' === $ich ) {
+			return false;
+		}
+
+		return self::grupa_barwy( $nasze ) !== null
+			&& self::grupa_barwy( $nasze ) === self::grupa_barwy( $ich );
+	}
+
+	/** Sprowadza opis wykonczenia do grupy barwy. */
+	private static function grupa_barwy( string $t ): ?string {
+		$grupy = [
+			'bronze'   => [ 'bronze', 'brąz', 'braz', 'miedzian' ],
+			'titanium' => [ 'titanium', 'tytan' ],
+			'graphite' => [ 'graphite', 'grafit', 'gun metal' ],
+			'silver'   => [ 'silver', 'srebr' ],
+			'gold'     => [ 'gold', 'złot', 'zlot' ],
+			'white'    => [ 'white', 'biał', 'bial' ],
+			'red'      => [ 'red', 'czerwon', 'candy' ],
+			'blue'     => [ 'blue', 'niebiesk', 'granat' ],
+			'black'    => [ 'black', 'czarn' ],
+		];
+
+		foreach ( $grupy as $nazwa => $slowa ) {
+			foreach ( $slowa as $s ) {
+				if ( str_contains( $t, $s ) ) {
+					return $nazwa;
+				}
+			}
 		}
 
 		return null;
@@ -170,11 +285,14 @@ class Dawmac_Allegro_Catalog {
 
 		preg_match( '/\b(\d)x(\d{2,3}(?:\.\d)?)\b/u', $n, $r );
 
+		preg_match( '/\bet\s*(\d{1,3})\b/u', $n, $e );
+
 		return [
 			'model'     => $model,
 			'szerokosc' => isset( $m[1] ) ? (float) $m[1] : null,
 			'srednica'  => $m[2] ?? '',
 			'rozstaw'   => isset( $r[1] ) ? self::norm_rozstaw( $r[1] . 'x' . $r[2] ) : '',
+			'et'        => isset( $e[1] ) ? (int) $e[1] : null,
 		];
 	}
 
@@ -195,6 +313,25 @@ class Dawmac_Allegro_Catalog {
 		sort( $out );
 
 		return array_values( array_unique( $out ) );
+	}
+
+	/** @return int[] posortowane rosnaco, rownolegle do szerokosci */
+	private static function odsadzenia( array $dane ): array {
+		$v = $dane['et'] ?? [];
+		$v = is_array( $v ) ? $v : [ $v ];
+		$out = [];
+
+		foreach ( $v as $x ) {
+			$n = preg_replace( '/[^0-9-]/', '', (string) $x );
+
+			if ( '' !== $n ) {
+				$out[] = (int) $n;
+			}
+		}
+
+		sort( $out );
+
+		return $out;
 	}
 
 	private static function srednica( array $dane ): string {

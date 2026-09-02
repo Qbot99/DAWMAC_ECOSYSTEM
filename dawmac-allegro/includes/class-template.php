@@ -31,7 +31,9 @@ class Dawmac_Allegro_Template {
 		'rozstaw'     => 'Rozstaw śrub',
 		'liczba_srub' => 'Liczba śrub',
 		'et'          => 'Odsadzenie ET',
-		'kolor'       => 'Kolor',
+		// Wykonczenie, nie kolor: sklep trzyma w pa_kategoria-koloru polke
+		// katalogu ("Brazowe i zlote"), a kupujacego interesuje "Brushed Bronze".
+		'wykonczenie' => 'Wykończenie',
 	];
 
 	const SPEC_LABELS_TYRES = [
