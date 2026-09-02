@@ -91,9 +91,13 @@ class Dawmac_Filters_Indexer {
 			return;
 		}
 
-		// Felgi (cały katalog).
+		// Felgi: cały katalog BEZ opon - dokładnie taki zbiór pokazuje sklep,
+		// więc liczba przy filtrze zgadza się z tym, co wyjdzie po kliknięciu.
 		$attrs    = array_keys( Dawmac_Filters_Frontend::ATTRIBUTES );
-		$counters = Dawmac_Filters_Query::get_counters( [], $attrs );
+		$counters = Dawmac_Filters_Query::get_counters(
+			[ '__exclude' => [ 'product_cat' => [ Dawmac_Filters_Native::TYRES_CAT ] ] ],
+			$attrs
+		);
 		$json     = wp_json_encode( $counters );
 		update_option( self::cache_key_for( 'shop' ), $json, 'no' );
 		update_option( self::backup_key_for( 'shop' ), $json, 'no' );

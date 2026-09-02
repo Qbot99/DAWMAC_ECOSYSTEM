@@ -119,8 +119,23 @@ class Dawmac_Filters_Query {
 		global $wpdb;
 		$table = Dawmac_Filters_Schema::table_name();
 
+		// Wykluczenia (np. opony na stronie sklepu) wyjmujemy z filtrów, żeby
+		// same nie wpychały nas w wolniejszą gałąź z JOIN-em. Liczby przy
+		// filtrach muszą dotyczyć DOKŁADNIE tego samego zbioru co wyniki -
+		// inaczej lista obiecuje 8000, a po kliknięciu wychodzi 7999.
+		$exclude = [];
+		if ( isset( $filters['__exclude'] ) && is_array( $filters['__exclude'] ) ) {
+			$exclude = $filters['__exclude'];
+		}
+		$exclude['product_visibility'] = array_values( array_unique( array_merge(
+			$exclude['product_visibility'] ?? [],
+			[ 'exclude-from-catalog' ]
+		) ) );
+		$filters_bez_wykluczen = $filters;
+		unset( $filters_bez_wykluczen['__exclude'] );
+
 		$constrained = array_keys( array_filter(
-			$filters,
+			$filters_bez_wykluczen,
 			fn( $k ) => 'price' !== $k && 'stock' !== $k,
 			ARRAY_FILTER_USE_KEY
 		) );
@@ -141,12 +156,16 @@ class Dawmac_Filters_Query {
 		$not_in = $constrained ? ' AND c.attribute NOT IN (' . self::quoted_list( $constrained ) . ')' : '';
 
 		// Bez żadnych filtrów zbiór "pasujących" to wszystko - JOIN z podzapytaniem
-		// tylko by spowalniał. Liczymy prosto po całej tabeli.
-		if ( empty( $filters ) ) {
+		// tylko by spowalniał. Liczymy prosto po całej tabeli, odejmując
+		// produkty ukryte w katalogu - inaczej liczba przy filtrze jest
+		// większa niż to, co faktycznie wyjdzie po jego kliknięciu.
+		// (Przy filtrach robi to już ids_sql, więc dotyczy tylko tej gałęzi.)
+		if ( empty( $filters_bez_wykluczen ) ) {
+			$bez = self::exclude_sql( $exclude, 'c' );
 			$rows = $wpdb->get_results( // phpcs:ignore WordPress.DB.PreparedSQL
 				"SELECT c.attribute, c.value_slug, c.value_label, COUNT(*) AS cnt
 				 FROM {$table} c
-				 WHERE {$attr_where}
+				 WHERE {$attr_where}{$bez}
 				 GROUP BY c.attribute, c.value_slug"
 			);
 		} else {
@@ -296,7 +315,7 @@ class Dawmac_Filters_Query {
 	 * Warunki wykluczające: NOT EXISTS dla każdej pary attr => slugi.
 	 * (np. __exclude ['product_cat' => ['opony']] = snippet "ukryj opony").
 	 */
-	private static function exclude_sql( array $exclude ): string {
+	private static function exclude_sql( array $exclude, string $alias = 'f0' ): string {
 		global $wpdb;
 		$table = Dawmac_Filters_Schema::table_name();
 
@@ -306,7 +325,7 @@ class Dawmac_Filters_Query {
 			if ( ! $slugs || ! preg_match( '/^[a-z0-9_-]{1,64}$/', (string) $attr ) ) {
 				continue;
 			}
-			$sql .= ' AND NOT EXISTS (SELECT 1 FROM ' . $table . ' ex WHERE ex.product_id = f0.product_id AND '
+			$sql .= ' AND NOT EXISTS (SELECT 1 FROM ' . $table . ' ex WHERE ex.product_id = ' . $alias . '.product_id AND '
 				. $wpdb->prepare( 'ex.attribute = %s', $attr )
 				. ' AND ex.value_slug IN (' . self::quoted_list( $slugs ) . '))';
 		}
