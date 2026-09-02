@@ -1,27 +1,31 @@
-import { useEffect, useState } from "react";
-import { GALLERY_SITE, PROJECTS_ENDPOINT, galleryImg } from "../config";
+import { useEffect, useRef, useState } from "react";
+import { PROJECTS_ENDPOINT, galleryImg } from "../config";
 import type { GalleryProject } from "../data/types";
 import { useLang } from "../i18n";
+import BuildLightbox from "./BuildLightbox";
+
+const PAGE = 10;
 
 export default function Builds() {
   const { t } = useLang();
   const [projects, setProjects] = useState<GalleryProject[]>([]);
+  const [shown, setShown] = useState(PAGE);
+  const [selected, setSelected] = useState<GalleryProject | null>(null);
+  const trackRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let cancelled = false;
-    // pokazujemy tylko projekty, których felga ma "forged" w marce lub modelu
+    // warunek: słowo "forged" (bez względu na wielkość liter) w marce lub modelu felgi
     fetch(PROJECTS_ENDPOINT)
       .then((r) => r.json())
       .then((data: GalleryProject[]) => {
         if (!cancelled && Array.isArray(data)) {
           setProjects(
-            data
-              .filter(
-                (p) =>
-                  p.image &&
-                  `${p.brand} ${p.model}`.toLowerCase().includes("forged")
-              )
-              .slice(0, 12)
+            data.filter(
+              (p) =>
+                p.image &&
+                `${p.brand} ${p.model}`.toLowerCase().includes("forged")
+            )
           );
         }
       })
@@ -30,6 +34,15 @@ export default function Builds() {
       cancelled = true;
     };
   }, []);
+
+  // doładowanie kolejnych kart, gdy przewijanie w poziomie dojedzie blisko końca
+  const onScroll = () => {
+    const el = trackRef.current;
+    if (!el) return;
+    if (el.scrollLeft + el.clientWidth >= el.scrollWidth - 320) {
+      setShown((s) => (s < projects.length ? s + PAGE : s));
+    }
+  };
 
   if (projects.length === 0) return null;
 
@@ -42,14 +55,12 @@ export default function Builds() {
         </div>
         <h2 className="section-title">{t.realTitle}</h2>
       </div>
-      <div className="builds__track">
-        {projects.map((p) => (
-          <a
+      <div className="builds__track" ref={trackRef} onScroll={onScroll}>
+        {projects.slice(0, shown).map((p) => (
+          <button
             key={p.project_id}
             className="builds__item"
-            href={`${GALLERY_SITE}/?Search=${encodeURIComponent(`${p.brand} ${p.model}`)}`}
-            target="_blank"
-            rel="noopener noreferrer"
+            onClick={() => setSelected(p)}
           >
             <img
               className="builds__img"
@@ -60,9 +71,13 @@ export default function Builds() {
             <span className="builds__caption">
               {p.brand} {p.model}
             </span>
-          </a>
+          </button>
         ))}
       </div>
+
+      {selected && (
+        <BuildLightbox project={selected} onClose={() => setSelected(null)} />
+      )}
     </section>
   );
 }
