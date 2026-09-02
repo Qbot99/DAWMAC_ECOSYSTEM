@@ -33,9 +33,16 @@ return [
 	 * jest mobilna, a sekcja dwukolumnowa schodzi tam do jednej kolumny.
 	 */
 	'images' => [
-		'banner_top'    => 'assets/banners/dawmac-banner-top.jpg',
-		'banner_trust'  => 'assets/banners/dawmac-trust.jpg',
-		'banner_bottom' => 'assets/banners/dawmac-banner-bottom.jpg',
+		// PUSTE SWIADOMIE. Ciemny, komponowany baner na bialej stronie Allegro
+		// czyta sie jako reklama doklejona do tresci, a nie jej czesc.
+		// Opis niosa teraz zdjecia realnego produktu i typografia.
+		//
+		// Pliki leza w assets/banners/. Zeby wrocic do banerow, wystarczy
+		// odkomentowac ponizsze i dopisac klucze do 'layout':
+		//
+		// 'banner_top'    => 'assets/banners/dawmac-banner-top.jpg',
+		// 'banner_bottom' => 'assets/banners/dawmac-banner-bottom.jpg',
+		// 'banner_trust'  => 'assets/banners/dawmac-trust.jpg',
 	],
 
 	/**
@@ -44,12 +51,11 @@ return [
 	 * reszta to stale bloki firmowe ponizej.
 	 */
 	'layout' => [
-		'banner_top',
-		'headline',
+		'headline',      // nazwa produktu
 		'spec',          // parametry + zdjecie produktu, dwie kolumny
 		'fitment',       // co dostajesz w zestawie / dopasowanie
-		'about',         // o marce + grafika, dwie kolumny
-		'banner_bottom',
+		'about',         // o marce + zdjecie produktu, dwie kolumny
+		'zdjecia',       // dwa kolejne zdjecia produktu obok siebie
 	],
 
 	'blocks' => [
@@ -77,7 +83,9 @@ return [
 					<li>Obsługa po polsku, bez pośredników.</li>
 				</ul>
 			',
-			'image' => 'banner_trust',
+			// Zamiast grafiki firmowej idzie tu kolejne zdjecie produktu -
+			// realna felga sprzedaje lepiej niz baner udajacy, ze sprzedaje.
+			'image' => 'produkt',
 		],
 
 		/**

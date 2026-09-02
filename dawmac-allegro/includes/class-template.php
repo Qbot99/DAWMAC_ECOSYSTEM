@@ -108,7 +108,8 @@ class Dawmac_Allegro_Template {
 			'headline'                    => $this->headline_section( $product ),
 			'spec'                        => $this->spec_section( $product ),
 			'fitment'                     => $this->text_block_section( 'fitment' ),
-			'about'                       => $this->about_section(),
+			'about'                       => $this->about_section( $product ),
+			'zdjecia'                     => $this->photos_section( $product ),
 			'shipping', 'warranty'        => $this->text_block_section( $key ),
 			default                       => null,
 		};
@@ -266,8 +267,11 @@ class Dawmac_Allegro_Template {
 		return $content ? [ 'items' => [ [ 'type' => 'TEXT', 'content' => $content ] ] ] : null;
 	}
 
-	/** "Dlaczego DAWMAC" + grafika zaufania obok. */
-	private function about_section(): ?array {
+	/**
+	 * "Dlaczego DAWMAC" + obrazek obok. Klucz 'produkt' oznacza kolejne
+	 * zdjecie produktu zamiast grafiki firmowej.
+	 */
+	private function about_section( array $product ): ?array {
 		$content = $this->block_html( 'about' );
 
 		if ( ! $content ) {
@@ -276,13 +280,44 @@ class Dawmac_Allegro_Template {
 
 		$items = [ [ 'type' => 'TEXT', 'content' => $content ] ];
 		$key   = $this->config['blocks']['about']['image'] ?? null;
-		$url   = $key ? ( $this->resolve_image )( $key ) : null;
+
+		$url = ( 'produkt' === $key )
+			? $this->photo( $product, 1 )
+			: ( $key ? ( $this->resolve_image )( $key ) : null );
 
 		if ( $url ) {
 			$items[] = [ 'type' => 'IMAGE', 'url' => $url ];
 		}
 
 		return [ 'items' => $items ];
+	}
+
+	/**
+	 * Dwa kolejne zdjecia produktu obok siebie. Sekcja powstaje tylko wtedy,
+	 * gdy sa oba - pojedyncze zdjecie na pol szerokosci wyglada jak pomylka.
+	 */
+	private function photos_section( array $product ): ?array {
+		$a = $this->photo( $product, 2 );
+		$b = $this->photo( $product, 3 );
+
+		if ( ! $a || ! $b ) {
+			return null;
+		}
+
+		return [ 'items' => [
+			[ 'type' => 'IMAGE', 'url' => $a ],
+			[ 'type' => 'IMAGE', 'url' => $b ],
+		] ];
+	}
+
+	/**
+	 * N-te zdjecie produktu po stronie Allegro. Zdjecie 0 siedzi w sekcji
+	 * parametrow, wiec kolejne sekcje siegaja po dalsze i sie nie powtarzaja.
+	 */
+	private function photo( array $product, int $n ): ?string {
+		$lista = $product['zdjecia'] ?? [];
+
+		return is_array( $lista ) && isset( $lista[ $n ] ) ? (string) $lista[ $n ] : null;
 	}
 
 	/** Naglowek h2 + tresc bloku, po sanitacji. */

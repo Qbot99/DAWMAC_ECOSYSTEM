@@ -220,12 +220,20 @@ foreach ( $desc['sections'] as $i => $section ) {
 	check( "sekcja {$i} ma 1-2 itemy", true, count( $section['items'] ) >= 1 && count( $section['items'] ) <= 2 );
 }
 
-// Brak grafik = sekcje banerow po prostu nie powstaja, zamiast psuc oferte.
-$bez_grafik = new Dawmac_Allegro_Template( $config, static fn( string $k ): ?string => null );
-$d2         = $bez_grafik->build( $felga );
+// Brak grafiki = sekcja banera po prostu nie powstaje, zamiast psuc oferte.
+//
+// Domyslna konfiguracja nie ma juz banerow, wiec test buduje wlasna -
+// inaczej sprawdzalby, ze zero sekcji to mniej niz zero.
+$z_banerem = $config;
+$z_banerem['images'] = [ 'banner_top' => 'assets/banners/dawmac-banner-top.jpg' ];
+$z_banerem['layout'] = array_merge( [ 'banner_top' ], $config['layout'] );
 
-check( 'bez grafik opis dalej jest poprawny', [], Dawmac_Allegro_Template::validate( $d2 ) );
-check( 'bez grafik sekcji jest mniej', true, count( $d2['sections'] ) < count( $desc['sections'] ) );
+$jest = ( new Dawmac_Allegro_Template( $z_banerem, static fn( string $k ): string => 'https://a.allegroimg.com/original/TEST/' . $k ) )->build( $felga );
+$brak = ( new Dawmac_Allegro_Template( $z_banerem, static fn( string $k ): ?string => null ) )->build( $felga );
+
+check( 'z banerem opis jest poprawny',     [], Dawmac_Allegro_Template::validate( $jest ) );
+check( 'bez grafiki opis dalej poprawny',  [], Dawmac_Allegro_Template::validate( $brak ) );
+check( 'bez grafiki sekcji jest mniej', true, count( $brak['sections'] ) < count( $jest['sections'] ) );
 
 // Dwa bloki TEXT obok siebie - Allegro odrzuca to bledem 422.
 $dwa_teksty = [ 'sections' => [ [ 'items' => [

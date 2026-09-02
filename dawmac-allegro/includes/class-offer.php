@@ -57,7 +57,8 @@ class Dawmac_Allegro_Offer {
 			$problemy[] = 'nie udało się wgrać żadnego zdjęcia produktu';
 		}
 
-		$dane['image'] = $zdjecia[0] ?? null;
+		$dane['image']   = $zdjecia[0] ?? null;
+		$dane['zdjecia'] = $zdjecia;   // szablon siega po kolejne w dalszych sekcjach
 
 		// 3. Opis z szablonu firmowego.
 		$template = dawmac_allegro_template();
@@ -158,9 +159,17 @@ class Dawmac_Allegro_Offer {
 		// Produkt z przypisana oferta aktualizujemy zamiast tworzyc druga.
 		$istniejaca = self::offer_id( $product->get_id() );
 
-		$response = $istniejaca
-			? Dawmac_Allegro_Client::patch( "/sale/product-offers/{$istniejaca}", $b['offer'] )
-			: Dawmac_Allegro_Client::post( '/sale/product-offers', $b['offer'] );
+		if ( $istniejaca ) {
+			// Statusu publikacji przy aktualizacji NIE ruszamy. Allegro odrzuca
+			// proba przestawienia zywej oferty na szkic ("Wystawionej i aktywnej
+			// oferty..."), a poza tym decyzja o tym, co jest na sprzedazy,
+			// nalezy do sprzedawcy - nie do aktualizacji opisu.
+			unset( $b['offer']['publication'] );
+
+			$response = Dawmac_Allegro_Client::patch( "/sale/product-offers/{$istniejaca}", $b['offer'] );
+		} else {
+			$response = Dawmac_Allegro_Client::post( '/sale/product-offers', $b['offer'] );
+		}
 
 		if ( is_wp_error( $response ) ) {
 			return $response;
@@ -252,12 +261,27 @@ class Dawmac_Allegro_Offer {
 		] + self::gpsr( $dane, $o ) ];
 	}
 
+	/** Twardy limit Allegro na oferte. */
+	const LIMIT_ZDJEC = 16;
+
+	/**
+	 * Ile zdjec produktu uzywa sam opis: jedno przy parametrach, jedno przy
+	 * "Dlaczego DAWMAC" i dwa w sekcji zdjec.
+	 */
+	const ZDJEC_W_OPISIE = 4;
+
 	/**
 	 * Ile zdjec produktu zmiesci sie w galerii.
 	 *
-	 * Allegro liczy razem galerie i grafiki opisu, a limit to 16. Odejmujemy
-	 * banery szablonu, ktore realnie zostaly wgrane - te niewgrane i tak
-	 * nie trafia do opisu, wiec nie zajmuja miejsca.
+	 * Limit 16 obejmuje galerie ORAZ obrazki opisu - i liczy je OSOBNO,
+	 * nawet gdy w opisie stoi dokladnie to samo zdjecie co w galerii.
+	 * Wyszlo to dopiero po usunieciu banerow: galeria urosla do 16, opis
+	 * dolozyl swoje cztery i Allegro odrzucilo cala oferte komunikatem
+	 * "Podany adres obrazka jest nieprawidlowy" - mylacym, bo problemem
+	 * byla liczba, nie adres.
+	 *
+	 * Odejmujemy wiec jedno i drugie: banery, ktore realnie zostaly wgrane,
+	 * i zdjecia, po ktore siega opis.
 	 */
 	private static function limit_galerii( array $config ): int {
 		$banery = 0;
@@ -268,7 +292,7 @@ class Dawmac_Allegro_Offer {
 			}
 		}
 
-		return max( 1, 16 - $banery );
+		return max( 1, self::LIMIT_ZDJEC - $banery - self::ZDJEC_W_OPISIE );
 	}
 
 	/** Pola GPSR doklejane do kazdej pozycji zestawu. */
