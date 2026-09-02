@@ -275,6 +275,10 @@
 			const res  = await fetch(ENDPOINT + '?' + p.toString(), { signal: inflight.signal });
 			const data = await res.json();
 
+			const licznik = document.querySelector('[data-dawmac-licznik]');
+			// ten sam zapis co po stronie PHP: spacja co trzy cyfry
+			if (licznik) licznik.textContent = String(data.total).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+
 			list.innerHTML = data.products.map(cardHtml).join('')
 				|| '<li class="woocommerce-info" style="grid-column:1/-1;list-style:none">Brak felg spełniających kryteria.</li>';
 			list.style.opacity = '';

@@ -215,6 +215,15 @@ class Dawmac_Filters_Query {
 		}
 		unset( $filters['__exclude'] );
 
+		// Produkty ukryte w katalogu (WooCommerce: exclude-from-catalog) nie
+		// mają prawa wyskoczyć w wynikach. Zapytanie WordPressa odsiewa je samo,
+		// więc bez tego liczba wyników z endpointu nie zgadzała się z tym,
+		// co realnie widać na stronie.
+		$exclude['product_visibility'] = array_values( array_unique( array_merge(
+			$exclude['product_visibility'] ?? [],
+			[ 'exclude-from-catalog' ]
+		) ) );
+
 		// Wyszukiwarka: każde słowo musi wystąpić w tytule (dane w tabeli kart).
 		$search_str = null;
 		if ( isset( $filters['search'] ) ) {

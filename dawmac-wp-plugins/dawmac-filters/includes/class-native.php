@@ -490,6 +490,17 @@ class Dawmac_Filters_Widget extends WP_Widget {
 			data-endpoint="<?php echo esc_url( DAWMAC_FILTERS_URL . 'endpoint.php' ); ?>"
 			data-shop="<?php echo $is_shop ? '1' : ''; ?>"
 			data-cat="<?php echo esc_attr( $cat_slug ); ?>">
+			<?php
+			// Licznik wyników. Przy wejściu na stronę bierzemy go z głównego
+			// zapytania (jest już policzone), a po każdej zmianie filtra
+			// podmienia go JS liczbą z endpointu.
+			global $wp_query;
+			$znaleziono = isset( $wp_query->found_posts ) ? (int) $wp_query->found_posts : 0;
+			?>
+			<div class="dawmac-licznik">
+				Znaleziono: <strong data-dawmac-licznik><?php echo esc_html( number_format( $znaleziono, 0, ',', ' ' ) ); ?></strong>
+			</div>
+
 			<div class="dawmac-group dawmac-search-group">
 				<label class="dawmac-search">
 					<span class="screen-reader-text">Szukaj felg</span>

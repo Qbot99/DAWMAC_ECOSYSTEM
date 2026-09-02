@@ -4,7 +4,7 @@
  *
  * Co trafia do indeksu (kolumna `attribute`):
  *  - wszystkie atrybuty produktowe WooCommerce (taksonomie pa_*),
- *  - kategorie (product_cat),
+ *  - kategorie (product_cat) i widoczność w katalogu (product_visibility),
  *  - cena jako 'price' (value_numeric - do filtrów zakresowych),
  *  - stan magazynowy jako 'stock' (instock / outofstock / onbackorder).
  *
@@ -367,7 +367,7 @@ class Dawmac_Filters_Indexer {
 			 JOIN {$wpdb->term_taxonomy} tt ON tt.term_taxonomy_id = tr.term_taxonomy_id
 			 JOIN {$wpdb->terms} t          ON t.term_id = tt.term_id
 			 WHERE tr.object_id IN ({$id_list})
-			   AND (tt.taxonomy LIKE 'pa\_%' OR tt.taxonomy = 'product_cat')" // phpcs:ignore WordPress.DB.PreparedSQL
+			   AND (tt.taxonomy LIKE 'pa\_%' OR tt.taxonomy IN ('product_cat', 'product_visibility'))" // phpcs:ignore WordPress.DB.PreparedSQL
 		);
 
 		foreach ( $terms as $t ) {
