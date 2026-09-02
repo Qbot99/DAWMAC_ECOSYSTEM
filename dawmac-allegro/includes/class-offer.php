@@ -217,91 +217,49 @@ class Dawmac_Allegro_Offer {
 	}
 
 	/**
-	 * Czy produkt katalogowy o tym kodzie ma to samo wykonczenie co nasz.
+	 * Czy podpowiedziany kod opisuje TO SAMO wykonczenie co nasz towar.
 	 *
-	 * Kody producenta felg koncza sie skrotem wykonczenia (BBZ - brushed
-	 * bronze, DTB - double tinted black, MB - matt black). Zamiast zgadywac
-	 * ze skrotu, pytamy katalog o produkt i porownujemy parametr Wykonczenie.
-	 * Gdy nie da sie tego potwierdzic - odmawiamy. Wlasny produkt w katalogu
-	 * jest gorszy dla widocznosci, ale nie klamie o towarze.
+	 * Parametr Wykonczenie w katalogu jest pusty, wiec porownanie po nim
+	 * zawsze wychodzilo negatywnie i odrzucalismy nawet trafne podpowiedzi.
+	 * Nosnikiem jest koncowka kodu producenta - inicjaly wykonczenia:
+	 *
+	 *   CVR71985P5L3572DTB  -> DTB -> Double Tinted Black
+	 *   CVR71985P5L4566BBZ  -> BBZ -> Brushed Bronze
+	 *   CVR52090P5H2872PBK  -> PBK -> Platinum Black
+	 *
+	 * Porownujemy inicjaly, nie grupe barwy. Grupa byla za szeroka: Platinum
+	 * Black i Double Tinted Black to oba "czarne", a to inne felgi - Allegro
+	 * podsunelo nam wlasnie taka zamiane, w dodatku z innym odsadzeniem.
 	 */
 	private static function kod_pasuje( string $kod, array $dane ): bool {
-		$nasze = mb_strtolower( trim( (string) ( $dane['wykonczenie'] ?? '' ) ), 'UTF-8' );
+		$nasze = self::inicjaly( (string) ( $dane['wykonczenie'] ?? '' ) );
 
 		if ( '' === $nasze ) {
 			return false;
 		}
 
-		$r = Dawmac_Allegro_Client::get( '/sale/products', [
-			'phrase'      => $kod,
-			'category.id' => Dawmac_Allegro_Mapper::CATEGORY_WHEELS,
-			'limit'       => 5,
-		] );
-
-		if ( is_wp_error( $r ) ) {
+		if ( ! preg_match( '/([A-Z]{2,4})$/', strtoupper( trim( $kod ) ), $m ) ) {
 			return false;
 		}
 
-		foreach ( $r['products'] ?? [] as $p ) {
-			foreach ( $p['parameters'] ?? [] as $par ) {
-				if ( Dawmac_Allegro_Mapper::P_KOD !== (string) ( $par['id'] ?? '' ) ) {
-					continue;
-				}
+		// BBZ przy "Brushed Bronze" - skrot bywa dluzszy niz same inicjaly,
+		// wiec wystarczy, ze sie od nich zaczyna.
+		return $m[1] === $nasze || str_starts_with( $m[1], $nasze );
+	}
 
-				if ( trim( (string) ( $par['values'][0] ?? '' ) ) !== $kod ) {
-					continue 2;   // to nie ten produkt
-				}
-			}
+	/** "Double Tinted Black" -> "DTB" */
+	private static function inicjaly( string $tekst ): string {
+		$out = '';
 
-			// Znalezlismy produkt o tym kodzie - porownujemy wykonczenie.
-			foreach ( $p['parameters'] ?? [] as $par ) {
-				if ( Dawmac_Allegro_Mapper::P_WYKONCZ !== (string) ( $par['id'] ?? '' ) ) {
-					continue;
-				}
-
-				$ich = mb_strtolower( (string) ( $par['values'][0] ?? '' ), 'UTF-8' );
-
-				return self::to_samo_wykonczenie( $nasze, $ich );
+		foreach ( preg_split( '/[^\p{L}]+/u', trim( $tekst ) ) ?: [] as $slowo ) {
+			if ( '' !== $slowo ) {
+				$out .= mb_strtoupper( mb_substr( $slowo, 0, 1, 'UTF-8' ), 'UTF-8' );
 			}
 		}
 
-		return false;
+		return strlen( $out ) >= 2 ? $out : '';
 	}
 
-	/**
-	 * Czy dwa opisy wykonczenia mowia o tym samym. Nasze jest po angielsku
-	 * ("Brushed Bronze"), katalogowe po polsku z kodem ("BLDTF - czarny +
-	 * podwojnie przyciemniany front"), wiec porownujemy przez slowa kluczowe.
-	 */
-	private static function to_samo_wykonczenie( string $nasze, string $ich ): bool {
-		$grupy = [
-			'bronze'   => [ 'bronze', 'brąz', 'braz' ],
-			'black'    => [ 'black', 'czarn' ],
-			'silver'   => [ 'silver', 'srebr' ],
-			'gold'     => [ 'gold', 'złot', 'zlot' ],
-			'graphite' => [ 'graphite', 'grafit', 'gun metal' ],
-			'white'    => [ 'white', 'biał', 'bial' ],
-			'titanium' => [ 'titanium', 'tytan' ],
-			'red'      => [ 'red', 'czerwon' ],
-		];
-
-		$grupa = static function ( string $t ) use ( $grupy ): ?string {
-			foreach ( $grupy as $nazwa => $slowa ) {
-				foreach ( $slowa as $s ) {
-					if ( str_contains( $t, $s ) ) {
-						return $nazwa;
-					}
-				}
-			}
-
-			return null;
-		};
-
-		$a = $grupa( $nasze );
-		$b = $grupa( $ich );
-
-		return null !== $a && $a === $b;
-	}
 
 	/** Kod producenta podpowiedziany przez Allegro w tresci bledu. */
 	private static function kod_z_bledu( WP_Error $e ): ?string {
