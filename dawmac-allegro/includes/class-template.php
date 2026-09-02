@@ -203,7 +203,10 @@ class Dawmac_Allegro_Template {
 			$value = $product[ $field ] ?? null;
 
 			if ( is_array( $value ) ) {
-				$value = implode( ' / ', array_filter( array_map( 'strval', $value ) ) );
+				// Plus, nie ukosnik: zestaw schodkowy to felga przednia ORAZ
+				// tylna, a nie wybor miedzy nimi. Szerokosci lacza sie tak samo,
+				// wiec "8,5" + 10"" czyta sie w parze z "ET 25 + 43".
+				$value = implode( ' + ', array_filter( array_map( 'strval', $value ) ) );
 			}
 
 			$value = trim( (string) $value );
@@ -234,7 +237,13 @@ class Dawmac_Allegro_Template {
 				continue;
 			}
 
-			$out[] = str_replace( '.', ',', rtrim( rtrim( $liczba, '0' ), '.' ) ) . '"';
+			// Zera obcinamy TYLKO po przecinku. Bez tego warunku "20" traci
+			// zero i robi sie "2", a "10J" zamienia sie w "1".
+			if ( str_contains( $liczba, '.' ) ) {
+				$liczba = rtrim( rtrim( $liczba, '0' ), '.' );
+			}
+
+			$out[] = str_replace( '.', ',', $liczba ) . '"';
 		}
 
 		return $out ? implode( ' + ', $out ) : $value;

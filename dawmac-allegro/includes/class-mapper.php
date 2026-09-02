@@ -152,7 +152,12 @@ class Dawmac_Allegro_Mapper {
 	 *
 	 * @return array{parameters: array, oferta: array, produkt: array, problemy: string[]}
 	 */
-	public static function map( array $product, array $dict ): array {
+	/**
+	 * @param array $nadpisz Szerokosc i ET dla jednej pozycji zestawu.
+	 *                       Przy zestawie schodkowym kazda pozycja opisuje
+	 *                       inna felge, wiec nie da sie ich wyliczyc z produktu.
+	 */
+	public static function map( array $product, array $dict, array $nadpisz = [] ): array {
 		$out      = [];
 		$problemy = [];
 
@@ -182,11 +187,11 @@ class Dawmac_Allegro_Mapper {
 
 		$slownik( self::P_PRODUCENT, $product['producent'] ?? null, true, 'Producent felg' );
 		$slownik( self::P_SREDNICA, self::srednica( $product ), true, 'Średnica felgi' );
-		$slownik( self::P_SZEROKOSC, self::szerokosc( $product ), true, 'Szerokość felgi' );
+		$slownik( self::P_SZEROKOSC, $nadpisz['szerokosc'] ?? self::szerokosc( $product ), true, 'Szerokość felgi' );
 		$slownik( self::P_ROZSTAW, self::rozstaw( $product ), true, 'Rozstaw śrub' );
 
 		// Nieobowiazkowe - brak dopasowania pomijamy zamiast blokowac oferte.
-		$et = self::et( $product );
+		$et = $nadpisz['et'] ?? self::et( $product );
 
 		if ( null !== $et && isset( $dict[ self::P_ET ]['wartosci'][ self::norm( $et ) ] ) ) {
 			$out[] = [ 'id' => self::P_ET, 'valuesIds' => [ $dict[ self::P_ET ]['wartosci'][ self::norm( $et ) ] ] ];
@@ -286,6 +291,70 @@ class Dawmac_Allegro_Mapper {
 	 *
 	 * Przy zestawie schodkowym bierzemy WEZSZA, czyli przednia.
 	 */
+	/**
+	 * Rozklada komplet na pozycje: [szerokosc, ET, ile sztuk].
+	 *
+	 * Komplet jednorodny to jedna pozycja x4. Zestaw schodkowy to dwie
+	 * pozycje po dwie felgi - wezsza z nizszym ET z przodu, szersza z tylu.
+	 * Bez tego rozbicia oferta opisywalaby tylko przednia felge, a kupujacy
+	 * nie wiedzialby, co dostanie na tylna os.
+	 *
+	 * @return array<int,array{szerokosc:string,et:?string,ile:int}>
+	 */
+	public static function pozycje( array $product ): array {
+		$szer = [];
+
+		foreach ( self::wszystkie( $product['szerokosc'] ?? null ) as $v ) {
+			$c = (float) str_replace( ',', '.', preg_replace( '/[^0-9.,]/', '', $v ) ?? '' );
+
+			if ( $c > 0 ) {
+				$szer[] = $c;
+			}
+		}
+
+		$ety = [];
+
+		foreach ( self::wszystkie( $product['et'] ?? null ) as $v ) {
+			$c = preg_replace( '/[^0-9-]/', '', (string) $v ) ?? '';
+
+			if ( '' !== $c ) {
+				$ety[] = (int) $c;
+			}
+		}
+
+		$szer = array_values( array_unique( $szer ) );
+		sort( $szer );
+		sort( $ety );
+
+		if ( ! $szer ) {
+			return [];
+		}
+
+		// Jedna szerokosc: caly komplet to ta sama felga.
+		if ( 1 === count( $szer ) ) {
+			return [ [
+				'szerokosc' => number_format( $szer[0], 1, '.', '' ) . '"',
+				'et'        => 1 === count( $ety ) ? (string) $ety[0] : null,
+				'ile'       => 4,
+			] ];
+		}
+
+		// Zestaw schodkowy. ET-y laczymy z szerokosciami po kolei; gdy liczby
+		// sie nie zgadzaja, zostawiamy ET pusty zamiast zgadywac.
+		$pary = count( $ety ) === count( $szer );
+		$out  = [];
+
+		foreach ( $szer as $i => $w ) {
+			$out[] = [
+				'szerokosc' => number_format( $w, 1, '.', '' ) . '"',
+				'et'        => $pary ? (string) $ety[ $i ] : null,
+				'ile'       => 2,
+			];
+		}
+
+		return $out;
+	}
+
 	private static function szerokosc( array $product ): ?string {
 		$wartosci = self::wszystkie( $product['szerokosc'] ?? null );
 

@@ -89,7 +89,7 @@ class Dawmac_Allegro_Offer {
 			// konczy sie bledem 422.
 			'parameters' => $m['oferta'],
 
-			'productSet' => self::product_set( $dane, $m, $zdjecia, $tytul, $o ),
+			'productSet' => self::product_set( $dane, $m, $zdjecia, $tytul, $o, $dict ),
 
 			'description' => $opis,
 			'images'   => $zdjecia,
@@ -380,7 +380,7 @@ class Dawmac_Allegro_Offer {
 	 * zestawu schodkowego pod pozycje katalogowa oznacza, ze kupujacy widzi
 	 * na stronie produktu co innego, niz dostanie.
 	 */
-	private static function product_set( array $dane, array $m, array $zdjecia, string $tytul, array $o ): array {
+	private static function product_set( array $dane, array $m, array $zdjecia, string $tytul, array $o, array $dict ): array {
 		$match = Dawmac_Allegro_Catalog::match( $dane );
 
 		if ( 'pelne' === $match['status'] && $match['productSet'] ) {
@@ -394,6 +394,18 @@ class Dawmac_Allegro_Offer {
 			);
 		}
 
+		// Wlasny produkt: ZAWSZE jedna pozycja na caly komplet.
+		//
+		// Rozbicie zestawu schodkowego na dwie pozycje bylo pierwsza proba,
+		// ale Allegro odmawia: "Mozesz zmieniac wartosci parametrow tylko
+		// pierwszego produktu w zestawie. Parametry pozostalych produktow
+		// pobieramy z Katalogu". Druga felga musialaby wiec istniec w katalogu,
+		// a wlasnie dla wykonczen spoza katalogu jej tam nie ma.
+		//
+		// Zostaje jedna pozycja x4. Szerokosc jest wymagana, wiec idzie wezsza
+		// (przednia); ET przy dwoch wartosciach zostaje pusty - lepiej go nie
+		// podac, niz podac jeden z dwoch i zafalszowac filtry. Pelna
+		// konfiguracja stoi w tytule i w parametrach opisu.
 		return [ [
 			'product' => [
 				'name'       => $tytul,
@@ -401,12 +413,15 @@ class Dawmac_Allegro_Offer {
 				'parameters' => $m['produkt'],
 				'images'     => $zdjecia,
 			],
-			'quantity' => [ 'value' => 1 ],
+			'quantity' => [ 'value' => self::ILE_FELG ],
 		] + self::gpsr( $dane, $o ) ];
 	}
 
 	/** Twardy limit Allegro na oferte. */
 	const LIMIT_ZDJEC = 16;
+
+	/** Komplet na oferte - cztery felgi. */
+	const ILE_FELG = 4;
 
 	/**
 	 * Ile zdjec produktu uzywa sam opis: jedno przy parametrach, jedno przy
