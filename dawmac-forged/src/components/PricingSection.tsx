@@ -16,7 +16,6 @@ export default function PricingSection() {
   const addons = Object.entries(sp?.dodatki ?? {});
   // gdy żaden rozmiar w serii nie ma ceny katalogowej, chowamy pustą kolumnę
   const hasCat = !!sp?.rozmiary?.some((r) => r.cena_katalogowa);
-  const air = sp?.ceny_poczta_lotnicza ?? [];
 
   return (
     <section className="section pricing" id="cennik">
@@ -94,24 +93,6 @@ export default function PricingSection() {
                     <div key={key} className="addon">
                       <span className="addon__name">{addonLabel(t, key)}</span>
                       <span className="addon__price">+ {fmtPrice(price)}</span>
-                    </div>
-                  ))}
-                </div>
-              </>
-            )}
-
-            {air.length > 0 && (
-              <>
-                <div className="pricing__addons-title" style={{ marginTop: 24 }}>
-                  {t.colAir} ({t.colPre})
-                </div>
-                <div className="pricing__addons">
-                  {air.map((r) => (
-                    <div key={r.rozmiar} className="addon">
-                      <span className="addon__name">{r.rozmiar}"</span>
-                      <span className="addon__price">
-                        {fmtPrice(r.przedplata_100)}
-                      </span>
                     </div>
                   ))}
                 </div>

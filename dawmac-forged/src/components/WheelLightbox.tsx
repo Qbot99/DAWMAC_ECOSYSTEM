@@ -51,9 +51,6 @@ export default function WheelLightbox({
     ? size
     : sizes[0]?.rozmiar ?? null;
   const selPrice = sizes.find((r) => r.rozmiar === selSize);
-  const airPrice = sp?.ceny_poczta_lotnicza?.find(
-    (r) => r.rozmiar === selSize
-  );
 
   const photos = wheel.images;
   const photo = photos[Math.min(photoIdx, photos.length - 1)];
@@ -278,12 +275,6 @@ export default function WheelLightbox({
                         <span className="lightbox__price-label">{t.lbPre}</span>
                         <span className="lightbox__price-pre">
                           {fmtPrice(selPrice.przedplata_100)}
-                        </span>
-                      </div>
-                      <div className="lightbox__price-row">
-                        <span className="lightbox__price-label">{t.lbAir}</span>
-                        <span className="lightbox__price-air">
-                          {airPrice ? fmtPrice(airPrice.przedplata_100) : t.lbAirVal}
                         </span>
                       </div>
                     </div>
