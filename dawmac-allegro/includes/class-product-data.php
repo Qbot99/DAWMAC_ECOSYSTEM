@@ -30,6 +30,10 @@ class Dawmac_Allegro_Product_Data {
 		'pa_rozstaw'          => 'rozstaw',
 		'pa_et'               => 'et',
 		'pa_kategoria-koloru' => 'kolor',
+		// pa_kolor trzyma nazwe wykonczenia wprost ("Brushed Bronze"),
+		// pa_kategoria-koloru tylko polke w katalogu ("Brazowe i zlote").
+		'pa_kolor'            => 'kolor_nazwa',
+		'pa_bore'             => 'bore',
 		'pa_szerokosc_opony'  => 'szerokosc_opony',
 		'pa_profil'           => 'profil',
 		'pa_srednica_opony'   => 'srednica_opony',
@@ -84,6 +88,7 @@ class Dawmac_Allegro_Product_Data {
 
 		$data['liczba_srub'] = self::bolt_count( $data['rozstaw'] ?? null );
 		$data['wykonczenie'] = self::finish( $data );
+		$data['bore']        = self::bore( $data['bore'] ?? null );
 
 		return $data;
 	}
@@ -198,6 +203,14 @@ class Dawmac_Allegro_Product_Data {
 	 * techniczna, a to, co zostaje, jest wykonczeniem.
 	 */
 	public static function finish( array $data ): string {
+		// Sklep trzyma nazwe wykonczenia w pa_kolor - to zrodlo pewne.
+		// Rozbieranie tytulu jest tylko awaryjne, dla produktow bez atrybutu.
+		$atrybut = trim( (string) ( $data['kolor_nazwa'] ?? '' ) );
+
+		if ( '' !== $atrybut ) {
+			return $atrybut;
+		}
+
 		$tytul = (string) ( $data['title'] ?? '' );
 
 		if ( '' === $tytul ) {
@@ -232,6 +245,27 @@ class Dawmac_Allegro_Product_Data {
 
 		// Same cyfry albo jeden znak to nie jest nazwa wykonczenia.
 		return preg_match( '/\p{L}{3,}/u', $tytul ) ? $tytul : '';
+	}
+
+	/**
+	 * Otwor centralny na postac ze slownika Allegro: "72,6".
+	 *
+	 * Sklep zapisuje go roznie - "72.6", "71,5", a bywa i "CB74.1" -
+	 * wiec zdejmujemy litery i ujednolicamy separator na przecinek.
+	 */
+	public static function bore( $raw ): string {
+		$v = is_array( $raw ) ? ( $raw[0] ?? '' ) : $raw;
+		$v = str_replace( ',', '.', (string) $v );
+		$v = preg_replace( '/[^0-9.]/', '', $v ) ?? '';
+
+		if ( '' === $v || ! is_numeric( $v ) ) {
+			return '';
+		}
+
+		// 56.00 -> 56, 72.60 -> 72,6
+		$v = rtrim( rtrim( number_format( (float) $v, 2, '.', '' ), '0' ), '.' );
+
+		return str_replace( '.', ',', $v );
 	}
 
 	/**

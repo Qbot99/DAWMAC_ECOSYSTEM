@@ -31,6 +31,7 @@ class Dawmac_Allegro_Template {
 		'rozstaw'     => 'Rozstaw śrub',
 		'liczba_srub' => 'Liczba śrub',
 		'et'          => 'Odsadzenie ET',
+		'bore'        => 'Otwór centralny',
 		// Wykonczenie, nie kolor: sklep trzyma w pa_kategoria-koloru polke
 		// katalogu ("Brazowe i zlote"), a kupujacego interesuje "Brushed Bronze".
 		'wykonczenie' => 'Wykończenie',

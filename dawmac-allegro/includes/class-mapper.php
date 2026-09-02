@@ -41,6 +41,7 @@ class Dawmac_Allegro_Mapper {
 	const P_MODEL     = '237206';
 	const P_KOD       = '224017';
 	const P_WYKONCZ   = '202913';
+	const P_OTWOR     = '250611';
 
 	/**
 	 * Wykonczenie ze sklepu na slownik Allegro. Klucz to slowo z tytulu,
@@ -205,6 +206,16 @@ class Dawmac_Allegro_Mapper {
 			$problemy[] = 'brak wartości dla: Kod producenta (nie ma ani modelu, ani SKU)';
 		} else {
 			$out[] = [ 'id' => self::P_KOD, 'values' => [ $kod ] ];
+		}
+
+		$otwor = trim( (string) ( $product['bore'] ?? '' ) );
+
+		if ( '' !== $otwor ) {
+			$id = $dict[ self::P_OTWOR ]['wartosci'][ self::norm( $otwor ) ] ?? null;
+
+			if ( null !== $id ) {
+				$out[] = [ 'id' => self::P_OTWOR, 'valuesIds' => [ $id ] ];
+			}
 		}
 
 		$wyk = self::wykonczenie( $product, $dict );
