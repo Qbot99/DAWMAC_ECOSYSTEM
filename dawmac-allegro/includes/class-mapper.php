@@ -392,10 +392,24 @@ class Dawmac_Allegro_Mapper {
 	 * a nie jest wymagany - wiec zamiast wybierac polprawde, pomijamy go.
 	 * Pelna konfiguracja i tak idzie do tytulu oraz listy parametrow w opisie.
 	 */
+	/**
+	 * ET do parametru Allegro - zawsze jedna wartosc.
+	 *
+	 * Przy zestawie schodkowym podajemy odsadzenie PRZEDNIEJ felgi, spojnie
+	 * z szerokoscia, ktora idzie w tym samym parametrze. Zostawianie pola
+	 * pustego wypychalo oferte z filtrow wyszukiwarki - kupujacy szukajacy
+	 * po ET nie widzial jej wcale. Pelny rozklad obu osi stoi w opisie.
+	 */
 	private static function et( array $product ): ?string {
+		$pozycje = self::pozycje( $product );
+
+		if ( $pozycje && null !== $pozycje[0]['et'] ) {
+			return $pozycje[0]['et'];
+		}
+
 		$wartosci = self::wszystkie( $product['et'] ?? null );
 
-		return 1 === count( $wartosci ) ? trim( $wartosci[0] ) : null;
+		return $wartosci ? trim( (string) $wartosci[0] ) : null;
 	}
 
 	/** Kolor sklepowy na slownik Allegro, z rozstrzyganiem po tytule. */

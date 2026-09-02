@@ -176,7 +176,7 @@ class Dawmac_Allegro_Template {
 			$html .= '<li><b>' . $this->esc( $label ) . ':</b> ' . $this->esc( $value ) . '</li>';
 		}
 
-		$html .= '</ul>';
+		$html .= '</ul>' . self::zestaw( $product );
 
 		$items = [ [ 'type' => 'TEXT', 'content' => Dawmac_Allegro_Text::clean( $html ) ] ];
 		$photo = $product['image'] ?? null;
@@ -227,6 +227,49 @@ class Dawmac_Allegro_Template {
 	 * Wymiar w calach po polsku: '8.5J' -> '8,5"', '19"' -> '19"'.
 	 * Kilka wartosci (zestaw schodkowy) laczymy plusem: '8,5" + 10"'.
 	 */
+	/**
+	 * Zdanie o zestawie schodkowym z rozkladem na osie.
+	 *
+	 * W parametrach Allegro moze stac tylko jedno odsadzenie i jedna
+	 * szerokosc, wiec bez tego zdania kupujacy nie wiedzialby, ze tylna
+	 * os jest inna. Puste, gdy komplet jest jednorodny.
+	 */
+	private static function zestaw( array $product ): string {
+		$szer = array_values( array_filter( array_map(
+			static fn( $v ): string => self::cale( (string) $v ),
+			is_array( $product['szerokosc'] ?? null ) ? $product['szerokosc'] : []
+		) ) );
+
+		$ety = array_values( array_filter( array_map(
+			static fn( $v ): string => trim( (string) $v ),
+			is_array( $product['et'] ?? null ) ? $product['et'] : []
+		) ) );
+
+		if ( count( $szer ) < 2 ) {
+			return '';
+		}
+
+		sort( $szer, SORT_NATURAL );
+		sort( $ety, SORT_NUMERIC );
+
+		$osie = [ 'przód', 'tył' ];
+		$opis = [];
+
+		foreach ( $szer as $i => $w ) {
+			$opis[] = sprintf(
+				'<b>%s</b> — %s%s',
+				$osie[ $i ] ?? sprintf( 'oś %d', $i + 1 ),
+				$w,
+				isset( $ety[ $i ] ) ? ' ET' . $ety[ $i ] : ''
+			);
+		}
+
+		return '<p>To <b>zestaw schodkowy</b> — felgi przednie i tylne różnią się '
+			. 'wymiarem: ' . implode( ', ', $opis ) . '. W parametrach oferty Allegro '
+			. 'pozwala podać tylko jedną szerokość i jedno odsadzenie, więc stoi tam '
+			. 'felga przednia. Komplet zawiera cztery felgi w konfiguracji podanej wyżej.</p>';
+	}
+
 	private static function cale( string $value ): string {
 		$out = [];
 
