@@ -61,13 +61,14 @@ return [
 	'blocks' => [
 
 		'fitment' => [
-			'title' => 'Co znajdziesz w zestawie',
+			'title' => 'W zestawie',
 			'html'  => '
 				<ul>
-					<li><b>Komplet czterech felg</b> w rozmiarze podanym w parametrach oferty.</li>
-					<li>Felgi fabrycznie nowe, wolne od wad, z pełną dokumentacją.</li>
-					<li>Zdjęcia w ofercie przedstawiają <b>rzeczywisty produkt</b>, nie wizualizację.</li>
-					<li>Śrub, nakrętek i pierścieni centrujących <b>nie dołączamy</b> — dobiera się je do konkretnego auta.</li>
+					<li>cztery nowe felgi aluminiowe</li>
+					<li>cztery dekielki z logiem producenta felg</li>
+					<li>komplet pierścieni centrujących</li>
+					<li>dokument potwierdzający zakup</li>
+					<li>solidne pakowanie na czas transportu</li>
 				</ul>
 				<p>Przed zakupem porównaj rozstaw śrub, średnicę otworu centralnego i odsadzenie ET z danymi swojego samochodu. Jeśli nie masz pewności co do dopasowania, napisz przez formularz kontaktu Allegro i podaj markę, model oraz rocznik auta — sprawdzimy to za Ciebie.</p>
 			',
