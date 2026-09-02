@@ -3,16 +3,15 @@ import { FaWhatsapp } from "react-icons/fa";
 import { FiLink } from "react-icons/fi";
 import {
   CONTACT,
-  GALLERY_SITE,
   PRICED_SERIES,
   PROJECTS_ENDPOINT,
   galleryImg,
-  seriesLabel,
+  galleryProjectUrl,
   wheelImg,
 } from "../config";
 import { fmtPrice, useForgedData } from "../data/useForgedData";
 import type { GalleryProject, Wheel } from "../data/types";
-import { useLang } from "../i18n";
+import { seriesName, useLang } from "../i18n";
 import { useToast } from "./Toast";
 
 interface Props {
@@ -109,22 +108,26 @@ export default function WheelLightbox({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [idx, wheels]);
 
+  const wheelUrl = `${window.location.origin}/wheel/${encodeURIComponent(wheel.name)}`;
+
   const share = () => {
-    const url = `${window.location.origin}/wheel/${encodeURIComponent(wheel.name)}`;
     if (navigator.share && /Mobi|Android/i.test(navigator.userAgent)) {
-      navigator.share({ title: `Dawmac Forged ${wheel.name}`, url }).catch(() => {});
+      navigator
+        .share({ title: `Dawmac Forged ${wheel.name}`, url: wheelUrl })
+        .catch(() => {});
       return;
     }
     navigator.clipboard
-      .writeText(url)
+      .writeText(wheelUrl)
       .then(() => toast(t.toast))
-      .catch(() => toast(url));
+      .catch(() => toast(wheelUrl));
   };
 
+  // wiadomość zawiera link do strony felgi — sprzedawca od razu wie, o który model chodzi
   const waText = {
-    pl: `Dzień dobry, pytam o felgę ${wheel.name}`,
-    en: `Hello, I'm asking about the ${wheel.name} wheel`,
-    de: `Guten Tag, ich interessiere mich für die Felge ${wheel.name}`,
+    pl: `Dzień dobry, pytam o felgę ${wheel.name}\n${wheelUrl}`,
+    en: `Hello, I'm asking about the ${wheel.name} wheel\n${wheelUrl}`,
+    de: `Guten Tag, ich interessiere mich für die Felge ${wheel.name}\n${wheelUrl}`,
   }[lang];
 
   return (
@@ -137,7 +140,7 @@ export default function WheelLightbox({
           <div className="lightbox__grid">
             <div className="lightbox__media">
               <span className="lightbox__fig">
-                FIG.{wheel.name} // {seriesLabel(wheel.series_id).toUpperCase()}
+                FIG.{wheel.name} // {seriesName(t, wheel.series_id).toUpperCase()}
               </span>
               <div
                 className="lightbox__mainimg-wrap"
@@ -207,7 +210,7 @@ export default function WheelLightbox({
                     {builds.map((b) => (
                       <a
                         key={b.project_id}
-                        href={`${GALLERY_SITE}/?Search=Dawmac+Forged+${encodeURIComponent(wheel.name)}+`}
+                        href={galleryProjectUrl(b.project_id)}
                         target="_blank"
                         rel="noopener noreferrer"
                         title={`${b.brand} ${b.model} — ${t.lbMore}`}
@@ -237,7 +240,7 @@ export default function WheelLightbox({
 
             <div className="lightbox__info">
               <span className="lightbox__series">
-                {seriesLabel(wheel.series_id)}
+                {seriesName(t, wheel.series_id)}
               </span>
               <h3 className="lightbox__name">{wheel.name}</h3>
               {wheel.series_id in seriesDescKey && (

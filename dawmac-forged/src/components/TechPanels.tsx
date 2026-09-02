@@ -5,7 +5,7 @@ import {
   seriesPriceFrom,
   useForgedData,
 } from "../data/useForgedData";
-import { useLang } from "../i18n";
+import { seriesName, useLang } from "../i18n";
 
 const FALLBACK: Record<string, string> = {
   "1": "/monoblock.jpeg",
@@ -29,28 +29,28 @@ export default function TechPanels() {
   const panels = [
     {
       sid: "1",
-      name: "Forged Mono",
+      name: seriesName(t, "1"),
       local: t.techMonoDesc,
       desc: t.techMonoTxt,
       priced: true,
     },
     {
       sid: "2",
-      name: "Forged Duo",
+      name: seriesName(t, "2"),
       local: t.techDuoDesc,
       desc: t.techDuoTxt,
       priced: true,
     },
     {
       sid: "3",
-      name: "Forged Trio",
+      name: seriesName(t, "3"),
       local: t.techTrioDesc,
       desc: t.techTrioTxt,
       priced: false,
     },
     {
       sid: "4",
-      name: "Forged Magnesium",
+      name: seriesName(t, "4"),
       local: t.techMagDesc,
       desc: t.techMagTxt,
       priced: false,

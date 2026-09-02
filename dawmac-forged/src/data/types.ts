@@ -34,3 +34,12 @@ export interface GalleryProject {
   model: string;
   image: string;
 }
+
+/** odpowiedź get_project_details.php (tablica z jednym elementem) */
+export interface GalleryProjectDetails {
+  project_id: string;
+  images: string[];
+  brand: string;
+  model: string;
+  params?: string | null;
+}

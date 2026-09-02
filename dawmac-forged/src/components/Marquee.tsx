@@ -1,16 +1,18 @@
-const ITEMS = [
-  "Forged Mono",
-  "Forged Duo",
-  "Forged Trio",
-  "Forged Magnesium",
-  'Ø 15-24"',
-  "Custom PCD / ET",
-  "CNC",
-  "Aluminium 6061 T6",
-];
+import { seriesName, useLang } from "../i18n";
 
 export default function Marquee() {
-  const doubled = [...ITEMS, ...ITEMS];
+  const { t } = useLang();
+  const items = [
+    seriesName(t, "1"),
+    seriesName(t, "2"),
+    seriesName(t, "3"),
+    seriesName(t, "4"),
+    'Ø 15-24"',
+    "Custom PCD / ET",
+    "CNC",
+    "Aluminium 6061 T6",
+  ];
+  const doubled = [...items, ...items];
   return (
     <div className="marquee">
       <div className="marquee__track">

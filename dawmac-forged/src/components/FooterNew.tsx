@@ -57,6 +57,9 @@ export default function FooterNew() {
         <span>
           © {new Date().getFullYear()} DAWMAC Polska. {t.footRights}
         </span>
+        <span>forged.dawmacpolska.pl</span>
+      </div>
+      <div className="footer__credit">
         <a
           className="credit"
           href="https://hkubot.com"
@@ -71,7 +74,6 @@ export default function FooterNew() {
             </span>
           </span>
         </a>
-        <span>forged.dawmacpolska.pl</span>
       </div>
     </footer>
   );

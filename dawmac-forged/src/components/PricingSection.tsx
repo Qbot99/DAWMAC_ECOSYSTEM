@@ -1,22 +1,21 @@
 import { useState } from "react";
 import { fmtPrice, useForgedData } from "../data/useForgedData";
-import { addonLabel, useLang } from "../i18n";
+import { addonLabel, seriesName, useLang } from "../i18n";
 
-const TABS = [
-  { sid: "1", label: "Forged Mono" },
-  { sid: "2", label: "Forged Duo" },
-  { sid: "3", label: "Forged Trio" },
-];
+const TAB_IDS = ["1", "2", "3"];
 
 export default function PricingSection() {
   const { t } = useLang();
   const { prices } = useForgedData();
   const [tab, setTab] = useState("1");
+  const TABS = TAB_IDS.map((sid) => ({ sid, label: seriesName(t, sid) }));
 
   // decyzja: tabele cen tylko dla Mono i Duo; Trio = wycena indywidualna
   const showTable = tab !== "3";
   const sp = prices[tab];
   const addons = Object.entries(sp?.dodatki ?? {});
+  // gdy żaden rozmiar w serii nie ma ceny katalogowej, chowamy pustą kolumnę
+  const hasCat = !!sp?.rozmiary?.some((r) => r.cena_katalogowa);
   const air = sp?.ceny_poczta_lotnicza ?? [];
 
   return (
@@ -47,10 +46,15 @@ export default function PricingSection() {
 
       {showTable && sp?.rozmiary?.length ? (
         <div className="pricing__grid">
-          <div className="pricing__table" data-reveal="1">
+          <div
+            className={`pricing__table ${hasCat ? "" : "pricing__table--nocat"}`}
+            data-reveal="1"
+          >
             <div className="pricing__thead">
               <span className="pricing__th">Ø</span>
-              <span className="pricing__th pricing__th--right">{t.colCat}</span>
+              {hasCat && (
+                <span className="pricing__th pricing__th--right">{t.colCat}</span>
+              )}
               <span className="pricing__th pricing__th--pre pricing__th--right">
                 {t.colPre}
               </span>
@@ -64,11 +68,13 @@ export default function PricingSection() {
                 }}
               >
                 <span className="pricing__size">{r.rozmiar}"</span>
-                <span
-                  className={`pricing__cat ${r.cena_katalogowa ? "" : "pricing__cat--plain"}`}
-                >
-                  {r.cena_katalogowa ? fmtPrice(r.cena_katalogowa) : "-"}
-                </span>
+                {hasCat && (
+                  <span
+                    className={`pricing__cat ${r.cena_katalogowa ? "" : "pricing__cat--plain"}`}
+                  >
+                    {r.cena_katalogowa ? fmtPrice(r.cena_katalogowa) : "-"}
+                  </span>
+                )}
                 <span className="pricing__pre">
                   {fmtPrice(r.przedplata_100)}
                 </span>

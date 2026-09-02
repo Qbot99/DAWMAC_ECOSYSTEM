@@ -1,15 +1,15 @@
-import { useMemo, useState } from "react";
-import { PRICED_SERIES, SERIES, seriesLabel, wheelImg } from "../config";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { PRICED_SERIES, wheelImg } from "../config";
 import {
   fmtPrice,
   seriesPriceFrom,
   seriesSizeRange,
   useForgedData,
 } from "../data/useForgedData";
-import { useLang } from "../i18n";
+import { seriesName, useLang } from "../i18n";
 
-const PAGE = 12;
-const FILTERS = ["all", "1", "2", "3", "5"]; // Wszystkie / Mono / Duo / Trio / Factory Stock
+const PAGE = 24;
+const FILTERS = ["all", "1", "2", "3", "4", "5"]; // Wszystkie / Mono / Duo / Trio / Magnesium / Factory Stock
 
 interface Props {
   onOpenWheel: (name: string) => void;
@@ -31,6 +31,22 @@ export default function Catalog({ onOpenWheel }: Props) {
   }, [wheels, filter, search]);
 
   const visible = filtered.slice(0, shown);
+
+  // infinite scroll jak w katalogu D2: sentinel dogrywa kolejną stronę,
+  // obserwator odtwarzany po każdej partii (szybki scroll -> kolejna od razu)
+  const moreRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = moreRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) setShown((s) => s + PAGE);
+      },
+      { rootMargin: "900px 0px" },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [shown, filtered.length]);
 
   return (
     <section className="section" id="katalog">
@@ -64,7 +80,7 @@ export default function Catalog({ onOpenWheel }: Props) {
               setShown(PAGE);
             }}
           >
-            {f === "all" ? t.fAll : SERIES[f].label}
+            {f === "all" ? t.fAll : seriesName(t, f)}
           </button>
         ))}
       </div>
@@ -104,7 +120,7 @@ export default function Catalog({ onOpenWheel }: Props) {
                       />
                     )}
                     <span className="wheel-card__series">
-                      {seriesLabel(w.series_id)}
+                      {seriesName(t, w.series_id)}
                     </span>
                   </div>
                   <div className="wheel-card__body">
@@ -132,13 +148,10 @@ export default function Catalog({ onOpenWheel }: Props) {
           )}
 
           {filtered.length > shown && (
-            <div className="catalog__more-wrap">
-              <button
-                className="btn-ghost"
-                onClick={() => setShown((s) => s + PAGE)}
-              >
-                {t.showMore} ({filtered.length - shown})
-              </button>
+            <div ref={moreRef} className="catalog__sentinel" aria-hidden="true">
+              <span className="catalog__sentinel-dot" />
+              <span className="catalog__sentinel-dot" />
+              <span className="catalog__sentinel-dot" />
             </div>
           )}
         </>

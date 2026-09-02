@@ -46,6 +46,7 @@ export default function ContactSection({ topic, onClearTopic }: Props) {
       label: t.chWhats,
       val: CONTACT.whatsappDisplay,
       href: `https://wa.me/${CONTACT.whatsapp}`,
+      wa: true,
     },
     {
       label: t.chPhone,
@@ -71,111 +72,126 @@ export default function ContactSection({ topic, onClearTopic }: Props) {
       <div className="contact__grid">
         <div data-reveal="1">
           <p className="contact__sub">{t.conSub}</p>
-          <ul className="contact__points">
+          <ul className="contact2__spec">
             {t.points.map((p) => (
               <li key={p}>{p}</li>
             ))}
           </ul>
-          <div className="contact__channels">
+          <div className="contact2__channels">
             {channels.map((ch) => (
               <a
                 key={ch.label}
-                className="channel"
+                className={`contact2-ch ${ch.wa ? "contact2-ch--wa" : ""}`}
                 href={ch.href}
                 target={ch.href.startsWith("http") ? "_blank" : undefined}
                 rel="noopener noreferrer"
               >
-                <span className="channel__label">{ch.label}</span>
-                <span className="channel__val">{ch.val}</span>
+                <span className="contact2-ch__label">
+                  {ch.label}
+                  <span className="contact2-ch__arrow">↗</span>
+                </span>
+                <span className="contact2-ch__val">{ch.val}</span>
               </a>
             ))}
           </div>
         </div>
 
         <div data-reveal="2">
-          {status === "sent" ? (
-            <div className="form__sent">
-              <div className="form__sent-title">{t.sentT}</div>
-              <div className="form__sent-msg">{t.sentM}</div>
+          <div className="contact2-form">
+            <div className="contact2-form__head">
+              <span className="contact2-form__title">{t.formTitle}</span>
+              <span className="contact2-form__tag">{t.formTag}</span>
             </div>
-          ) : (
-            <form className="form" onSubmit={submit}>
-              {topic && (
-                <div className="form__topic">
-                  {t.asking} <strong>{topic}</strong>
-                  <button type="button" onClick={onClearTopic} aria-label="Usuń">
-                    ✕
-                  </button>
+            {status === "sent" ? (
+              <div className="form__sent">
+                <div className="form__sent-title">{t.sentT}</div>
+                <div className="form__sent-msg">{t.sentM}</div>
+              </div>
+            ) : (
+              <form className="form" onSubmit={submit}>
+                {topic && (
+                  <div className="form__topic">
+                    {t.asking} <strong>{topic}</strong>
+                    <button
+                      type="button"
+                      onClick={onClearTopic}
+                      aria-label="Usuń"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                )}
+                <div className="contact2-form__row">
+                  <div>
+                    <label className="form__label" htmlFor="f-name">
+                      {t.fName}
+                    </label>
+                    <input
+                      id="f-name"
+                      className="form__input"
+                      name="name"
+                      required
+                      maxLength={100}
+                    />
+                  </div>
+                  <div>
+                    <label className="form__label" htmlFor="f-contact">
+                      {t.fContact}
+                    </label>
+                    <input
+                      id="f-contact"
+                      className="form__input"
+                      name="contact"
+                      required
+                      maxLength={150}
+                    />
+                  </div>
                 </div>
-              )}
-              <div>
-                <label className="form__label" htmlFor="f-name">
-                  {t.fName}
-                </label>
+                <div>
+                  <label className="form__label" htmlFor="f-car">
+                    {t.fCar}
+                  </label>
+                  <input
+                    id="f-car"
+                    className="form__input"
+                    name="car"
+                    placeholder={t.fCarPh}
+                    maxLength={150}
+                  />
+                </div>
+                <div>
+                  <label className="form__label" htmlFor="f-msg">
+                    {t.fMsg}
+                  </label>
+                  <textarea
+                    id="f-msg"
+                    className="form__textarea"
+                    name="message"
+                    placeholder={t.fMsgPh}
+                    maxLength={3000}
+                  />
+                </div>
+                {/* honeypot — boty wypełniają, ludzie nie widzą */}
                 <input
-                  id="f-name"
-                  className="form__input"
-                  name="name"
-                  required
-                  maxLength={100}
+                  className="form__hp"
+                  type="text"
+                  name="website"
+                  tabIndex={-1}
+                  autoComplete="off"
                 />
-              </div>
-              <div>
-                <label className="form__label" htmlFor="f-contact">
-                  {t.fContact}
-                </label>
-                <input
-                  id="f-contact"
-                  className="form__input"
-                  name="contact"
-                  required
-                  maxLength={150}
-                />
-              </div>
-              <div>
-                <label className="form__label" htmlFor="f-car">
-                  {t.fCar}
-                </label>
-                <input
-                  id="f-car"
-                  className="form__input"
-                  name="car"
-                  placeholder={t.fCarPh}
-                  maxLength={150}
-                />
-              </div>
-              <div>
-                <label className="form__label" htmlFor="f-msg">
-                  {t.fMsg}
-                </label>
-                <textarea
-                  id="f-msg"
-                  className="form__textarea"
-                  name="message"
-                  placeholder={t.fMsgPh}
-                  maxLength={3000}
-                />
-              </div>
-              {/* honeypot — boty wypełniają, ludzie nie widzą */}
-              <input
-                className="form__hp"
-                type="text"
-                name="website"
-                tabIndex={-1}
-                autoComplete="off"
-              />
-              {status === "error" && (
-                <p className="form__error">{t.sendErr}</p>
-              )}
-              <button
-                className="btn-primary"
-                type="submit"
-                disabled={status === "sending"}
-              >
-                {status === "sending" ? t.sending : `${t.send} →`}
-              </button>
-            </form>
-          )}
+                {status === "error" && (
+                  <p className="form__error">{t.sendErr}</p>
+                )}
+                <button
+                  className="btn-primary"
+                  type="submit"
+                  disabled={status === "sending"}
+                >
+                  {status === "sending" ? t.sending : `${t.send} →`}
+                </button>
+              </form>
+            )}
+          </div>
         </div>
       </div>
     </section>
