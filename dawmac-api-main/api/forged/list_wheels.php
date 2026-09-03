@@ -4,7 +4,7 @@ require "db.php";
 $conn->query("SET SESSION group_concat_max_len = 1000000;");
 
 $sql = "
-SELECT wheel.id, wheel.name, series.name AS series_name, wheel.series_id, JSON_ARRAYAGG(image.url) AS images, video.youtube_url FROM wheel JOIN series ON wheel.series_id = series.id LEFT JOIN image ON wheel.id = image.wheel_id LEFT JOIN video ON wheel.id = video.wheel_id GROUP BY wheel.id, wheel.name, series.name ORDER BY wheel.id DESC;
+SELECT wheel.id, wheel.name, wheel.description, wheel.min_weight, series.name AS series_name, wheel.series_id, JSON_ARRAYAGG(image.url) AS images, video.youtube_url FROM wheel JOIN series ON wheel.series_id = series.id LEFT JOIN image ON wheel.id = image.wheel_id LEFT JOIN video ON wheel.id = video.wheel_id GROUP BY wheel.id, wheel.name, wheel.description, wheel.min_weight, series.name, wheel.series_id, video.youtube_url ORDER BY wheel.id DESC;
 ";
 
 $result = $conn->query($sql);

@@ -14,6 +14,9 @@ if ($wheel_name === '') {
     exit();
 }
 
+// Opis jest opcjonalny; brak pola = pusty string, tak jak zapisuje aplikacja iOS.
+$description = trim($_POST["description"] ?? '');
+
 $series_id = trim($_POST["series"] ?? '');
 if ($series_id === '' || !is_numeric($series_id)) {
     http_response_code(400);
@@ -28,13 +31,13 @@ if (!isset($_FILES["wheel_image"])) {
 }
 
 // Zapis felgi do bazy z użyciem prepared statement
-$stmt = $conn->prepare("INSERT INTO `wheel` (`name`, `series_id`) VALUES (?, ?)");
+$stmt = $conn->prepare("INSERT INTO `wheel` (`name`, `series_id`, `description`) VALUES (?, ?, ?)");
 if (!$stmt) {
     http_response_code(500);
     echo json_encode(["error" => "Błąd przygotowania zapytania do bazy: " . $conn->error]);
     exit();
 }
-$stmt->bind_param("si", $wheel_name, $series_id);
+$stmt->bind_param("sis", $wheel_name, $series_id, $description);
 
 if (!$stmt->execute()) {
     http_response_code(500);
@@ -123,6 +126,8 @@ if (count($error_files) > 0) {
 } else {
     echo json_encode([
         "success" => true,
+        "wheel_id" => $wheel_id,
+        "name" => $wheel_name,
         "uploaded" => $success_files,
         "message" => "Wszystkie pliki zostały przesłane pomyślnie."
     ]);

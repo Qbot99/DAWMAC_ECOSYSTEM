@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { useLoading } from "./loading/LoadingContext";
+import { FORGED_WHEELS_CHANGED } from "./Forged_add_wheel";
 
 type WheelData = {
   id: number;
   name: string;
+  description: string | null;
   series_name: string;
   images: string[];
 };
@@ -13,6 +15,7 @@ export default function Forged_edit_wheel() {
   const [selectedWheel, setSelectedWheel] = useState<WheelData | undefined>();
   const [selectedId, setSelectedId] = useState<string>("");
   const [newWheelName, setNewWheelName] = useState<string>("");
+  const [newDescription, setNewDescription] = useState<string>("");
   const { setLoading } = useLoading();
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -32,7 +35,12 @@ export default function Forged_edit_wheel() {
 
   useEffect(() => {
     refreshWheelList();
-  }, []);
+    // Po dodaniu felgi w sąsiednim formularzu lista ma się odświeżyć.
+    window.addEventListener(FORGED_WHEELS_CHANGED, refreshWheelList);
+    return () =>
+      window.removeEventListener(FORGED_WHEELS_CHANGED, refreshWheelList);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedId]);
 
   function refreshWheelList() {
     getWheels().then((data) => {
@@ -40,6 +48,7 @@ export default function Forged_edit_wheel() {
       const selected = data.find((wheel) => wheel.id.toString() === selectedId);
       setSelectedWheel(selected);
       setNewWheelName(selected?.name ?? "");
+      setNewDescription(selected?.description ?? "");
     });
   }
 
@@ -50,6 +59,7 @@ export default function Forged_edit_wheel() {
     const selected = wheelList.find((wheel) => wheel.id.toString() === id);
     setSelectedWheel(selected);
     setNewWheelName(selected?.name ?? "");
+    setNewDescription(selected?.description ?? "");
   }
 
   function deleteWheel(wheel_id: number) {
@@ -73,29 +83,34 @@ export default function Forged_edit_wheel() {
       });
   }
 
-  function editWheelName(wheel_id: number, new_wheel_name: string) {
+  function saveWheel(
+    wheel_id: number,
+    new_wheel_name: string,
+    new_description: string
+  ) {
     setLoading(true);
 
     fetch(import.meta.env.VITE_DOMAIN + "api/forged/edit_wheel_name.php", {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: `wheel_id=${encodeURIComponent(
-        wheel_id
-      )}&wheel_name=${encodeURIComponent(new_wheel_name)}`,
+      body:
+        `wheel_id=${encodeURIComponent(wheel_id)}` +
+        `&wheel_name=${encodeURIComponent(new_wheel_name.trim())}` +
+        `&description=${encodeURIComponent(new_description.trim())}`,
     })
       .then((res) => {
         if (!res.ok) throw new Error("HTTP error " + res.status);
         return res.json();
-        setLoading(false);
       })
       .then((data) => {
         console.log("Response:", data);
-        console.log("Zmieniono nazwę felgi ID: " + wheel_id);
+        console.log("Zapisano felgę ID: " + wheel_id);
         refreshWheelList();
+        window.dispatchEvent(new Event(FORGED_WHEELS_CHANGED));
         setLoading(false);
       })
       .catch((err) => {
-        console.error("Nie udało się zmienić nazwy felgi ID:", wheel_id, err);
+        console.error("Nie udało się zapisać felgi ID:", wheel_id, err);
         setLoading(false);
       });
   }
@@ -184,6 +199,12 @@ export default function Forged_edit_wheel() {
               value={newWheelName}
               onChange={(e) => setNewWheelName(e.target.value)}
             />
+            <textarea
+              placeholder="Opis felgi (opcjonalnie)"
+              rows={3}
+              value={newDescription}
+              onChange={(e) => setNewDescription(e.target.value)}
+            />
 
             <div id="forged-edit-wheel-images">
               {selectedWheel.images.map((img) => (
@@ -218,9 +239,11 @@ export default function Forged_edit_wheel() {
 
           <div id="forged-edit-controlls">
             <button
-              onClick={() => editWheelName(selectedWheel.id, newWheelName)}
+              onClick={() =>
+                saveWheel(selectedWheel.id, newWheelName, newDescription)
+              }
             >
-              Zmień nazwę
+              Zapisz nazwę i opis
             </button>
             <button onClick={() => deleteWheel(selectedWheel.id)}>
               Usuń felgę

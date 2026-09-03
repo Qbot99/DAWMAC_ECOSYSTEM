@@ -126,6 +126,31 @@
   gap: .9rem;
 }
 
+/* Wybór serii: radio w jednym rzędzie, bez rozciągania na całą szerokość */
+.forged-series {
+  display: flex;
+  gap: 1.4rem;
+}
+
+.forged-series label {
+  display: inline-flex;
+  align-items: center;
+  gap: .45rem;
+  cursor: pointer;
+}
+
+.forged-series input[type="radio"] {
+  width: auto;
+  margin: 0;
+  accent-color: var(--dm-czerwony);
+}
+
+#forged-add-wheel textarea,
+#forged-edit-wheel textarea {
+  resize: vertical;
+  min-height: 4.5rem;
+}
+
 #forged-edit-wheel-info { display: flex; flex-direction: column; gap: .3rem; }
 #forged-edit-wheel-info span { font-size: .95rem; color: var(--dm-tekst-2); }
 
