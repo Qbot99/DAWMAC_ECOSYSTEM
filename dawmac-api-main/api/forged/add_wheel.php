@@ -65,7 +65,11 @@ $success_files = [];
 $error_files = [];
 
 // Prepared statement do wstawiania obrazków
-$stmt_img = $conn->prepare("INSERT INTO `image` (`url`, `wheel_id`) VALUES (?, ?)");
+// Panel wysyła pliki w kolejności ustawionej przez użytkownika; pierwsze
+// poprawnie zapisane zdjęcie dostaje is_primary = 1 (tak samo czyta to
+// aplikacja iOS i list_wheels.php, które sortuje po tej fladze).
+$primary_set = false;
+$stmt_img = $conn->prepare("INSERT INTO `image` (`url`, `wheel_id`, `is_primary`) VALUES (?, ?, ?)");
 if (!$stmt_img) {
     http_response_code(500);
     echo json_encode(["error" => "Błąd przygotowania zapytania do bazy (image): " . $conn->error]);
@@ -97,13 +101,16 @@ for ($i = 0; $i < count($uploaded_files["name"]); $i++) {
         $success_files[] = $filename;
 
         $file_location = "wheels_images/" . $wheel_id . "/" . $filename;
-        $stmt_img->bind_param("si", $file_location, $wheel_id);
+        $is_primary = $primary_set ? 0 : 1;
+        $stmt_img->bind_param("sii", $file_location, $wheel_id, $is_primary);
 
         if (!$stmt_img->execute()) {
             $error_files[] = [
                 "file" => $filename,
                 "error" => "Błąd zapisu ścieżki pliku w bazie: " . $stmt_img->error
             ];
+        } else {
+            $primary_set = true;
         }
     } else {
         $error_files[] = [

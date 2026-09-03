@@ -4,7 +4,15 @@ require "db.php";
 $conn->query("SET SESSION group_concat_max_len = 1000000;");
 
 $sql = "
-SELECT wheel.id, wheel.name, wheel.description, wheel.min_weight, series.name AS series_name, wheel.series_id, JSON_ARRAYAGG(image.url) AS images, video.youtube_url FROM wheel JOIN series ON wheel.series_id = series.id LEFT JOIN image ON wheel.id = image.wheel_id LEFT JOIN video ON wheel.id = video.wheel_id GROUP BY wheel.id, wheel.name, wheel.description, wheel.min_weight, series.name, wheel.series_id, video.youtube_url ORDER BY wheel.id DESC;
+SELECT wheel.id, wheel.name, wheel.description, wheel.min_weight, series.name AS series_name, wheel.series_id,
+       GROUP_CONCAT(image.url ORDER BY image.is_primary DESC, image.id ASC SEPARATOR '\n') AS images,
+       video.youtube_url
+FROM wheel
+JOIN series ON wheel.series_id = series.id
+LEFT JOIN image ON wheel.id = image.wheel_id
+LEFT JOIN video ON wheel.id = video.wheel_id
+GROUP BY wheel.id, wheel.name, wheel.description, wheel.min_weight, series.name, wheel.series_id, video.youtube_url
+ORDER BY wheel.id DESC;
 ";
 
 $result = $conn->query($sql);
@@ -20,8 +28,11 @@ if (!$result) {
 $wheels = [];
 
 while ($row = $result->fetch_assoc()) {
-    // images jest stringiem JSON, zdekoduj go do tablicy PHP
-    $row['images'] = json_decode($row['images'], true);
+    // Zdjęcia przychodzą jako lista rozdzielona nową linią, główne (is_primary)
+    // jest pierwsze. Strona forged i panel traktują images[0] jako główne.
+    $row['images'] = ($row['images'] === null || $row['images'] === '')
+        ? []
+        : explode("\n", $row['images']);
     $wheels[] = $row;
 }
 

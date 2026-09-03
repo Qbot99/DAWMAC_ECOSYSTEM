@@ -4,6 +4,9 @@ import { nastepnaNazwa } from "./forgedWheelName";
 
 type WheelRow = { id: number; name: string; series_id: number | string };
 
+/** Wybrane zdjęcie z podglądem; kolejność na liście = kolejność w galerii. */
+type Wybrane = { key: string; file: File; url: string };
+
 /** Zdarzenie, po którym panel edycji odświeża swoją listę felg. */
 export const FORGED_WHEELS_CHANGED = "forged-wheels-changed";
 
@@ -13,6 +16,7 @@ export default function Forged_add_wheel() {
   const [name, setName] = useState<string>("");
   const [nameTouched, setNameTouched] = useState(false);
   const [description, setDescription] = useState<string>("");
+  const [zdjecia, setZdjecia] = useState<Wybrane[]>([]);
   const [komunikat, setKomunikat] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const { setLoading } = useLoading();
@@ -40,6 +44,52 @@ export default function Forged_add_wheel() {
     setName(nastepnaNazwa(series, wheels));
   }, [series, wheels, nameTouched]);
 
+  // Podglądy to obiekty URL, trzeba je zwolnić, gdy znikają z listy.
+  useEffect(() => {
+    return () => zdjecia.forEach((z) => URL.revokeObjectURL(z.url));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function dodajPliki(files: FileList | null) {
+    if (!files) return;
+    const nowe: Wybrane[] = [];
+    for (const file of Array.from(files)) {
+      const key = `${file.name}-${file.size}-${file.lastModified}`;
+      if (zdjecia.some((z) => z.key === key) || nowe.some((z) => z.key === key))
+        continue;
+      nowe.push({ key, file, url: URL.createObjectURL(file) });
+    }
+    setZdjecia([...zdjecia, ...nowe]);
+    // Ten sam plik ma dać się wybrać ponownie po usunięciu z listy.
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }
+
+  function przesun(index: number, oIle: number) {
+    const cel = index + oIle;
+    if (cel < 0 || cel >= zdjecia.length) return;
+    const kopia = [...zdjecia];
+    [kopia[index], kopia[cel]] = [kopia[cel], kopia[index]];
+    setZdjecia(kopia);
+  }
+
+  function ustawGlowne(index: number) {
+    if (index === 0) return;
+    const kopia = [...zdjecia];
+    const [wybrane] = kopia.splice(index, 1);
+    setZdjecia([wybrane, ...kopia]);
+  }
+
+  function usunZdjecie(index: number) {
+    URL.revokeObjectURL(zdjecia[index].url);
+    setZdjecia(zdjecia.filter((_, i) => i !== index));
+  }
+
+  function wyczyscZdjecia() {
+    zdjecia.forEach((z) => URL.revokeObjectURL(z.url));
+    setZdjecia([]);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }
+
   function zmienSerie(nowa: string) {
     setSeries(nowa);
     // Kliknięcie w serię ma zawsze podstawić numer z tej serii.
@@ -47,14 +97,13 @@ export default function Forged_add_wheel() {
   }
 
   async function dodaj() {
-    const files = fileInputRef.current?.files;
     const nazwa = name.trim();
 
     if (!nazwa) {
       setKomunikat("Podaj nazwę felgi.");
       return;
     }
-    if (!files || files.length === 0) {
+    if (zdjecia.length === 0) {
       setKomunikat("Dodaj przynajmniej jedno zdjęcie.");
       return;
     }
@@ -73,8 +122,9 @@ export default function Forged_add_wheel() {
     formData.append("wheel_name", nazwa);
     formData.append("series", series);
     formData.append("description", description.trim());
-    for (let i = 0; i < files.length; i++) {
-      formData.append("wheel_image[]", files[i]);
+    // Kolejność z listy: pierwsze zdjęcie zostaje głównym (is_primary).
+    for (const z of zdjecia) {
+      formData.append("wheel_image[]", z.file);
     }
 
     try {
@@ -96,7 +146,7 @@ export default function Forged_add_wheel() {
         setKomunikat(`Dodano felgę ${nazwa}.`);
         setDescription("");
         setNameTouched(false);
-        if (fileInputRef.current) fileInputRef.current.value = "";
+        wyczyscZdjecia();
         window.dispatchEvent(new Event(FORGED_WHEELS_CHANGED));
       }
     } catch (err) {
@@ -168,7 +218,66 @@ export default function Forged_add_wheel() {
           id="wheel_image"
           multiple
           accept="image/*"
+          onChange={(e) => dodajPliki(e.target.files)}
         />
+
+        {zdjecia.length > 0 && (
+          <div className="forged-order">
+            <p className="forged-order__hint">
+              Pierwsze zdjęcie będzie głównym. Ustaw kolejność strzałkami albo
+              przyciskiem „Główne”.
+            </p>
+            <ol className="forged-order__list">
+              {zdjecia.map((z, i) => (
+                <li
+                  key={z.key}
+                  className={
+                    "forged-order__item" +
+                    (i === 0 ? " forged-order__item--main" : "")
+                  }
+                >
+                  <img src={z.url} alt="" />
+                  <span className="forged-order__nr">
+                    {i === 0 ? "Główne" : i + 1}
+                  </span>
+                  <span className="forged-order__name" title={z.file.name}>
+                    {z.file.name}
+                  </span>
+                  <span className="forged-order__btns">
+                    <button
+                      type="button"
+                      className="forged-order__arrow"
+                      onClick={() => przesun(i, -1)}
+                      disabled={i === 0}
+                      title="W górę"
+                    >
+                      ▲
+                    </button>
+                    <button
+                      type="button"
+                      className="forged-order__arrow"
+                      onClick={() => przesun(i, 1)}
+                      disabled={i === zdjecia.length - 1}
+                      title="W dół"
+                    >
+                      ▼
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => ustawGlowne(i)}
+                      disabled={i === 0}
+                    >
+                      Główne
+                    </button>
+                    <button type="button" onClick={() => usunZdjecie(i)}>
+                      Usuń
+                    </button>
+                  </span>
+                </li>
+              ))}
+            </ol>
+          </div>
+        )}
 
         <button type="submit">Dodaj</button>
 

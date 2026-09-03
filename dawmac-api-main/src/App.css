@@ -151,6 +151,109 @@
   min-height: 4.5rem;
 }
 
+/* Kolejność zdjęć przy dodawaniu felgi: pierwsze = główne */
+.forged-order__hint {
+  margin: 0 0 .5rem;
+  font-size: .85rem;
+  color: var(--dm-tekst-2);
+}
+
+.forged-order__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: .4rem;
+}
+
+.forged-order__item {
+  display: flex;
+  align-items: center;
+  gap: .7rem;
+  padding: .4rem .6rem;
+  border: 1px solid var(--dm-obrys);
+  border-radius: 3px;
+  background: var(--dm-panel-2);
+}
+
+.forged-order__item--main { border-color: var(--dm-czerwony); }
+
+.forged-order__item img {
+  width: 64px;
+  height: 64px;
+  object-fit: cover;
+  border-radius: 3px;
+  flex: none;
+}
+
+.forged-order__nr {
+  flex: none;
+  min-width: 3.6rem;
+  font-size: .75rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--dm-tekst-2);
+}
+
+.forged-order__item--main .forged-order__nr { color: var(--dm-czerwony); }
+
+.forged-order__name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: .85rem;
+  color: var(--dm-tekst-2);
+}
+
+.forged-order__btns {
+  display: flex;
+  gap: .3rem;
+  flex: none;
+}
+
+.forged-order__btns button,
+.forged-edit-image button {
+  padding: .35rem .55rem;
+  font-size: .72rem;
+}
+
+.forged-order__btns .forged-order__arrow {
+  font-size: 1.05rem;
+  line-height: 1;
+  padding: .2rem .5rem;
+  text-transform: none;
+}
+
+/* Zdjęcia w edycji felgi: główne oznaczone */
+.forged-edit-image {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .35rem;
+  padding: .4rem;
+  border: 1px solid var(--dm-obrys);
+  border-radius: 3px;
+}
+
+.forged-edit-image--main { border-color: var(--dm-czerwony); }
+
+.forged-edit-image__badge {
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--dm-czerwony);
+  padding: .35rem 0;
+}
+
+@media (max-width: 600px) {
+  .forged-order__name { display: none; }
+}
+
 #forged-edit-wheel-info { display: flex; flex-direction: column; gap: .3rem; }
 #forged-edit-wheel-info span { font-size: .95rem; color: var(--dm-tekst-2); }
 

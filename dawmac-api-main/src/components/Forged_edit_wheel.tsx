@@ -141,6 +141,29 @@ export default function Forged_edit_wheel() {
       });
   }
 
+  function setPrimaryImage(wheel_id: number, img_url: string) {
+    setLoading(true);
+
+    fetch(import.meta.env.VITE_DOMAIN + "api/forged/set_primary_image.php", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: `wheel_id=${encodeURIComponent(
+        wheel_id
+      )}&img_url=${encodeURIComponent(img_url)}`,
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.error) console.error("Zdjęcie główne:", data.error);
+        refreshWheelList();
+        window.dispatchEvent(new Event(FORGED_WHEELS_CHANGED));
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("Nie udało się ustawić zdjęcia głównego:", err);
+        setLoading(false);
+      });
+  }
+
   function addWheelImages(wheel_id: number, files: FileList | null) {
     setLoading(true);
 
@@ -207,15 +230,34 @@ export default function Forged_edit_wheel() {
             />
 
             <div id="forged-edit-wheel-images">
-              {selectedWheel.images.map((img) => (
-                <div key={img} id="forged-edit-wheel-image-wrapper">
-                  <button onClick={() => deleteImage(selectedWheel.id, img)}>
-                    Usuń
-                  </button>
+              {selectedWheel.images.map((img, i) => (
+                <div
+                  key={img}
+                  className={
+                    "forged-edit-image" +
+                    (i === 0 ? " forged-edit-image--main" : "")
+                  }
+                >
                   <img
                     src={import.meta.env.VITE_DOMAIN + "forged/" + img}
                     width={100}
                   />
+                  {i === 0 ? (
+                    <span className="forged-edit-image__badge">Główne</span>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setPrimaryImage(selectedWheel.id, img)}
+                    >
+                      Ustaw główne
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => deleteImage(selectedWheel.id, img)}
+                  >
+                    Usuń
+                  </button>
                 </div>
               ))}
               <input
