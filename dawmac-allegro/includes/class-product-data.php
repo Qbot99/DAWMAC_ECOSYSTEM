@@ -203,15 +203,17 @@ class Dawmac_Allegro_Product_Data {
 	 * techniczna, a to, co zostaje, jest wykonczeniem.
 	 */
 	public static function finish( array $data ): string {
-		// Sklep trzyma nazwe wykonczenia w pa_kolor - to zrodlo pewne.
-		// Rozbieranie tytulu jest tylko awaryjne, dla produktow bez atrybutu.
+		// pa_kolor jest zrodlem pierwszego wyboru - czesc tytulow w ogole nie
+		// niesie wykonczenia ("MODEL:YA001 19\" 8J ET45 5x112") i wtedy atrybut
+		// jest jedyna informacja. Rozbieznosci NIE rozstrzygamy tu automatycznie:
+		// od tego jest watpliwe_wykonczenie() i lista do weryfikacji.
 		$atrybut = trim( (string) ( $data['kolor_nazwa'] ?? '' ) );
+		$tytul   = (string) ( $data['title'] ?? '' );
 
 		if ( '' !== $atrybut ) {
 			return $atrybut;
 		}
 
-		$tytul = (string) ( $data['title'] ?? '' );
 
 		if ( '' === $tytul ) {
 			return '';
@@ -245,6 +247,60 @@ class Dawmac_Allegro_Product_Data {
 
 		// Same cyfry albo jeden znak to nie jest nazwa wykonczenia.
 		return preg_match( '/\p{L}{3,}/u', $tytul ) ? $tytul : '';
+	}
+
+	/**
+	 * Czy wykonczenie wymaga sprawdzenia przez czlowieka.
+	 *
+	 * Sprzedawca nie wystawia takich produktow automatycznie - trafiaja na
+	 * liste do weryfikacji. Proba rozstrzygania tego w kodzie skonczyla sie
+	 * gorzej niz problem: przy tytulach bez wykonczenia "poprawka" z tytulu
+	 * dawala "MODEL:YA001" zamiast poprawnego "Silver" z atrybutu.
+	 */
+	public static function watpliwe_wykonczenie( array $data ): bool {
+		$atrybut = trim( (string) ( $data['kolor_nazwa'] ?? '' ) );
+
+		if ( '' === $atrybut ) {
+			return true;
+		}
+
+		return ! self::finish_zgodne( $atrybut, (string) ( $data['title'] ?? '' ) );
+	}
+
+	/**
+	 * Czy wartosc pa_kolor jest wiarygodna: tytul konczy sie nia albo jej
+	 * skrotem. Katalogi felg zapisuja wykonczenie na koncu nazwy, wiec
+	 * rozbieznosc znaczy, ze atrybut mowi o czym innym niz produkt.
+	 */
+	public static function finish_zgodne( string $atrybut, string $tytul ): bool {
+		$norm = static function ( string $s ): string {
+			$s = html_entity_decode( $s, ENT_QUOTES | ENT_HTML5, 'UTF-8' );
+			$s = str_replace( [ '″', '”', '×' ], [ '"', '"', 'x' ], $s );
+
+			return trim( preg_replace( '/[^a-z0-9]+/u', ' ', mb_strtolower( $s, 'UTF-8' ) ) ?? '' );
+		};
+
+		$a = $norm( $atrybut );
+		$t = $norm( $tytul );
+
+		if ( '' === $a || '' === $t ) {
+			return false;
+		}
+
+		if ( str_ends_with( $t, $a ) ) {
+			return true;
+		}
+
+		// Tytul bywa skrocony do inicjalow: "Black Polished Face" -> "BPF".
+		$ini = '';
+
+		foreach ( explode( ' ', $a ) as $slowo ) {
+			if ( '' !== $slowo ) {
+				$ini .= $slowo[0];
+			}
+		}
+
+		return strlen( $ini ) >= 2 && str_ends_with( $t, $ini );
 	}
 
 	/**
