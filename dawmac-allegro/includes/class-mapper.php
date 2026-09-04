@@ -330,6 +330,22 @@ class Dawmac_Allegro_Mapper {
 			return [];
 		}
 
+		// Pary bierzemy z TYTULU, nie z posortowanych atrybutow.
+		//
+		// WooCommerce sortuje wartosci atrybutu, wiec dla felgi
+		// "9.5J ET22 + 10.5J ET15" tablica ET wraca jako ["15","22"] i
+		// powiazanie z szerokosciami przepada. Parowanie po posortowanych
+		// wartosciach dawalo 9.5" ET15 - odwrotnie niz w rzeczywistosci.
+		// Szersza felga nie zawsze ma wyzsze odsadzenie.
+		$z_tytulu = self::pary_z_tytulu( (string) ( $product['title'] ?? '' ) );
+
+		if ( count( $z_tytulu ) === count( $szer ) ) {
+			return array_map(
+				static fn( array $p ): array => $p + [ 'ile' => 1 === count( $z_tytulu ) ? 4 : 2 ],
+				$z_tytulu
+			);
+		}
+
 		// Jedna szerokosc: caly komplet to ta sama felga.
 		if ( 1 === count( $szer ) ) {
 			return [ [
@@ -349,6 +365,28 @@ class Dawmac_Allegro_Mapper {
 				'szerokosc' => number_format( $w, 1, '.', '' ) . '"',
 				'et'        => $pary ? (string) $ety[ $i ] : null,
 				'ile'       => 2,
+			];
+		}
+
+		return $out;
+	}
+
+	/**
+	 * Pary szerokosc-ET wprost z tytulu: "9.5J ET22 + 10.5J ET15".
+	 *
+	 * @return array<int,array{szerokosc:string,et:string}> w kolejnosci z tytulu
+	 */
+	private static function pary_z_tytulu( string $tytul ): array {
+		if ( ! preg_match_all( '/(\d+(?:[.,]\d+)?)\s*J?\s*ET\s*(-?\d+)/iu', $tytul, $m, PREG_SET_ORDER ) ) {
+			return [];
+		}
+
+		$out = [];
+
+		foreach ( $m as $x ) {
+			$out[] = [
+				'szerokosc' => number_format( (float) str_replace( ',', '.', $x[1] ), 1, '.', '' ) . '"',
+				'et'        => (string) (int) $x[2],
 			];
 		}
 
