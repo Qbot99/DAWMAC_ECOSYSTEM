@@ -289,6 +289,106 @@ class Dawmac_Allegro_Offer {
 		unset( $poz );
 	}
 
+	/**
+	 * Wystawia oferte na sprzedaz - JEDYNA droga do publikacji.
+	 *
+	 * Kontrola tresci siedzi tutaj, a nie w skrypcie wolajacym, bo dwa razy
+	 * zdarzylo sie wystawic oferte z nieaktualnym opisem: raz przez skrypt
+	 * bioracy "najstarszy szkic", raz przez narzedzie diagnostyczne, ktore
+	 * mialo tylko sprawdzac, a aktywowalo. Zabezpieczenie w jednym narzedziu
+	 * nie chroni, gdy publikowac potrafia trzy.
+	 *
+	 * @return true|WP_Error  WP_Error z lista zarzutow, gdy tresc jest nieaktualna
+	 */
+	public static function aktywuj( string $oid ) {
+		$o = Dawmac_Allegro_Client::get( "/sale/product-offers/{$oid}" );
+
+		if ( is_wp_error( $o ) ) {
+			return $o;
+		}
+
+		if ( 'ACTIVE' === ( $o['publication']['status'] ?? '' ) ) {
+			return true;
+		}
+
+		$zarzuty = self::zarzuty( $o );
+
+		if ( $zarzuty ) {
+			return new WP_Error(
+				'dawmac_allegro_tresc',
+				sprintf( 'Oferta %s nie nadaje się do wystawienia: %s', $oid, implode( ' · ', $zarzuty ) )
+			);
+		}
+
+		$cmd = wp_generate_uuid4();
+		$r   = Dawmac_Allegro_Client::put( "/sale/offer-publication-commands/{$cmd}", [
+			'publication'   => [ 'action' => 'ACTIVATE' ],
+			'offerCriteria' => [ [ 'offers' => [ [ 'id' => $oid ] ], 'type' => 'CONTAINS_OFFERS' ] ],
+		] );
+
+		return is_wp_error( $r ) ? $r : true;
+	}
+
+	/**
+	 * Co dyskwalifikuje oferte z publikacji. Pusta tablica = mozna wystawiac.
+	 *
+	 * @return string[]
+	 */
+	public static function zarzuty( array $o ): array {
+		$opis = '';
+
+		foreach ( ( $o['description']['sections'] ?? [] ) as $s ) {
+			foreach ( $s['items'] as $it ) {
+				if ( 'TEXT' === ( $it['type'] ?? '' ) ) {
+					$opis .= $it['content'];
+				}
+			}
+		}
+
+		$liczba = '';
+
+		foreach ( ( $o['parameters'] ?? [] ) as $x ) {
+			if ( 'Liczba felg w ofercie' === ( $x['name'] ?? '' ) ) {
+				$liczba = implode( ', ', $x['values'] ?? [] );
+			}
+		}
+
+		$otwor = '';
+
+		foreach ( ( $o['productSet'][0]['product']['parameters'] ?? [] ) as $x ) {
+			if ( 'Otwór centralny' === ( $x['name'] ?? '' ) ) {
+				$otwor = trim( implode( '', $x['values'] ?? [] ) );
+			}
+		}
+
+		$zarzuty = [];
+
+		// "nie dolaczamy" pochodzi ze starej tresci, ktora mylnie twierdzila,
+		// ze pierscieni centrujacych nie ma w komplecie.
+		if ( str_contains( $opis, 'nie dołączamy' ) ) {
+			$zarzuty[] = 'nieaktualny opis zawartości';
+		}
+
+		if ( ! str_contains( $opis, 'W zestawie' ) ) {
+			$zarzuty[] = 'brak sekcji "W zestawie"';
+		}
+
+		if ( '4 szt.' !== $liczba ) {
+			$zarzuty[] = 'liczba felg: ' . ( $liczba ?: 'brak' );
+		}
+
+		if ( '' === $otwor ) {
+			$zarzuty[] = 'brak otworu centralnego';
+		}
+
+		if ( empty( $o['productSet'][0]['responsibleProducer']['id'] )
+			|| empty( $o['productSet'][0]['safetyInformation']['description'] ) ) {
+			$zarzuty[] = 'niekompletne dane GPSR';
+		}
+
+		return $zarzuty;
+	}
+
 	/** ID oferty przypisanej do produktu albo null. */
 	public static function offer_id( int $product_id ): ?string {
 		$id = get_post_meta( $product_id, self::META_OFFER, true );
