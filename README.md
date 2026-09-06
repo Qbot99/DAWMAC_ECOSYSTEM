@@ -17,6 +17,7 @@
 | `dawmac-gallery/` | Public photo gallery | Astro, React |
 | `dawmac-wp-plugins/` | WordPress plugins for the shop (`dawmac-filters`, `dawmac-galeria`) | PHP |
 | `dawmac-wp-snippets/` | Standalone WPCode snippets running on the shop | PHP |
+| `dawmac-serwer/` | Scripts running straight on the dhosting account (cron reindex, uptime monitor) | Bash |
 
 Product photos, builds and server statistics are **not** kept here - they live on the
 production servers. This repository holds source code and the data needed to rebuild it.
