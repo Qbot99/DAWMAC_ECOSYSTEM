@@ -83,10 +83,12 @@ const dict = {
     cenTitle: "Aktualne ceny",
     cenBadge: "Cena dotyczy kompletu czterech felg",
     colCat: "Katalogowa",
-    colPre: "Przedpłata 100%",
+    colPre: "Wysyłka lotnicza",
+    colTrain: "Wysyłka pociągiem",
+    trainLead: "realizacja 10-12 tygodni",
     addonsTitle: "Dodatki",
     cenNote:
-      "Ceny przedpłatowe obowiązują przy 100% przedpłacie. Ceny dodatków liczone za komplet. ET i rozstaw PCD dobierane pod samochód. Realizacja ok. 6 tygodni.",
+      "Ceny obowiązują przy 100% przedpłacie i dotyczą kompletu 4 felg. Wysyłka pociągiem: realizacja 10-12 tygodni, czasami dłużej z przyczyn niezależnych od nas. Ceny dodatków liczone za komplet. ET i rozstaw PCD dobierane pod samochód.",
     trioIndiv:
       "Ceny felg trzyczęściowych ustalamy indywidualnie pod projekt. Napisz do nas z rozmiarem i modelem auta - odpowiemy z pełną wyceną.",
     magBar: "Forged Magnesium - wycena indywidualna",
@@ -225,10 +227,12 @@ const dict = {
     cenTitle: "Current prices",
     cenBadge: "Price applies to a set of four wheels",
     colCat: "List price",
-    colPre: "100% prepayment",
+    colPre: "Air freight",
+    colTrain: "Rail freight",
+    trainLead: "lead time 10-12 weeks",
     addonsTitle: "Add-ons",
     cenNote:
-      "Prepayment prices apply with 100% prepayment. Add-on prices per set. ET and PCD matched to your car. Lead time approx. 6 weeks.",
+      "Prices apply with 100% prepayment and cover a set of 4 wheels. Rail freight: lead time 10-12 weeks, occasionally longer for reasons beyond our control. Add-on prices per set. ET and PCD matched to your car.",
     trioIndiv:
       "Three-piece wheel prices are quoted individually per project. Write to us with your size and car model - we will reply with a full quote.",
     magBar: "Forged Magnesium - individual quote",
@@ -367,10 +371,12 @@ const dict = {
     cenTitle: "Aktuelle Preise",
     cenBadge: "Preis gilt für einen Satz von vier Felgen",
     colCat: "Listenpreis",
-    colPre: "100% Vorkasse",
+    colPre: "Luftfracht",
+    colTrain: "Bahnfracht",
+    trainLead: "Lieferzeit 10-12 Wochen",
     addonsTitle: "Extras",
     cenNote:
-      "Vorkasse-Preise gelten bei 100% Vorauszahlung. Extras pro Satz. ET und Lochkreis passend zum Fahrzeug. Fertigung ca. 6 Wochen.",
+      "Preise gelten bei 100% Vorauszahlung und für einen Satz von 4 Felgen. Bahnfracht: Lieferzeit 10-12 Wochen, gelegentlich länger aus Gründen außerhalb unserer Kontrolle. Extras pro Satz. ET und Lochkreis passend zum Fahrzeug.",
     trioIndiv:
       "Preise für dreiteilige Räder kalkulieren wir individuell pro Projekt. Schreiben Sie uns Größe und Fahrzeugmodell - wir antworten mit einem Angebot.",
     magBar: "Forged Magnesium - Preis auf Anfrage",

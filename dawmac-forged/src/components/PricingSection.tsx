@@ -14,6 +14,8 @@ export default function PricingSection() {
   const showTable = tab !== "3";
   const sp = prices[tab];
   const addons = Object.entries(sp?.dodatki ?? {});
+  // kolumna z wysyłką pociągiem pojawia się tylko dla serii, które mają takie ceny
+  const hasTrain = !!sp?.rozmiary?.some((r) => r.cena_pociag);
   // gdy żaden rozmiar w serii nie ma ceny katalogowej, chowamy pustą kolumnę
   const hasCat = !!sp?.rozmiary?.some((r) => r.cena_katalogowa);
 
@@ -49,7 +51,9 @@ export default function PricingSection() {
             className={`pricing__table ${hasCat ? "" : "pricing__table--nocat"}`}
             data-reveal="1"
           >
-            <div className="pricing__thead">
+            <div
+              className={`pricing__thead ${hasTrain ? "pricing__thead--train" : ""}`}
+            >
               <span className="pricing__th">Ø</span>
               {hasCat && (
                 <span className="pricing__th pricing__th--right">{t.colCat}</span>
@@ -57,11 +61,17 @@ export default function PricingSection() {
               <span className="pricing__th pricing__th--pre pricing__th--right">
                 {t.colPre}
               </span>
+              {hasTrain && (
+                <span className="pricing__th pricing__th--right">
+                  {t.colTrain}
+                  <span className="pricing__th-note">{t.trainLead}</span>
+                </span>
+              )}
             </div>
             {sp.rozmiary.map((r, i) => (
               <div
                 key={r.rozmiar}
-                className="pricing__row"
+                className={`pricing__row ${hasTrain ? "pricing__row--train" : ""}`}
                 style={{
                   background: i % 2 ? "rgba(255,255,255,.015)" : "transparent",
                 }}
@@ -77,6 +87,11 @@ export default function PricingSection() {
                 <span className="pricing__pre">
                   {fmtPrice(r.przedplata_100)}
                 </span>
+                {hasTrain && (
+                  <span className="pricing__train">
+                    {r.cena_pociag ? fmtPrice(r.cena_pociag) : "-"}
+                  </span>
+                )}
               </div>
             ))}
           </div>

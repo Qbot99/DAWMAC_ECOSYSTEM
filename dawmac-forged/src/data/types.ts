@@ -12,7 +12,10 @@ export interface Wheel {
 export interface SizePrice {
   rozmiar: string;
   cena_katalogowa?: number;
+  /** cena przy 100% przedpłacie — wysyłka lotnicza (szybciej) */
   przedplata_100: number;
+  /** cena przy 100% przedpłacie — wysyłka pociągiem (taniej, 10-12 tygodni) */
+  cena_pociag?: number;
 }
 
 export interface AirMailPrice {

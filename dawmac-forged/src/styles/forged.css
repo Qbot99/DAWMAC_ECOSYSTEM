@@ -2448,3 +2448,32 @@ a:hover > .lightbox__build {
 .pricing__table--nocat .pricing__row {
   grid-template-columns: 64px 1fr;
 }
+
+/* cennik z drugą opcją wysyłki (pociągiem) — czwarta kolumna */
+.pricing__thead--train,
+.pricing__row--train {
+  grid-template-columns: 56px 1fr 1fr 1fr;
+}
+.pricing__th-note {
+  display: block;
+  margin-top: 3px;
+  font: 400 9px var(--font-mono);
+  letter-spacing: 0.04em;
+  text-transform: none;
+  color: var(--faint);
+}
+.pricing__train {
+  text-align: right;
+  font: 800 17px var(--font-display);
+  color: var(--ink-strong);
+  white-space: nowrap;
+}
+@media (max-width: 700px) {
+  .pricing__thead--train,
+  .pricing__row--train {
+    grid-template-columns: 38px 1fr 1fr 1fr;
+    gap: 6px;
+  }
+  .pricing__train { font-size: 14px; }
+  .pricing__th-note { font-size: 8px; }
+}

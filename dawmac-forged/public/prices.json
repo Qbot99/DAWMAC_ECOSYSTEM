@@ -14,42 +14,50 @@
       {
         "rozmiar": "17",
         "cena_katalogowa": 11900,
-        "przedplata_100": 8900
+        "przedplata_100": 8900,
+        "cena_pociag": 8400
       },
       {
         "rozmiar": "18",
         "cena_katalogowa": 12200,
-        "przedplata_100": 9200
+        "przedplata_100": 9200,
+        "cena_pociag": 8500
       },
       {
         "rozmiar": "19",
         "cena_katalogowa": 14200,
-        "przedplata_100": 11200
+        "przedplata_100": 11200,
+        "cena_pociag": 9250
       },
       {
         "rozmiar": "20",
         "cena_katalogowa": 15200,
-        "przedplata_100": 12200
+        "przedplata_100": 12200,
+        "cena_pociag": 10300
       },
       {
         "rozmiar": "21",
         "cena_katalogowa": 16200,
-        "przedplata_100": 13200
+        "przedplata_100": 13200,
+        "cena_pociag": 11400
       },
       {
         "rozmiar": "22",
         "cena_katalogowa": 17200,
-        "przedplata_100": 14200
+        "przedplata_100": 14200,
+        "cena_pociag": 12700
       },
       {
         "rozmiar": "23",
         "cena_katalogowa": 20100,
-        "przedplata_100": 17200
+        "przedplata_100": 17200,
+        "cena_pociag": 15200
       },
       {
         "rozmiar": "24",
         "cena_katalogowa": 21200,
-        "przedplata_100": 18200
+        "przedplata_100": 18200,
+        "cena_pociag": 16000
       }
     ],
     "dodatki": {
