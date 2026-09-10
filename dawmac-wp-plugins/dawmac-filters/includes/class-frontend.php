@@ -29,6 +29,7 @@ class Dawmac_Filters_Frontend {
 	 * co snippet nwk_specs_for() pokazuje na kafelku opony.
 	 */
 	const ATTRIBUTES_TYRES = [
+		'pa_sezon'           => 'Sezon',
 		'pa_producent'       => 'Producent',
 		'pa_szerokosc_opony' => 'Szerokość',
 		'pa_profil'          => 'Profil',
