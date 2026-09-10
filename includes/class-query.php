@@ -41,14 +41,14 @@ class Dawmac_Filters_Query {
 
 		$sql = self::ids_sql( $filters );
 
-		if ( 'price_asc' === $orderby || 'price_desc' === $orderby ) {
-			$dir   = 'price_asc' === $orderby ? 'ASC' : 'DESC';
+		$kolejnosc = self::order_by_sql( $orderby );
+		if ( '' !== $kolejnosc ) {
 			$cards = Dawmac_Filters_Schema::cards_table_name();
-			// Cena z tabeli kart (kolumna na PK product_id) - pojedynczy lookup
-			// na produkt, zamiast nested-loop po wierszach 'price' tabeli meta.
+			// Cena i nazwa siedzą w tabeli kart (kolumny na PK product_id) -
+			// pojedynczy lookup na produkt, zamiast nested-loop po tabeli meta.
 			$sql   = "SELECT m.product_id FROM ({$sql}) m
 			          JOIN {$cards} c ON c.product_id = m.product_id
-			          ORDER BY c.price {$dir}, m.product_id DESC";
+			          ORDER BY {$kolejnosc}, m.product_id DESC";
 		}
 
 		if ( $limit > 0 ) {
@@ -82,14 +82,14 @@ class Dawmac_Filters_Query {
 
 		$ids_sql = self::ids_sql( $filters );
 
-		if ( 'price_asc' === $orderby || 'price_desc' === $orderby ) {
-			$dir   = 'price_asc' === $orderby ? 'ASC' : 'DESC';
+		$kolejnosc = self::order_by_sql( $orderby );
+		if ( '' !== $kolejnosc ) {
 			$cards = Dawmac_Filters_Schema::cards_table_name();
-			// Cena z tabeli kart (PK) - patrz get_product_ids().
+			// Cena/nazwa z tabeli kart (PK) - patrz get_product_ids().
 			$sql = "SELECT m.product_id, COUNT(*) OVER() AS _total
 			        FROM ({$ids_sql}) m
 			        JOIN {$cards} c ON c.product_id = m.product_id
-			        ORDER BY c.price {$dir}, m.product_id DESC";
+			        ORDER BY {$kolejnosc}, m.product_id DESC";
 		} else {
 			$sql = "SELECT m.product_id, COUNT(*) OVER() AS _total
 			        FROM ({$ids_sql}) m
@@ -315,6 +315,27 @@ class Dawmac_Filters_Query {
 	 * Warunki wykluczające: NOT EXISTS dla każdej pary attr => slugi.
 	 * (np. __exclude ['product_cat' => ['opony']] = snippet "ukryj opony").
 	 */
+	/**
+	 * Zamienia nazwę sortowania na fragment ORDER BY.
+	 *
+	 * Wyłącznie z zamkniętej listy - wartość trafia wprost do SQL-a, więc nie
+	 * ma tu miejsca na nic, czego sami nie wpisaliśmy.
+	 */
+	private static function order_by_sql( string $orderby ): string {
+		switch ( $orderby ) {
+			case 'price_asc':
+				return 'c.price ASC';
+			case 'price_desc':
+				return 'c.price DESC';
+			case 'title_asc':
+				return 'c.title ASC';
+			case 'title_desc':
+				return 'c.title DESC';
+			default:
+				return '';
+		}
+	}
+
 	private static function exclude_sql( array $exclude, string $alias = 'f0' ): string {
 		global $wpdb;
 		$table = Dawmac_Filters_Schema::table_name();
@@ -325,7 +346,10 @@ class Dawmac_Filters_Query {
 			if ( ! $slugs || ! preg_match( '/^[a-z0-9_-]{1,64}$/', (string) $attr ) ) {
 				continue;
 			}
-			$sql .= ' AND NOT EXISTS (SELECT 1 FROM ' . $table . ' ex WHERE ex.product_id = ' . $alias . '.product_id AND '
+			// NOT IN, nie NOT EXISTS: podzapytanie liczy się RAZ i zostaje w pamięci,
+			// zamiast wykonywać się dla każdego z 34 tysięcy produktów osobno.
+			// Zmierzone na produkcji: domyślny katalog 2,58 s -> 0,036 s.
+			$sql .= ' AND ' . $alias . '.product_id NOT IN (SELECT ex.product_id FROM ' . $table . ' ex WHERE '
 				. $wpdb->prepare( 'ex.attribute = %s', $attr )
 				. ' AND ex.value_slug IN (' . self::quoted_list( $slugs ) . '))';
 		}

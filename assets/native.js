@@ -30,6 +30,19 @@
 	const NWK_SALE_IMG = 'https://dawmac.pl/wp-content/uploads/2026/02/computer-icons-discounts-and-allowances-sales-red-sale-lable-dc3ddc0a1526425805bbcb50cf90b819.png';
 
 	let page    = 1;
+	// WooCommerce nazywa sortowania po swojemu (price, price-desc, title,
+	// title-desc), nasz silnik po swojemu. Jedno miejsce na tlumaczenie
+	// w obie strony, zeby nie rozjechalo sie miedzy odczytem a adresem.
+	const SORTOWANIA = {
+		'price':      'price_asc',
+		'price-desc': 'price_desc',
+		'title':      'title_asc',
+		'title-desc': 'title_desc'
+	};
+	const SORTOWANIA_ODWROTNIE = Object.fromEntries(
+		Object.entries(SORTOWANIA).map(([woo, nasze]) => [nasze, woo])
+	);
+
 	let orderby = detectNativeOrderby();
 
 	// ---------------------------------------------------------------------
@@ -55,7 +68,7 @@
 	// URL strony (do history/pushState i fallbacku) - czyste parametry df_*.
 	function pageUrl() {
 		const p = formParams();
-		if (orderby) p.set('orderby', orderby === 'price_asc' ? 'price' : 'price-desc');
+		if (orderby) p.set('orderby', SORTOWANIA_ODWROTNIE[orderby] || 'price');
 		const qs = p.toString();
 		return location.pathname + (qs ? '?' + qs : '');
 	}
@@ -81,9 +94,7 @@
 	function detectNativeOrderby() {
 		const sel = document.querySelector('.woocommerce-ordering select.orderby');
 		if (!sel) return '';
-		if (sel.value === 'price') return 'price_asc';
-		if (sel.value === 'price-desc') return 'price_desc';
-		return '';
+		return SORTOWANIA[sel.value] || '';
 	}
 
 	// ---------------------------------------------------------------------
@@ -332,8 +343,7 @@
 		if (!e.target.matches('.woocommerce-ordering select.orderby')) return;
 		e.preventDefault();
 		e.stopPropagation();
-		orderby = e.target.value === 'price-desc' ? 'price_desc'
-			: ( e.target.value === 'price' ? 'price_asc' : '' );
+		orderby = SORTOWANIA[e.target.value] || '';
 		page = 1;
 		refresh();
 	}, true);
