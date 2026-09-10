@@ -202,7 +202,7 @@ if ( $ids ) {
 		 FROM " . Dawmac_Filters_Schema::table_name() . "
 		 WHERE product_id IN ({$id_list})
 		   AND attribute IN ('pa_srednica','pa_szerokosc','pa_rozstaw','pa_et','pa_producent','pa_model',
-		                     'pa_szerokosc_opony','pa_profil','pa_srednica_opony','product_cat')
+		                     'pa_szerokosc_opony','pa_profil','pa_srednica_opony','pa_sezon','product_cat')
 		 ORDER BY value_numeric, value_label" // phpcs:ignore WordPress.DB.PreparedSQL
 	);
 	foreach ( $attr_rows as $ar ) {

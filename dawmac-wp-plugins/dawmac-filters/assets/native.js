@@ -126,6 +126,7 @@
 				['Szerokość', nwkNormal(a.szerokosc_opony)],
 				['Profil', nwkNormal(a.profil)],
 				['Średnica', nwkNormal(a.srednica_opony)],
+				['Sezon', nwkNormal(a.sezon)],
 			]
 			: [
 				['Średnica', nwkNormal(a.srednica)],
