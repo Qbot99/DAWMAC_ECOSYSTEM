@@ -35,10 +35,12 @@ class Dawmac_Filters_Native {
 		add_action( 'template_redirect', [ __CLASS__, 'redirect_legacy_fe_urls' ], 0 );
 		add_action( 'template_redirect', [ __CLASS__, 'redirect_product_search' ], 1 );
 		add_filter( 'sidebars_widgets', [ __CLASS__, 'suppress_fe_widget_on_shop' ] );
+		add_action( 'wp', [ __CLASS__, 'pilnuj_pustego_katalogu' ], 99 );
 	}
 
 	/** Slug kategorii opon (własny zestaw atrybutów). */
 	const TYRES_CAT = 'opony';
+	const LOG_OPTION = 'dawmac_filters_pusty_katalog';
 
 	/**
 	 * Gdzie działa Dawmac: '' (nigdzie), 'shop' (katalog felg) albo
@@ -305,6 +307,62 @@ class Dawmac_Filters_Native {
 	 * Parametry df_* z GET -> tablica filtrów dla Dawmac_Filters_Query.
 	 * Ta sama walidacja co w endpoint.php (is_numeric+is_finite, tylko pa_*).
 	 */
+	/**
+	 * Nie pozwala zapisać w cache strony sklepu, na której nie ma towaru.
+	 *
+	 * Powód z życia (2026-09-09): sklep wyrenderował się raz z zerem produktów
+	 * - zapytanie WooCommerce nie doszło do skutku po zadławieniu się PHP.
+	 * LiteSpeed zapisał tę pustą stronę i podawał ją WSZYSTKIM przez godziny,
+	 * odpowiadając 200 OK. Kopia trzyma się 7 dni, więc jeden zły render
+	 * potrafi wyłączyć sklep na tydzień, bez śladu w logach.
+	 *
+	 * Teraz taka strona nie trafia do cache: zły render zobaczy jedna osoba,
+	 * raz, a następne wejście policzy stronę od nowa.
+	 *
+	 * To NIE zapobiega złemu renderowi - pilnuje tylko, żeby go nie zamrozić.
+	 */
+	public static function pilnuj_pustego_katalogu(): void {
+		if ( is_admin() || ! self::engine_on() || '' === self::context() ) {
+			return;
+		}
+
+		global $wp_query;
+		$znalezione = isset( $wp_query->found_posts ) ? (int) $wp_query->found_posts : 0;
+		if ( $znalezione > 1 ) {
+			return;
+		}
+
+		// Pusto mimo braku filtrów = coś poszło nie tak (przy zdrowym sklepie
+		// jest tu 30 tysięcy produktów). Zapisujemy zdarzenie, żeby wiedzieć,
+		// jak często się zdarza, zamiast dowiadywać się przypadkiem.
+		if ( empty( self::filters_from_request() ) ) {
+			self::zapisz_pusty_katalog( $znalezione );
+		}
+
+		// Oficjalne polecenie LiteSpeed: tej odpowiedzi nie zapisuj.
+		do_action( 'litespeed_control_set_nocache', 'Dawmac Filters: pusty katalog' );
+		if ( ! headers_sent() ) {
+			header( 'Cache-Control: no-store, no-cache, must-revalidate, max-age=0', true );
+		}
+	}
+
+	/**
+	 * Dziennik pustych renderów - ostatnie 20 zdarzeń w opcji.
+	 */
+	private static function zapisz_pusty_katalog( int $znalezione ): void {
+		$dziennik = get_option( self::LOG_OPTION, [] );
+		if ( ! is_array( $dziennik ) ) {
+			$dziennik = [];
+		}
+		$dziennik[] = [
+			'czas'       => current_time( 'mysql' ),
+			'adres'      => esc_url_raw( ( isset( $_SERVER['REQUEST_URI'] ) ? (string) $_SERVER['REQUEST_URI'] : '' ) ),
+			'kontekst'   => self::context(),
+			'znalezione' => $znalezione,
+		];
+		update_option( self::LOG_OPTION, array_slice( $dziennik, -20 ), 'no' );
+	}
+
 	public static function filters_from_request(): array {
 		$filters = [];
 
