@@ -7,7 +7,7 @@
  *   f[<atrybut>]  lista slugów po przecinku (OR w ramach atrybutu)
  *   price_min / price_max
  *   instock=1     tylko dostępne
- *   orderby       price_asc | price_desc
+ *   orderby       price_asc | price_desc | title_asc | title_desc
  *   page          od 1 (domyślnie 1)
  *   per_page      domyślnie 24, max 60
  *
@@ -126,7 +126,7 @@ if ( isset( $_GET['s'] ) && is_string( $_GET['s'] ) && '' !== trim( $_GET['s'] )
 	$filters['search'] = mb_substr( trim( $_GET['s'] ), 0, 100 );
 }
 
-$orderby  = in_array( $_GET['orderby'] ?? '', [ 'price_asc', 'price_desc' ], true ) ? $_GET['orderby'] : '';
+$orderby  = in_array( $_GET['orderby'] ?? '', [ 'price_asc', 'price_desc', 'title_asc', 'title_desc' ], true ) ? $_GET['orderby'] : '';
 $page     = max( 1, (int) ( $_GET['page'] ?? 1 ) );
 $per_page = min( 60, max( 1, (int) ( $_GET['per_page'] ?? 24 ) ) );
 
