@@ -40,6 +40,13 @@ class Dawmac_Filters_Native {
 
 	/** Slug kategorii opon (własny zestaw atrybutów). */
 	const TYRES_CAT = 'opony';
+
+	/**
+	 * Slug sezonowej kategorii promocyjnej - felgi, te same atrybuty co sklep.
+	 * Sezon się zmienia (wiosną będzie inny slug) - wtedy zmienić tylko tu.
+	 */
+	const PROMO_CAT = 'jesienna-promocja';
+
 	const LOG_OPTION = 'dawmac_filters_pusty_katalog';
 
 	/**
@@ -51,8 +58,13 @@ class Dawmac_Filters_Native {
 		if ( ! did_action( 'wp' ) ) {
 			return ''; // za wcześnie, query jeszcze nie rozstrzygnięte
 		}
-		if ( function_exists( 'is_product_category' ) && is_product_category( self::TYRES_CAT ) ) {
-			return self::TYRES_CAT;
+		if ( function_exists( 'is_product_category' ) ) {
+			if ( is_product_category( self::TYRES_CAT ) ) {
+				return self::TYRES_CAT;
+			}
+			if ( is_product_category( self::PROMO_CAT ) ) {
+				return self::PROMO_CAT;
+			}
 		}
 		if ( function_exists( 'is_shop' ) && is_shop() ) {
 			return 'shop';
@@ -74,7 +86,7 @@ class Dawmac_Filters_Native {
 		if ( $q->is_tax( 'product_cat' ) ) {
 			$slug = (string) $q->get( 'product_cat' );
 			$slug = substr( strrchr( '/' . $slug, '/' ), 1 ); // "rodzic/opony" -> "opony"
-			return self::TYRES_CAT === $slug ? self::TYRES_CAT : '';
+			return in_array( $slug, [ self::TYRES_CAT, self::PROMO_CAT ], true ) ? $slug : '';
 		}
 		if ( $q->is_post_type_archive( 'product' ) ) {
 			return 'shop';
@@ -581,7 +593,11 @@ class Dawmac_Filters_Widget extends WP_Widget {
 				<label class="dawmac-search">
 					<span class="screen-reader-text">Szukaj felg</span>
 					<input type="search" name="df_s" class="dawmac-search-input"
-						placeholder="<?php echo Dawmac_Filters_Native::TYRES_CAT === $context ? 'Szukaj opon…' : 'Szukaj felg…'; ?>"
+						placeholder="<?php
+						echo Dawmac_Filters_Native::TYRES_CAT === $context
+							? 'Szukaj opon…'
+							: ( Dawmac_Filters_Native::PROMO_CAT === $context ? 'Szukaj w promocji…' : 'Szukaj felg…' );
+						?>"
 						value="<?php echo esc_attr( $val( 'df_s' ) ); ?>" autocomplete="off">
 				</label>
 			</div>

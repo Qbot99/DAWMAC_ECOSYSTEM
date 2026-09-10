@@ -113,6 +113,18 @@ class Dawmac_Filters_Indexer {
 		update_option( self::cache_key_for( Dawmac_Filters_Native::TYRES_CAT ), $tyre_json, 'no' );
 		update_option( self::backup_key_for( Dawmac_Filters_Native::TYRES_CAT ), $tyre_json, 'no' );
 
+		// Jesienna promocja: felgi, te same atrybuty co sklep, ale listy
+		// liczone TYLKO wśród produktów tej kategorii - inaczej w filtrze
+		// producenta wylądowałyby wszystkie 150 marek sklepu zamiast tych
+		// faktycznie objętych promocją.
+		$promo_counters = Dawmac_Filters_Query::get_counters(
+			[ 'product_cat' => [ Dawmac_Filters_Native::PROMO_CAT ] ],
+			$attrs
+		);
+		$promo_json = wp_json_encode( $promo_counters );
+		update_option( self::cache_key_for( Dawmac_Filters_Native::PROMO_CAT ), $promo_json, 'no' );
+		update_option( self::backup_key_for( Dawmac_Filters_Native::PROMO_CAT ), $promo_json, 'no' );
+
 		// Właśnie rozgrzaliśmy - skasuj ewentualny zaplanowany warm, żeby
 		// nie liczyć drugi raz (np. po pełnym reindeksie, który woła to wprost).
 		if ( function_exists( 'wp_clear_scheduled_hook' ) ) {
