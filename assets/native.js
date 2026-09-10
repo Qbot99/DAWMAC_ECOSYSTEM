@@ -25,6 +25,11 @@
 	const ENDPOINT = form.dataset.endpoint;
 	const IS_SHOP  = form.dataset.shop === '1';
 	const CAT      = form.dataset.cat || '';
+	// Wejscie z wyszukiwarki na stronie glownej ("szukaj wszedzie"): dopoki
+	// fraza sie nie zmieni na pusta, kolejne filtry tez maja przeszukiwac
+	// caly katalog. Inaczej pierwszy klik filtra chowalby opony i wyniki
+	// znikalyby uzytkownikowi w trakcie zawezania.
+	const WESZLO_Z_GLOWNEJ = form.dataset.global === '1';
 	const PER_PAGE = 32; // parytet ze snippetem nwk (loop_shop_per_page)
 
 	const NWK_SALE_IMG = 'https://dawmac.pl/wp-content/uploads/2026/02/computer-icons-discounts-and-allowances-sales-red-sale-lable-dc3ddc0a1526425805bbcb50cf90b819.png';
@@ -58,6 +63,14 @@
 		return p;
 	}
 
+	// Czy wciaz jestesmy w trybie "szukaj wszedzie" (globalne wejscie
+	// + niepusta fraza). Skasowanie frazy = zwykle przegladanie sklepu.
+	function szukamyWszedzie() {
+		if (!WESZLO_Z_GLOWNEJ) return false;
+		const s = form.querySelector('[name="df_s"]');
+		return !!(s && s.value.trim());
+	}
+
 	function hasAnyFilter(p) {
 		for (const k of p.keys()) {
 			if (k.startsWith('df_')) return true;
@@ -69,6 +82,9 @@
 	function pageUrl() {
 		const p = formParams();
 		if (orderby) p.set('orderby', SORTOWANIA_ODWROTNIE[orderby] || 'price');
+		// Znacznik zostaje w adresie, zeby odswiezenie strony i przycisk
+		// "wstecz" odtworzyly ten sam, globalny zbior wynikow.
+		if (szukamyWszedzie()) p.set('df_global', '1');
 		const qs = p.toString();
 		return location.pathname + (qs ? '?' + qs : '');
 	}
@@ -83,7 +99,7 @@
 			else if (k === 'df_instock') p.set('instock', '1');
 			else if (k.startsWith('df_')) p.set(k.slice(3), v);            // df_price_min -> price_min
 		}
-		if (IS_SHOP) p.set('not_cat', 'opony');                            // mirror: "ukryj opony"
+		if (IS_SHOP && !szukamyWszedzie()) p.set('not_cat', 'opony');      // mirror: "ukryj opony"
 		if (CAT) p.append('f[product_cat]', CAT);                          // kategoria: zostań w niej
 		if (orderby) p.set('orderby', orderby);
 		p.set('page', String(page));
