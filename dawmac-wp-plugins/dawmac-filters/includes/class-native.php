@@ -30,6 +30,7 @@ class Dawmac_Filters_Native {
 
 	public static function init(): void {
 		add_action( 'widgets_init', [ __CLASS__, 'register_widget' ] );
+		add_action( 'woocommerce_product_query', [ __CLASS__, 'unhide_opony_for_global_search' ], 15 );
 		add_action( 'woocommerce_product_query', [ __CLASS__, 'filter_product_query' ], 20 );
 		add_action( 'wp_enqueue_scripts', [ __CLASS__, 'assets' ] );
 		add_action( 'template_redirect', [ __CLASS__, 'redirect_legacy_fe_urls' ], 0 );
@@ -40,6 +41,13 @@ class Dawmac_Filters_Native {
 
 	/** Slug kategorii opon (własny zestaw atrybutów). */
 	const TYRES_CAT = 'opony';
+
+	/**
+	 * Slug sezonowej kategorii promocyjnej - felgi, te same atrybuty co sklep.
+	 * Sezon się zmienia (wiosną będzie inny slug) - wtedy zmienić tylko tu.
+	 */
+	const PROMO_CAT = 'jesienna-promocja';
+
 	const LOG_OPTION = 'dawmac_filters_pusty_katalog';
 
 	/**
@@ -51,8 +59,13 @@ class Dawmac_Filters_Native {
 		if ( ! did_action( 'wp' ) ) {
 			return ''; // za wcześnie, query jeszcze nie rozstrzygnięte
 		}
-		if ( function_exists( 'is_product_category' ) && is_product_category( self::TYRES_CAT ) ) {
-			return self::TYRES_CAT;
+		if ( function_exists( 'is_product_category' ) ) {
+			if ( is_product_category( self::TYRES_CAT ) ) {
+				return self::TYRES_CAT;
+			}
+			if ( is_product_category( self::PROMO_CAT ) ) {
+				return self::PROMO_CAT;
+			}
 		}
 		if ( function_exists( 'is_shop' ) && is_shop() ) {
 			return 'shop';
@@ -74,7 +87,7 @@ class Dawmac_Filters_Native {
 		if ( $q->is_tax( 'product_cat' ) ) {
 			$slug = (string) $q->get( 'product_cat' );
 			$slug = substr( strrchr( '/' . $slug, '/' ), 1 ); // "rodzic/opony" -> "opony"
-			return self::TYRES_CAT === $slug ? self::TYRES_CAT : '';
+			return in_array( $slug, [ self::TYRES_CAT, self::PROMO_CAT ], true ) ? $slug : '';
 		}
 		if ( $q->is_post_type_archive( 'product' ) ) {
 			return 'shop';
@@ -166,6 +179,11 @@ class Dawmac_Filters_Native {
 	 * Przekierowujemy taki request na sklep z parametrem df_s: formularz
 	 * i jego stylowanie zostają NIETKNIĘTE (to ta sama "metalowa
 	 * wyszukiwarka"), zmienia się tylko silnik, który liczy wyniki.
+	 *
+	 * To JEDYNE miejsce, z którego leci df_global=1 - znacznik "szukaj
+	 * wszędzie" (patrz unhide_opony_for_global_search). Wyszukiwarki osadzone
+	 * bezpośrednio w sklepie/oponach/promocji (pole df_s w widgecie) nigdy
+	 * przez tę funkcję nie przechodzą - zostają zawężone do swojej kategorii.
 	 */
 	public static function redirect_product_search(): void {
 		if ( ! self::engine_on() || ! is_search() ) {
@@ -189,9 +207,55 @@ class Dawmac_Filters_Native {
 			return;
 		}
 
-		$target = add_query_arg( 'df_s', rawurlencode( $term ), get_permalink( $shop_id ) );
+		$target = add_query_arg(
+			[
+				'df_s'      => rawurlencode( $term ),
+				'df_global' => '1', // "szukaj wszędzie" - patrz unhide_opony_for_global_search()
+			],
+			get_permalink( $shop_id )
+		);
 		wp_safe_redirect( $target, 302 ); // 302: wyniki wyszukiwania są dynamiczne
 		exit;
+	}
+
+	/**
+	 * Wyszukiwarka ze strony głównej ma szukać WSZĘDZIE (felgi + promocja +
+	 * opony), ale strona sklepu ma swój snippet "ukryj opony na stronie
+	 * sklepu" (woocommerce_product_query, priorytet domyślny 10), który
+	 * dokłada do zapytania tax_query "product_cat NOT IN (Opony)" - bez
+	 * wyjątków, zawsze gdy is_shop().
+	 *
+	 * Żeby wyszukiwarka główna faktycznie widziała opony, TYLKO gdy żądanie
+	 * ma znacznik df_global=1 (czyli wyłącznie po przekierowaniu z
+	 * redirect_product_search - nigdy przy zwykłym przeglądaniu sklepu ani
+	 * przy szukaniu w samym widgecie filtrów) zdejmujemy z zapytania właśnie
+	 * TĘ jedną klauzulę. Reszta zapytania - łącznie z resztą tax_query,
+	 * gdyby jakaś inna istniała - zostaje nietknięta. Priorytet 15: po
+	 * snippecie Huberta (10, klauzula już dołożona), przed naszym własnym
+	 * post__in (20).
+	 *
+	 * Plik snippetu "ukryj opony" NIE jest tu w żaden sposób modyfikowany -
+	 * to jest osobny hook w NASZEJ wtyczce, aktywny tylko dla jednego,
+	 * wyraźnie oznaczonego typu żądania.
+	 */
+	public static function unhide_opony_for_global_search( $q ): void {
+		if ( empty( $_GET['df_global'] )
+			|| ! ( function_exists( 'is_shop' ) && is_shop() )
+			|| ! $q->is_main_query() ) {
+			return;
+		}
+
+		$tax_query = (array) $q->get( 'tax_query' );
+		$tax_query = array_values( array_filter( $tax_query, static function ( $clause ) {
+			if ( ! is_array( $clause )
+				|| 'product_cat' !== strtolower( (string) ( $clause['taxonomy'] ?? '' ) )
+				|| 'NOT IN' !== strtoupper( (string) ( $clause['operator'] ?? 'IN' ) ) ) {
+				return true; // nie nasza klauzula - zostaw bez zmian
+			}
+			$terms = array_map( 'strtolower', array_map( 'strval', (array) ( $clause['terms'] ?? [] ) ) );
+			return ! in_array( self::TYRES_CAT, $terms, true );
+		} ) );
+		$q->set( 'tax_query', $tax_query );
 	}
 
 	/**
@@ -565,7 +629,8 @@ class Dawmac_Filters_Widget extends WP_Widget {
 		<form class="dawmac-native" id="dawmac-native" method="get" action=""
 			data-endpoint="<?php echo esc_url( DAWMAC_FILTERS_URL . 'endpoint.php' ); ?>"
 			data-shop="<?php echo $is_shop ? '1' : ''; ?>"
-			data-cat="<?php echo esc_attr( $cat_slug ); ?>">
+			data-cat="<?php echo esc_attr( $cat_slug ); ?>"
+			data-global="<?php echo empty( $_GET['df_global'] ) ? '' : '1'; ?>">
 			<?php
 			// Licznik wyników. Przy wejściu na stronę bierzemy go z głównego
 			// zapytania (jest już policzone), a po każdej zmianie filtra
@@ -581,7 +646,11 @@ class Dawmac_Filters_Widget extends WP_Widget {
 				<label class="dawmac-search">
 					<span class="screen-reader-text">Szukaj felg</span>
 					<input type="search" name="df_s" class="dawmac-search-input"
-						placeholder="<?php echo Dawmac_Filters_Native::TYRES_CAT === $context ? 'Szukaj opon…' : 'Szukaj felg…'; ?>"
+						placeholder="<?php
+						echo Dawmac_Filters_Native::TYRES_CAT === $context
+							? 'Szukaj opon…'
+							: ( Dawmac_Filters_Native::PROMO_CAT === $context ? 'Szukaj w promocji…' : 'Szukaj felg…' );
+						?>"
 						value="<?php echo esc_attr( $val( 'df_s' ) ); ?>" autocomplete="off">
 				</label>
 			</div>

@@ -121,9 +121,10 @@ class Dawmac_Filters_Admin {
 
 		if ( 'dawmac' === $target ) {
 			update_option( self::MODE_OPTION, 'dawmac' );
-			// Filter Everything ZOSTAJE aktywny - obsługuje kategorie
-			// (m.in. opony). Na samej stronie sklepu jego widget jest
-			// wyciszany filtrem sidebars_widgets. Czysty podział ról.
+			// Filter Everything ZOSTAJE aktywny - obsługuje pozostałe kategorie
+			// (Dawmac przejął sklep, opony i jesienną promocję). Na tych
+			// stronach jego widget jest wyciszany filtrem sidebars_widgets.
+			// Czysty podział ról.
 			if ( $fe && ! is_plugin_active( $fe ) ) {
 				$res = activate_plugin( $fe );
 				if ( is_wp_error( $res ) ) {
@@ -166,7 +167,7 @@ class Dawmac_Filters_Admin {
 			. 'wersja ' . esc_html( DAWMAC_FILTERS_VERSION ) . '</span></h1>';
 
 		if ( 'dawmac' === $switched ) {
-			echo '<div class="notice notice-success"><p><strong>Włączono Dawmac Filtry na stronie sklepu (felgi).</strong> Filter Everything działa dalej i obsługuje kategorie - w tym opony.</p></div>';
+			echo '<div class="notice notice-success"><p><strong>Włączono Dawmac Filtry.</strong> Obejmuje sklep, opony i jesienną promocję. Filter Everything działa dalej i obsługuje pozostałe kategorie.</p></div>';
 		} elseif ( 'fe' === $switched ) {
 			echo '<div class="notice notice-success"><p><strong>Przywrócono Filter Everything wszędzie.</strong> Nasze filtry uśpione (indeks aktualizuje się dalej w tle).</p></div>';
 		} elseif ( 'fe_error' === $switched ) {
@@ -178,7 +179,7 @@ class Dawmac_Filters_Admin {
 		echo '<div style="background:#fff;border:1px solid #ccd0d4;border-left:4px solid ' . esc_attr( $state_color ) . ';padding:14px 18px;margin:18px 0;max-width:720px">';
 		echo '<h2 style="margin-top:0">Strona sklepu (felgi): <span style="color:' . esc_attr( $state_color ) . '">'
 			. ( $is_dawmac ? 'Dawmac Filtry (nowy, szybki)' : 'Filter Everything (stary)' ) . '</span></h2>';
-		echo '<p><strong>Kategorie (m.in. opony): zawsze Filter Everything</strong> - tam nic nie zmieniamy.</p>';
+		echo '<p><strong>Sklep, opony, jesienna promocja: Dawmac Filtry</strong> (gdy włączone). <strong>Pozostałe kategorie: zawsze Filter Everything</strong> - tam nic nie zmieniamy.</p>';
 		echo '<p>Filter Everything wykryty: ' . ( $fe ? '<code>' . esc_html( $fe_name ) . '</code> - ' . ( $fe_active ? 'aktywny' : 'nieaktywny' ) : '<em>nie znaleziono</em>' ) . '</p>';
 		echo '</div>';
 
@@ -191,7 +192,7 @@ class Dawmac_Filters_Admin {
 			'<a href="%s" class="button button-primary button-hero" %s>➜ Włącz Dawmac Filtry%s</a>',
 			esc_url( $to_dawmac ),
 			$is_dawmac ? 'style="pointer-events:none;opacity:.5"' : '',
-			$is_dawmac ? ' (aktywne)' : '<br><small>tylko strona sklepu; opony zostają na FE</small>'
+			$is_dawmac ? ' (aktywne)' : '<br><small>sklep, opony, jesienna promocja</small>'
 		);
 
 		// -> Filter Everything (rollback)
