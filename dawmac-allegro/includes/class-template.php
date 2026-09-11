@@ -270,6 +270,38 @@ class Dawmac_Allegro_Template {
 			. 'felga przednia. Komplet zawiera cztery felgi w konfiguracji podanej wyżej.</p>';
 	}
 
+	/**
+	 * Pierwsza wartosc pola, ktore moze byc tablica.
+	 *
+	 * Szerokosc i ET przy zestawie mieszanym sa tablicami. Rzutowanie takiej
+	 * tablicy na tekst dawalo ostrzezenie PHP i doslowne "Array" w tytule.
+	 */
+	private static function pierwsza( $v ): string {
+		if ( is_array( $v ) ) {
+			$v = reset( $v );
+		}
+
+		return trim( (string) $v );
+	}
+
+	/** "ET25" albo "ET25+43" przy zestawie mieszanym. Pusta, gdy brak. */
+	private static function etykieta_et( array $product ): string {
+		$v = $product['et'] ?? '';
+		$v = is_array( $v ) ? $v : [ $v ];
+
+		$out = [];
+
+		foreach ( $v as $x ) {
+			$x = trim( (string) $x );
+
+			if ( '' !== $x ) {
+				$out[] = $x;
+			}
+		}
+
+		return $out ? 'ET' . implode( '+', $out ) : '';
+	}
+
 	private static function cale( string $value ): string {
 		$out = [];
 
@@ -439,7 +471,7 @@ class Dawmac_Allegro_Template {
 			$product['model'] ?? '',
 			$this->size_label( $product ),
 			$tyres ? '' : $this->rozstaw_label( $product ),
-			! $tyres && isset( $product['et'] ) && '' !== (string) $product['et'] ? 'ET' . $product['et'] : '',
+			! $tyres ? self::etykieta_et( $product ) : '',
 		] );
 
 		$title = implode( ' ', array_map( 'strval', $parts ) );
@@ -468,8 +500,8 @@ class Dawmac_Allegro_Template {
 			return '' !== $p ? "{$w}/{$p} R{$d}" : "{$w} R{$d}";
 		}
 
-		$w = trim( (string) ( $product['szerokosc'] ?? '' ) );
-		$d = trim( (string) ( $product['srednica'] ?? '' ) );
+		$w = self::pierwsza( $product['szerokosc'] ?? '' );
+		$d = self::pierwsza( $product['srednica'] ?? '' );
 
 		if ( '' === $w || '' === $d ) {
 			return $d !== '' ? $d . '"' : '';

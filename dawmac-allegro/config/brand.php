@@ -129,6 +129,16 @@ return [
 	 *
 	 * Identyfikatory pochodza z konta DawmacPolska i sa dla niego stale.
 	 */
+	/**
+	 * Cennik. Marki wlasne i te, ktore sprzedawca ma w cenniku producenta,
+	 * ida po cenie sklepowej. Reszta dostaje staly narzut - pokrywa prowizje
+	 * Allegro, ktorej w cenie sklepowej nie ma.
+	 */
+	'cennik' => [
+		'narzut'      => 150.00,
+		'bez_narzutu' => [ 'Concaver', 'Japan Racing' ],
+	],
+
 	'oferta' => [
 		'kategoria'      => '257711',   // Felgi > Do samochodow > Aluminiowe
 		'handling_time'  => 'PT48H',    // tyle deklaruje istniejaca oferta

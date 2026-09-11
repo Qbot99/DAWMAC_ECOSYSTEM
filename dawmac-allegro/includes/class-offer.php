@@ -73,8 +73,8 @@ class Dawmac_Allegro_Offer {
 			$problemy[] = 'nie da się zbudować tytułu oferty';
 		}
 
-		// 5. Cena.
-		$cena = (string) ( $dane['cena'] ?? '' );
+		// 5. Cena: sklepowa plus narzut, zaleznie od marki.
+		$cena = self::cena( $dane, $config );
 
 		if ( '' === $cena || (float) $cena <= 0 ) {
 			$problemy[] = 'produkt nie ma ceny';
@@ -160,6 +160,19 @@ class Dawmac_Allegro_Offer {
 		$istniejaca = self::offer_id( $product->get_id() );
 
 		$response = self::wyslij( $b['offer'], $istniejaca );
+
+		// Wygasle zdjecia: Allegro kasuje pliki wgrane przez API, jesli nie
+		// zostana w porę przypiete do oferty. Czyscimy cache i skladamy oferte
+		// jeszcze raz, ze swiezo wgranymi plikami.
+		if ( is_wp_error( $response ) && str_contains( $response->get_error_message(), 'nie istniej' ) ) {
+			Dawmac_Allegro_Images::zapomnij( $b['dane']['gallery'] ?? [] );
+
+			$b = self::build( $product, $dict, $status );
+
+			if ( ! is_wp_error( $b ) ) {
+				$response = self::wyslij( $b['offer'], $istniejaca );
+			}
+		}
 
 		// Allegro potrafi samo rozpoznac produkt w katalogu i odmowic, bo nasz
 		// "Kod producenta" rozni sie od katalogowego:
@@ -387,6 +400,32 @@ class Dawmac_Allegro_Offer {
 		}
 
 		return $zarzuty;
+	}
+
+	/**
+	 * Cena oferty: sklepowa, powiekszona o narzut dla marek spoza listy.
+	 *
+	 * Concaver i Japan Racing ida po cenie sklepowej - sprzedawca ma je
+	 * w cenniku producenta i marze ma juz wliczona. Pozostale marki dostaja
+	 * staly narzut, ktory pokrywa prowizje Allegro.
+	 */
+	private static function cena( array $dane, array $config ): string {
+		$cena = (float) ( $dane['cena'] ?? 0 );
+
+		if ( $cena <= 0 ) {
+			return '';
+		}
+
+		$cennik = $config['cennik'] ?? [];
+		$marka  = mb_strtolower( trim( (string) ( $dane['producent'] ?? '' ) ), 'UTF-8' );
+
+		foreach ( (array) ( $cennik['bez_narzutu'] ?? [] ) as $wolna ) {
+			if ( mb_strtolower( trim( (string) $wolna ), 'UTF-8' ) === $marka ) {
+				return number_format( $cena, 2, '.', '' );
+			}
+		}
+
+		return number_format( $cena + (float) ( $cennik['narzut'] ?? 0 ), 2, '.', '' );
 	}
 
 	/** ID oferty przypisanej do produktu albo null. */

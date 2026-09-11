@@ -148,6 +148,33 @@ class Dawmac_Allegro_Images {
 	}
 
 	/**
+	 * Usuwa z cache adresy podanych zdjec, wymuszajac ponowne wgranie.
+	 *
+	 * Allegro kasuje pliki wgrane przez API, jesli nie zostana w porę przypiete
+	 * do oferty. Cache trzymal wtedy martwe adresy i tworzenie produktu padalo
+	 * na "niektore adresy prowadza do zdjec ktore juz nie istnieja".
+	 *
+	 * @param string[] $urls Adresy w sklepie.
+	 */
+	public static function zapomnij( array $urls ): void {
+		$cache = get_option( self::OPT_CACHE . '_products', [] );
+		$zmiana = false;
+
+		foreach ( $urls as $url ) {
+			$key = md5( (string) $url );
+
+			if ( isset( $cache[ $key ] ) ) {
+				unset( $cache[ $key ] );
+				$zmiana = true;
+			}
+		}
+
+		if ( $zmiana ) {
+			update_option( self::OPT_CACHE . '_products', $cache, 'no' );
+		}
+	}
+
+	/**
 	 * Zdjecia produktu na serwerach Allegro, z cache po adresie zrodlowym.
 	 * Bez cache kazda aktualizacja oferty wgrywalaby te same pliki od nowa.
 	 *
