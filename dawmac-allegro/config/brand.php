@@ -130,6 +130,17 @@ return [
 	 * Identyfikatory pochodza z konta DawmacPolska i sa dla niego stale.
 	 */
 	/**
+	 * Nazwy marek ze sklepu na brzmienia ze slownika Allegro.
+	 *
+	 * Slownik producentow ma 814 pozycji i jest zamkniety - marki spoza niego
+	 * nie da sie wystawic. Czesc roznic to jednak sam zapis: sklep ma "Wrath",
+	 * Allegro "Wrath Wheels". Tu je zestawiamy.
+	 */
+	'marki_alias' => [
+		'Wrath' => 'Wrath Wheels',
+	],
+
+	/**
 	 * Cennik. Marki wlasne i te, ktore sprzedawca ma w cenniku producenta,
 	 * ida po cenie sklepowej. Reszta dostaje staly narzut - pokrywa prowizje
 	 * Allegro, ktorej w cenie sklepowej nie ma.

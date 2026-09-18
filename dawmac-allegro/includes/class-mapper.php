@@ -185,7 +185,7 @@ class Dawmac_Allegro_Mapper {
 		$slownik( self::P_STAN, 'Nowy', true, 'Stan' );
 		$slownik( self::P_LICZBA, '4 szt.', true, 'Liczba felg w ofercie' );
 
-		$slownik( self::P_PRODUCENT, $product['producent'] ?? null, true, 'Producent felg' );
+		$slownik( self::P_PRODUCENT, self::marka( $product ), true, 'Producent felg' );
 		$slownik( self::P_SREDNICA, self::srednica( $product ), true, 'Średnica felgi' );
 		$slownik( self::P_SZEROKOSC, $nadpisz['szerokosc'] ?? self::szerokosc( $product ), true, 'Szerokość felgi' );
 		$slownik( self::P_ROZSTAW, self::rozstaw( $product ), true, 'Rozstaw śrub' );
@@ -391,6 +391,31 @@ class Dawmac_Allegro_Mapper {
 		}
 
 		return $out;
+	}
+
+	/**
+	 * Marka w brzmieniu ze slownika Allegro, gdy znamy odpowiednik.
+	 *
+	 * Slownik producentow jest zamkniety, ale czesc rozbieznosci to sam zapis:
+	 * sklep ma "Wrath", Allegro "Wrath Wheels". Bez aliasu zwracamy wartosc
+	 * ze sklepu bez zmian.
+	 */
+	private static function marka( array $product ): ?string {
+		$m = trim( (string) ( $product['producent'] ?? '' ) );
+
+		if ( '' === $m ) {
+			return null;
+		}
+
+		$config = function_exists( 'dawmac_allegro_config' ) ? dawmac_allegro_config() : [];
+
+		foreach ( (array) ( $config['marki_alias'] ?? [] ) as $ze_sklepu => $w_allegro ) {
+			if ( 0 === strcasecmp( trim( (string) $ze_sklepu ), $m ) ) {
+				return (string) $w_allegro;
+			}
+		}
+
+		return $m;
 	}
 
 	private static function szerokosc( array $product ): ?string {

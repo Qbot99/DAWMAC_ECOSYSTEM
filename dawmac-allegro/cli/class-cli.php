@@ -625,4 +625,54 @@ class Dawmac_Allegro_CLI {
 
 		WP_CLI::success( 'Komenda wykonana. Sprawdź "wp dawmac-allegro status".' );
 	}
+
+	/**
+	 * Wyrownuje ceny ofert z cenami w sklepie.
+	 *
+	 * Marki z listy 'bez_narzutu' w konfiguracji ida po cenie sklepowej,
+	 * pozostale dostaja narzut. Dotyka tylko ofert, ktorych cena sie rozni.
+	 *
+	 * ## OPTIONS
+	 *
+	 * [--sucho]
+	 * : Tylko pokaz, co by sie zmienilo, bez wysylania na Allegro.
+	 *
+	 * ## EXAMPLES
+	 *
+	 *     wp dawmac-allegro ceny
+	 *     wp dawmac-allegro ceny --sucho
+	 */
+	public function ceny( array $args, array $flags ): void {
+		$na_sucho = isset( $flags['sucho'] );
+
+		if ( $na_sucho ) {
+			WP_CLI::log( 'Przebieg próbny - nic nie zostanie wysłane na Allegro.' );
+		}
+
+		$w = Dawmac_Allegro_Prices::sync( $na_sucho );
+
+		foreach ( array_slice( $w['szczegoly'], 0, 15 ) as $x ) {
+			WP_CLI::log( '  ' . $x );
+		}
+
+		if ( count( $w['szczegoly'] ) > 15 ) {
+			WP_CLI::log( sprintf( '  ... i %d więcej', count( $w['szczegoly'] ) - 15 ) );
+		}
+
+		WP_CLI::log( '' );
+		WP_CLI::log( sprintf(
+			'zmienione: %d · bez zmian: %d · błędy: %d · łączna zmiana: %+.2f zł',
+			$w['zmienione'],
+			$w['bez_zmian'],
+			$w['bledy'],
+			$w['roznica']
+		) );
+
+		if ( $w['bledy'] ) {
+			WP_CLI::warning( 'Część ofert nie przyjęła nowej ceny.' );
+			return;
+		}
+
+		WP_CLI::success( $na_sucho ? 'Przebieg próbny zakończony.' : 'Ceny wyrównane.' );
+	}
 }

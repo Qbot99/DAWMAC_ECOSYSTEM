@@ -25,6 +25,7 @@ require_once DAWMAC_ALLEGRO_DIR . 'includes/class-client.php';
 require_once DAWMAC_ALLEGRO_DIR . 'includes/class-images.php';
 require_once DAWMAC_ALLEGRO_DIR . 'includes/class-mapper.php';
 require_once DAWMAC_ALLEGRO_DIR . 'includes/class-catalog.php';
+require_once DAWMAC_ALLEGRO_DIR . 'includes/class-prices.php';
 require_once DAWMAC_ALLEGRO_DIR . 'includes/class-offer.php';
 require_once DAWMAC_ALLEGRO_DIR . 'includes/class-admin.php';
 
@@ -66,6 +67,7 @@ add_action( 'plugins_loaded', static function (): void {
 	}
 
 	Dawmac_Allegro_Admin::init();
+	Dawmac_Allegro_Prices::init();
 } );
 
 // Komendy konsolowe - w stylu dawmac-filters, do odpalania z hostingu.
