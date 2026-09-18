@@ -132,6 +132,7 @@ class Dawmac_Allegro_Catalog {
 				'nazwa'       => (string) ( $p['name'] ?? '' ),
 				'k'           => self::klucz( (string) ( $p['name'] ?? '' ) ),
 				'wykonczenie' => self::wykonczenie_produktu( $p ),
+				'kod'         => self::kod_produktu( $p ),
 			];
 		}
 
@@ -174,7 +175,11 @@ class Dawmac_Allegro_Catalog {
 				continue;
 			}
 
-			if ( null !== $et && null !== $c['k']['et'] && $c['k']['et'] !== $et ) {
+			// ET bierzemy z nazwy, a gdy jej nie ma - z kodu producenta.
+			$kod_dane = self::z_kodu( $c['kod'] ?? '' );
+			$kat_et   = $c['k']['et'] ?? $kod_dane['et'];
+
+			if ( null !== $et && null !== $kat_et && $kat_et !== $et ) {
 				continue;
 			}
 
@@ -183,7 +188,7 @@ class Dawmac_Allegro_Catalog {
 			// Tinted Black, choc po nazwie tego nie widac. Dopasowanie po samej
 			// nazwie podpielo brazowa felge pod czarna. Porownujemy wiec
 			// parametry, a bez pewnosci - odmawiamy.
-			if ( ! self::zgodne_wykonczenie( $c, $dane ) ) {
+			if ( ! self::zgodne_wykonczenie( $c, $dane, $kod_dane['wyk'] ) ) {
 				continue;
 			}
 
@@ -191,6 +196,50 @@ class Dawmac_Allegro_Catalog {
 		}
 
 		return null;
+	}
+
+	/** Kod producenta z parametrow pozycji katalogowej. */
+	private static function kod_produktu( array $p ): string {
+		foreach ( $p['parameters'] ?? [] as $par ) {
+			if ( Dawmac_Allegro_Mapper::P_KOD === (string) ( $par['id'] ?? '' ) ) {
+				return trim( (string) ( $par['values'][0] ?? '' ) );
+			}
+		}
+
+		return '';
+	}
+
+	/**
+	 * Odsadzenie i wykonczenie z kodu producenta.
+	 *
+	 * Nazwy katalogowe czesto nie podaja ani ET, ani wykonczenia - a parametr
+	 * Wykonczenie jest w katalogu pusty. Oba siedza natomiast w kodzie:
+	 *
+	 *   JR211885F15L4566HG1
+	 *        18 85    L45 66 HG    -> 18", 8.5J, ET45, otwor 66, Hyper Gray
+	 *
+	 * @return array{et:?int,wyk:string}
+	 */
+	private static function z_kodu( string $kod ): array {
+		$out = [ 'et' => null, 'wyk' => '' ];
+
+		if ( '' === $kod ) {
+			return $out;
+		}
+
+		$kod = strtoupper( $kod );
+
+		// L<ET><otwor centralny>, np. L4566 = ET45, otwor 66.
+		if ( preg_match( '/L(\d{2})(\d{2})/', $kod, $m ) ) {
+			$out['et'] = (int) $m[1];
+		}
+
+		// Koncowka literowa to skrot wykonczenia; bywa z cyfra wariantu.
+		if ( preg_match( '/([A-Z]{2,4})\d?$/', $kod, $m ) ) {
+			$out['wyk'] = $m[1];
+		}
+
+		return $out;
 	}
 
 	/**
@@ -236,16 +285,39 @@ class Dawmac_Allegro_Catalog {
 	 * porownujemy przez grupy barw. Brak pewnosci = brak dopasowania:
 	 * wlasny produkt jest gorszy dla widocznosci, ale nie klamie o towarze.
 	 */
-	private static function zgodne_wykonczenie( array $kandydat, array $dane ): bool {
-		$nasze = mb_strtolower( trim( (string) ( $dane['wykonczenie'] ?? '' ) ), 'UTF-8' );
-		$ich   = mb_strtolower( trim( (string) ( $kandydat['wykonczenie'] ?? '' ) ), 'UTF-8' );
+	private static function zgodne_wykonczenie( array $kandydat, array $dane, string $skrot_z_kodu = '' ): bool {
+		$nasze = trim( (string) ( $dane['wykonczenie'] ?? '' ) );
 
-		if ( '' === $nasze || '' === $ich ) {
+		if ( '' === $nasze ) {
 			return false;
 		}
 
-		return self::grupa_barwy( $nasze ) !== null
-			&& self::grupa_barwy( $nasze ) === self::grupa_barwy( $ich );
+		// Najpewniejszy tor: skrot z kodu producenta kontra inicjaly naszego
+		// wykonczenia. "Hyper Gray" -> HG, "Brushed Bronze" -> BB (kod: BBZ).
+		if ( '' !== $skrot_z_kodu ) {
+			$ini = '';
+
+			foreach ( preg_split( '/[^\p{L}]+/u', $nasze ) ?: [] as $slowo ) {
+				if ( '' !== $slowo ) {
+					$ini .= mb_strtoupper( mb_substr( $slowo, 0, 1, 'UTF-8' ), 'UTF-8' );
+				}
+			}
+
+			if ( strlen( $ini ) >= 2 ) {
+				return $skrot_z_kodu === $ini || str_starts_with( $skrot_z_kodu, $ini );
+			}
+		}
+
+		// Awaryjnie: parametr Wykonczenie, gdy katalog go wypelnia.
+		$ich = mb_strtolower( trim( (string) ( $kandydat['wykonczenie'] ?? '' ) ), 'UTF-8' );
+
+		if ( '' === $ich ) {
+			return false;
+		}
+
+		$a = self::grupa_barwy( mb_strtolower( $nasze, 'UTF-8' ) );
+
+		return null !== $a && $a === self::grupa_barwy( $ich );
 	}
 
 	/** Sprowadza opis wykonczenia do grupy barwy. */

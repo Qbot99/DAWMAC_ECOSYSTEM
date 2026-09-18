@@ -110,10 +110,10 @@ class Dawmac_Allegro_Template {
 			'banner_top', 'banner_bottom' => $this->image_section( $key ),
 			'headline'                    => $this->headline_section( $product ),
 			'spec'                        => $this->spec_section( $product ),
-			'fitment'                     => $this->text_block_section( 'fitment' ),
+			'fitment'                     => $this->text_block_section( 'fitment', $product ),
 			'about'                       => $this->about_section( $product ),
 			'zdjecia'                     => $this->photos_section( $product ),
-			'shipping', 'warranty'        => $this->text_block_section( $key ),
+			'shipping', 'warranty'        => $this->text_block_section( $key, $product ),
 			default                       => null,
 		};
 	}
@@ -176,7 +176,7 @@ class Dawmac_Allegro_Template {
 			$html .= '<li><b>' . $this->esc( $label ) . ':</b> ' . $this->esc( $value ) . '</li>';
 		}
 
-		$html .= '</ul>' . self::zestaw( $product );
+		$html .= '</ul>' . self::zestaw( $product ) . self::stan_towaru( $product );
 
 		$items = [ [ 'type' => 'TEXT', 'content' => Dawmac_Allegro_Text::clean( $html ) ] ];
 		$photo = $product['image'] ?? null;
@@ -234,6 +234,50 @@ class Dawmac_Allegro_Template {
 	 * szerokosc, wiec bez tego zdania kupujacy nie wiedzialby, ze tylna
 	 * os jest inna. Puste, gdy komplet jest jednorodny.
 	 */
+	/**
+	 * Zdanie o stanie towaru, gdy odbiega od "komplet czterech nowych felg".
+	 *
+	 * Tresc bierzemy z opisu sklepowego, bo sprzedawca wie, co jest nie tak.
+	 * Pusta, gdy produkt jest zwyklym kompletem bez zastrzezen.
+	 */
+	private static function stan_towaru( array $product ): string {
+		$a = $product['adnotacje'] ?? [];
+
+		if ( ! $a ) {
+			return '';
+		}
+
+		$punkty = [];
+
+		if ( ! empty( $a['sztuk'] ) && 4 !== (int) $a['sztuk'] ) {
+			$punkty[] = sprintf( '<b>Oferta obejmuje %d felgi</b>, nie komplet czterech.', (int) $a['sztuk'] );
+		}
+
+		if ( ! empty( $a['niejednorodny'] ) ) {
+			$punkty[] = '<b>Felgi w zestawie różnią się między sobą.</b> ' . esc_html( $a['niejednorodny'] );
+		}
+
+		if ( ! empty( $a['uzywane'] ) ) {
+			$punkty[] = '<b>Towar używany</b> — felgi były wcześniej eksploatowane.';
+		}
+
+		if ( ! empty( $a['uszkodzenie'] ) ) {
+			$punkty[] = '<b>Uwaga na stan:</b> ' . esc_html( $a['uszkodzenie'] );
+		}
+
+		if ( isset( $a['dekielki'] ) && ! $a['dekielki'] ) {
+			$punkty[] = '<b>Dekielki nie wchodzą w skład zestawu.</b>';
+		}
+
+		if ( ! $punkty ) {
+			return '';
+		}
+
+		return '<p><b>Zanim kupisz — ta oferta odbiega od standardowego kompletu:</b></p><ul><li>'
+			. implode( '</li><li>', $punkty )
+			. '</li></ul>';
+	}
+
 	private static function zestaw( array $product ): string {
 		$szer = array_values( array_filter( array_map(
 			static fn( $v ): string => self::cale( (string) $v ),
@@ -348,8 +392,8 @@ class Dawmac_Allegro_Template {
 	}
 
 	/** Staly blok tekstowy z konfiguracji, jedna kolumna. */
-	private function text_block_section( string $name ): ?array {
-		$content = $this->block_html( $name );
+	private function text_block_section( string $name, array $product = [] ): ?array {
+		$content = $this->block_html( $name, $product );
 
 		return $content ? [ 'items' => [ [ 'type' => 'TEXT', 'content' => $content ] ] ] : null;
 	}
@@ -359,7 +403,7 @@ class Dawmac_Allegro_Template {
 	 * zdjecie produktu zamiast grafiki firmowej.
 	 */
 	private function about_section( array $product ): ?array {
-		$content = $this->block_html( 'about' );
+		$content = $this->block_html( 'about', $product );
 
 		if ( ! $content ) {
 			return null;
@@ -407,8 +451,13 @@ class Dawmac_Allegro_Template {
 		return is_array( $lista ) && isset( $lista[ $n ] ) ? (string) $lista[ $n ] : null;
 	}
 
-	/** Naglowek h2 + tresc bloku, po sanitacji. */
-	private function block_html( string $name ): ?string {
+	/**
+	 * Naglowek h2 + tresc bloku, po sanitacji.
+	 *
+	 * @param array $product Dane produktu - potrzebne, bo czesc punktow
+	 *                       listy zalezy od tego, co jest w zestawie.
+	 */
+	private function block_html( string $name, array $product = [] ): ?string {
 		$block = $this->config['blocks'][ $name ] ?? null;
 
 		if ( ! is_array( $block ) ) {
@@ -421,7 +470,15 @@ class Dawmac_Allegro_Template {
 			$html .= '<h2>' . $this->esc( Dawmac_Allegro_Text::plain( $block['title'] ) ) . '</h2>';
 		}
 
-		$html .= (string) ( $block['html'] ?? '' );
+		$tresc = (string) ( $block['html'] ?? '' );
+
+		// Dekielki wypadaja z listy, gdy sklep pisze, ze ich nie ma.
+		// Sama informacja o braku trafia do sekcji o stanie towaru.
+		if ( isset( $product['adnotacje']['dekielki'] ) && ! $product['adnotacje']['dekielki'] ) {
+			$tresc = preg_replace( '#<li>[^<]*dekiel[^<]*</li>#iu', '', $tresc ) ?? $tresc;
+		}
+
+		$html .= $tresc;
 		$clean = Dawmac_Allegro_Text::clean( $html );
 
 		return '' !== $clean ? $clean : null;

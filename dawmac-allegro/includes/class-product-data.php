@@ -88,6 +88,7 @@ class Dawmac_Allegro_Product_Data {
 
 		$data['liczba_srub'] = self::bolt_count( $data['rozstaw'] ?? null );
 		$data['wykonczenie'] = self::finish( $data );
+		$data['adnotacje']   = self::adnotacje( $product );
 		$data['bore']        = self::bore( $data['bore'] ?? null );
 
 		return $data;
@@ -301,6 +302,128 @@ class Dawmac_Allegro_Product_Data {
 		}
 
 		return strlen( $ini ) >= 2 && str_ends_with( $t, $ini );
+	}
+
+	/**
+	 * Co opis sklepowy mowi o stanie towaru.
+	 *
+	 * Szablon zaklada komplet czterech nowych felg z dekielkami. Czesc
+	 * produktow tego nie spelnia i opis musi to powiedziec wprost, inaczej
+	 * kupujacy dostaje co innego, niz przeczytal.
+	 *
+	 * @return array{dekielki:bool,uszkodzenie:string,uzywane:bool,sztuk:?int,niejednorodny:string}
+	 */
+	public static function adnotacje( WC_Product $product ): array {
+		// Tytul pomijamy - niesie nazwe i rozmiar, nie stan towaru.
+		$tekst = html_entity_decode(
+			wp_strip_all_tags( $product->get_description() . ' ' . $product->get_short_description() ),
+			ENT_QUOTES | ENT_HTML5,
+			'UTF-8'
+		);
+		$tekst = trim( preg_replace( '/\s+/u', ' ', $tekst ) ?? $tekst );
+		$maly  = mb_strtolower( $tekst, 'UTF-8' );
+
+		$out = [
+			'dekielki'      => true,
+			'uszkodzenie'   => '',
+			'uzywane'       => false,
+			'sztuk'         => null,
+			'niejednorodny' => '',
+		];
+
+		foreach ( [ 'brak dekli', 'brak dekielk', 'brak kapsli', 'brak deki' ] as $f ) {
+			if ( str_contains( $maly, $f ) ) {
+				$out['dekielki'] = false;
+			}
+		}
+
+		$out['uszkodzenie'] = self::wytnij_wokol(
+			$tekst,
+			[ 'uszkodz', 'rysy', 'zarysow', 'obtar', 'wady lakieru', 'utleniaj', 'ślady po demontażu' ]
+		);
+
+		foreach ( [ 'ex-demo', 'ex demo', 'odnowion', 'z demontażu', 'ślady użytkowania' ] as $f ) {
+			if ( str_contains( $maly, $f ) ) {
+				$out['uzywane'] = true;
+			}
+		}
+
+		if ( preg_match( '/\b([2356])\s*(?:szt|sztuk)/iu', $tekst, $m ) ) {
+			$out['sztuk'] = (int) $m[1];
+		}
+
+		$out['niejednorodny'] = self::wytnij_wokol(
+			$tekst,
+			[ 'kierunek prawy', 'felgi o szerokości', 'w rozstawie', 'sztuki posiadają', 'kolejne 2' ]
+		);
+
+		return $out;
+	}
+
+	/**
+	 * Fragment opisu wokol pierwszego trafionego slowa.
+	 *
+	 * Opisy sklepowe bywaja jednym ciagiem bez kropek, wiec nie dzielimy ich
+	 * na zdania, tylko wycinamy okno. Zdania zaprzeczajace ("brak uszkodzen",
+	 * "bez wad") pomijamy - mowia dokladnie odwrotnie niz szukamy.
+	 *
+	 * @param string[] $slowa
+	 */
+	private static function wytnij_wokol( string $tekst, array $slowa ): string {
+		$maly = mb_strtolower( $tekst, 'UTF-8' );
+		$poz  = null;
+
+		foreach ( $slowa as $f ) {
+			$i = 0;
+
+			while ( true ) {
+				$i = mb_strpos( $maly, $f, $i );
+
+				if ( false === $i ) {
+					break;
+				}
+
+				// Zaprzeczenie tuz przed trafieniem = to nie jest wada.
+				$kontekst = mb_substr( $maly, max( 0, $i - 24 ), 24 );
+
+				if ( ! preg_match( '/\b(brak|bez|nie)\s*\S*\s*$/u', $kontekst ) ) {
+					if ( null === $poz || $i < $poz ) {
+						$poz = $i;
+					}
+					break;
+				}
+
+				$i += mb_strlen( $f );
+			}
+		}
+
+		if ( null === $poz ) {
+			return '';
+		}
+
+		// Poczatek zdania. Opisy sklepowe nie maja kropek miedzy specyfikacja
+		// a uwaga o stanie ("Kolor: Black Matt Jedna felga posiada..."), wiec
+		// szukamy wielkiej litery rozpoczynajacej slowo - to granica zdania
+		// bez interpunkcji. Kropka, gdy jest, ma pierwszenstwo.
+		$od    = max( 0, $poz - 110 );
+		$przed = mb_substr( $tekst, $od, $poz - $od );
+		$krop  = mb_strrpos( $przed, '. ' );
+
+		if ( false !== $krop ) {
+			$od += $krop + 2;
+		} elseif ( preg_match_all( '/(?<=[a-ząćęłńóśźż0-9]\s)\p{Lu}/u', $przed, $m, PREG_OFFSET_CAPTURE ) ) {
+			$ostatnia = end( $m[0] );
+			$od      += mb_strlen( substr( $przed, 0, $ostatnia[1] ) );
+		}
+
+		$wycinek = mb_substr( $tekst, $od, 230 );
+		$koniec  = mb_strpos( $wycinek, '. ' );
+
+		if ( false !== $koniec ) {
+			$wycinek = mb_substr( $wycinek, 0, $koniec + 1 );
+		}
+
+		return trim( $wycinek );
 	}
 
 	/**

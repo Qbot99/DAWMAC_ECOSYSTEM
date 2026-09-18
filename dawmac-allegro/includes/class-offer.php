@@ -164,7 +164,10 @@ class Dawmac_Allegro_Offer {
 		// Wygasle zdjecia: Allegro kasuje pliki wgrane przez API, jesli nie
 		// zostana w porę przypiete do oferty. Czyscimy cache i skladamy oferte
 		// jeszcze raz, ze swiezo wgranymi plikami.
-		if ( is_wp_error( $response ) && str_contains( $response->get_error_message(), 'nie istniej' ) ) {
+		// Allegro sygnalizuje wygasle pliki dwoma roznymi komunikatami:
+		// "adresy prowadza do zdjec ktore juz nie istnieja" oraz
+		// "Podany adres obrazka jest nieprawidlowy". Oba znacza to samo.
+		if ( is_wp_error( $response ) && self::zdjecia_wygasly( $response ) ) {
 			Dawmac_Allegro_Images::zapomnij( $b['dane']['gallery'] ?? [] );
 
 			$b = self::build( $product, $dict, $status );
@@ -426,6 +429,19 @@ class Dawmac_Allegro_Offer {
 		}
 
 		return number_format( $cena + (float) ( $cennik['narzut'] ?? 0 ), 2, '.', '' );
+	}
+
+	/** Czy blad dotyczy zdjec, ktore Allegro juz usunelo. */
+	private static function zdjecia_wygasly( WP_Error $e ): bool {
+		$m = $e->get_error_message();
+
+		foreach ( [ 'nie istniej', 'adres obrazka jest nieprawid' ] as $fraza ) {
+			if ( str_contains( $m, $fraza ) ) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	/** ID oferty przypisanej do produktu albo null. */
