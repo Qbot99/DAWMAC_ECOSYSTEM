@@ -87,6 +87,7 @@ class Dawmac_Allegro_Product_Data {
 		}
 
 		$data['liczba_srub'] = self::bolt_count( $data['rozstaw'] ?? null );
+		$data['model']       = self::model( $data );
 		$data['wykonczenie'] = self::finish( $data );
 		$data['adnotacje']   = self::adnotacje( $product );
 		$data['bore']        = self::bore( $data['bore'] ?? null );
@@ -193,6 +194,53 @@ class Dawmac_Allegro_Product_Data {
 		$n = (int) $m[1];
 
 		return ( $n >= 3 && $n <= 8 ) ? $n : null;
+	}
+
+	/**
+	 * Oznaczenie modelu. Gdy sklep nie ma atrybutu, bierzemy je z tytulu.
+	 *
+	 * Bez tego wtyczka siegala po SKU, ktore u sprzedawcy bywa pelna nazwa
+	 * produktu - a ta trafiala do parametru "Kod producenta" i przekraczala
+	 * limit znakow Allegro ("MODEL:1005 19\" 9.5J ET50 5x112 Dark Anthracite
+	 * Gloss Polished" to 61 znakow). Model stoi w tytule przed rozmiarem.
+	 */
+	public static function model( array $data ): string {
+		$model = trim( (string) ( $data['model'] ?? '' ) );
+
+		if ( '' !== $model ) {
+			return $model;
+		}
+
+		$tytul = trim( (string) ( $data['title'] ?? '' ) );
+
+		if ( '' === $tytul ) {
+			return '';
+		}
+
+		// Producenta z poczatku tytulu odcinamy, potem bierzemy wszystko
+		// do pierwszego elementu rozmiaru (17", 8.5J, 5x112, ET35).
+		$producent = trim( (string) ( $data['producent'] ?? '' ) );
+
+		if ( '' !== $producent ) {
+			$tytul = preg_replace( '/^' . preg_quote( $producent, '/' ) . '\s*/iu', '', $tytul ) ?? $tytul;
+		}
+
+		$czesci = preg_split( '/\s+/u', $tytul ) ?: [];
+		$out    = [];
+
+		foreach ( $czesci as $slowo ) {
+			if ( preg_match( '/^\d{1,2}(?:[.,]\d)?["\x27]|^\d{1,2}(?:[.,]\d)?J|^ET|^\d\s*x\s*\d{2,3}|^\d{2}["\x27]/iu', $slowo ) ) {
+				break;
+			}
+
+			$out[] = $slowo;
+
+			if ( count( $out ) >= 3 ) {
+				break;
+			}
+		}
+
+		return mb_substr( trim( implode( ' ', $out ) ), 0, 40 );
 	}
 
 	/**

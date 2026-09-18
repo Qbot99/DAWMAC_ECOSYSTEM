@@ -205,7 +205,10 @@ class Dawmac_Allegro_Mapper {
 
 		// Parametry tekstowe. "Kod producenta" jest wymagany - bierzemy model,
 		// a gdy go brak, SKU ze sklepu.
+		// SKU u sprzedawcy bywa pelna nazwa produktu, a "Kod producenta" ma
+		// limit znakow - dlatego przycinamy i wolimy model.
 		$kod = trim( (string) ( $product['model'] ?? '' ) ) ?: trim( (string) ( $product['sku'] ?? '' ) );
+		$kod = mb_substr( $kod, 0, 40 );
 
 		if ( '' === $kod ) {
 			$problemy[] = 'brak wartości dla: Kod producenta (nie ma ani modelu, ani SKU)';
