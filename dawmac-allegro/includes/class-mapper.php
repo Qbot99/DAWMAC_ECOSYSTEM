@@ -185,7 +185,21 @@ class Dawmac_Allegro_Mapper {
 		$slownik( self::P_STAN, 'Nowy', true, 'Stan' );
 		$slownik( self::P_LICZBA, '4 szt.', true, 'Liczba felg w ofercie' );
 
-		$slownik( self::P_PRODUCENT, self::marka( $product ), true, 'Producent felg' );
+		// Marka spoza slownika dostaje wartosc ogolna z konfiguracji. Warunek
+		// sprawdza obecnosc w slowniku, wiec marki chronione (obecne, ale
+		// zablokowane przez wlasciciela) nie sa tym objete.
+		$marka = self::marka( $product );
+
+		if ( null !== $marka && ! isset( $dict[ self::P_PRODUCENT ]['wartosci'][ self::norm( $marka ) ] ) ) {
+			$config  = function_exists( 'dawmac_allegro_config' ) ? dawmac_allegro_config() : [];
+			$ogolna  = trim( (string) ( $config['marka_spoza_slownika'] ?? '' ) );
+
+			if ( '' !== $ogolna ) {
+				$marka = $ogolna;
+			}
+		}
+
+		$slownik( self::P_PRODUCENT, $marka, true, 'Producent felg' );
 		$slownik( self::P_SREDNICA, self::srednica( $product ), true, 'Średnica felgi' );
 		$slownik( self::P_SZEROKOSC, $nadpisz['szerokosc'] ?? self::szerokosc( $product ), true, 'Szerokość felgi' );
 		$slownik( self::P_ROZSTAW, self::rozstaw( $product ), true, 'Rozstaw śrub' );

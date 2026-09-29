@@ -675,4 +675,24 @@ class Dawmac_Allegro_CLI {
 
 		WP_CLI::success( $na_sucho ? 'Przebieg próbny zakończony.' : 'Ceny wyrównane.' );
 	}
+
+	/**
+	 * Uzgadnia oferty ze stanem magazynowym sklepu.
+	 *
+	 * Konczy oferty na towar, ktorego nie ma, wznawia te, ktorych towar
+	 * wrocil, i wyrownuje ilosc.
+	 *
+	 * ## EXAMPLES
+	 *
+	 *     wp dawmac-allegro stan
+	 */
+	public function stan( array $args, array $flags ): void {
+		$w = Dawmac_Allegro_Stock::uzgodnij();
+
+		foreach ( $w as $k => $n ) {
+			WP_CLI::log( sprintf( '  %-12s %d', $k, $n ) );
+		}
+
+		WP_CLI::success( 'Stan uzgodniony.' );
+	}
 }

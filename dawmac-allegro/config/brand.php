@@ -141,6 +141,18 @@ return [
 	],
 
 	/**
+	 * Wartosc parametru "Producent felg" dla marek, ktorych slownik Allegro
+	 * nie zna (DAWMAC, ISPIRI, OEMS i ~30 innych). Prawdziwa marka zostaje
+	 * w tytule i opisie. Decyzja sprzedawcy z 29.09.2026.
+	 *
+	 * NIE dotyczy marek chronionych (Japan Racing, Haxer, Seventy9...) - te
+	 * w slowniku SA, a blokuje je wlasciciel marki. Oznaczanie ich jako
+	 * "nieznany producent" byloby obejsciem ochrony, za ktore Allegro blokuje
+	 * konta.
+	 */
+	'marka_spoza_slownika' => 'nieznany producent',
+
+	/**
 	 * Cennik. Marki wlasne i te, ktore sprzedawca ma w cenniku producenta,
 	 * ida po cenie sklepowej. Reszta dostaje staly narzut - pokrywa prowizje
 	 * Allegro, ktorej w cenie sklepowej nie ma.
