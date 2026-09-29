@@ -92,6 +92,20 @@ class Dawmac_Allegro_Product_Data {
 		$data['adnotacje']   = self::adnotacje( $product );
 		$data['bore']        = self::bore( $data['bore'] ?? null );
 
+		// Otwor centralny: gdy nie ma atrybutu, szukamy w opisie ("bore 73,1").
+		if ( '' === $data['bore'] ) {
+			$data['bore'] = self::bore_z_opisu( $product );
+		}
+
+		// Watpliwe wykonczenie POMIJAMY zamiast blokowac produkt. Tytul i tak
+		// podaje kolor, a wolimy nie podac informacji niz podac zla.
+		// Zrodlowa wartosc zostaje w 'wykonczenie_sklep' - do przegladu.
+		$data['wykonczenie_sklep'] = $data['wykonczenie'];
+
+		if ( ! self::wykonczenie_do_oferty( $data ) ) {
+			$data['wykonczenie'] = '';
+		}
+
 		return $data;
 	}
 
@@ -299,6 +313,76 @@ class Dawmac_Allegro_Product_Data {
 	}
 
 	/**
+	 * Czy wykonczenie mozna pokazac na ofercie.
+	 *
+	 * Samo "nie zgadza sie z tytulem" to za malo, zeby je wyciac: wiele
+	 * tytulow w ogole nie podaje koloru ("AXE EX11 19\" 8.5J ET20 5X120"),
+	 * a wtedy atrybut jest jedynym zrodlem i zwykle jest dobry. Wycinamy
+	 * tylko wtedy, gdy atrybut wyglada na smieci albo przeczy tytulowi.
+	 */
+	public static function wykonczenie_do_oferty( array $data ): bool {
+		$w = trim( (string) ( $data['wykonczenie'] ?? '' ) );
+
+		if ( '' === $w ) {
+			return false;
+		}
+
+		$tytul = (string) ( $data['title'] ?? '' );
+
+		if ( self::finish_zgodne( $w, $tytul ) ) {
+			return true;
+		}
+
+		// Smieci po imporcie: cyfry, znaki laczace, zdania handlowe, uwagi o wadach.
+		if ( preg_match( '/\d|[+:\/]|\s-\s/u', $w ) || mb_strlen( $w ) > 40 || count( preg_split( '/\s+/u', $w ) ) > 5 ) {
+			return false;
+		}
+
+		foreach ( [ 'model', 'promocja', 'posiadamy', 'zapraszamy', 'komplet', 'wyprzeda', 'felg', 'brak',
+			'uszkodz', 'outlet', 'sztuk', 'jedna', 'dwie', 'technologia', 'metoda', 'mozliw', 'możliw', 'polerowane', 'czarn', 'srebrn' ] as $zle ) {
+			if ( str_contains( mb_strtolower( $w, 'UTF-8' ), $zle ) ) {
+				return false;
+			}
+		}
+
+		// Sprzecznosc: tytul podaje barwe, a atrybut innej grupy barw.
+		$gw = self::grupy_barw( $w );
+		$gt = self::grupy_barw( $tytul );
+
+		if ( $gw && $gt && ! array_intersect( $gw, $gt ) ) {
+			return false;
+		}
+
+		return true;
+	}
+
+	/** @return string[] grupy barw wystepujace w tekscie */
+	private static function grupy_barw( string $t ): array {
+		$t = mb_strtolower( $t, 'UTF-8' );
+		$grupy = [
+			'black'  => [ 'black', 'schwarz', 'noir' ],
+			'silver' => [ 'silver', 'silber', 'chrome', 'hyper silver' ],
+			'grey'   => [ 'grey', 'gray', 'grau', 'gunmetal', 'gun metal', 'graphite', 'anthracite', 'anthracit', 'titan' ],
+			'bronze' => [ 'bronze', 'copper' ],
+			'gold'   => [ 'gold' ],
+			'white'  => [ 'white', 'weiss' ],
+			'red'    => [ 'red', 'rot' ],
+			'blue'   => [ 'blue' ],
+			'green'  => [ 'green' ],
+		];
+		$out = [];
+		foreach ( $grupy as $g => $slowa ) {
+			foreach ( $slowa as $s ) {
+				if ( preg_match( '/\b' . preg_quote( $s, '/' ) . '\b/u', $t ) ) {
+					$out[] = $g;
+					break;
+				}
+			}
+		}
+		return $out;
+	}
+
+	/**
 	 * Czy wykonczenie wymaga sprawdzenia przez czlowieka.
 	 *
 	 * Sprzedawca nie wystawia takich produktow automatycznie - trafiaja na
@@ -340,6 +424,35 @@ class Dawmac_Allegro_Product_Data {
 			return true;
 		}
 
+		// Ten sam kolor zapisany inaczej: "Gloss Black" i "Black Glossy",
+		// "Gunmetal" i "Gun Metal", "Matte" i "Matt". Porownujemy zbior slow
+		// z konca tytulu po sprowadzeniu synonimow do jednej formy.
+		$syn = static function ( string $x ): array {
+			$x = str_replace( [ 'gun metal', 'gunmetall' ], 'gunmetal', $x );
+			$zamiany = [
+				'glossy' => 'gloss', 'shiny' => 'gloss', 'matte' => 'matt', 'mat' => 'matt',
+				'gray' => 'grey', 'polish' => 'polished', 'machine' => 'machined',
+				'machiend' => 'machined', 'brush' => 'brushed', 'anthracit' => 'anthracite',
+				'titan' => 'titanium', 'lackiert' => '', 'with' => '', 'and' => '', 'w' => '',
+			];
+			$out = [];
+			foreach ( explode( ' ', $x ) as $w ) {
+				if ( '' === $w ) { continue; }
+				$w = $zamiany[ $w ] ?? $w;
+				if ( '' !== $w ) { $out[ $w ] = true; }
+			}
+			ksort( $out );
+			return array_keys( $out );
+		};
+
+		$sa = $syn( $a );
+		$tw = explode( ' ', $t );
+		$ogon = $syn( implode( ' ', array_slice( $tw, -count( explode( ' ', $a ) ) - 1 ) ) );
+
+		if ( $sa && ! array_diff( $sa, $ogon ) ) {
+			return true;
+		}
+
 		// Tytul bywa skrocony do inicjalow: "Black Polished Face" -> "BPF".
 		$ini = '';
 
@@ -362,9 +475,11 @@ class Dawmac_Allegro_Product_Data {
 	 * @return array{dekielki:bool,uszkodzenie:string,uzywane:bool,sztuk:?int,niejednorodny:string}
 	 */
 	public static function adnotacje( WC_Product $product ): array {
-		// Tytul pomijamy - niesie nazwe i rozmiar, nie stan towaru.
+		// Tytul pomijamy - niesie nazwe i rozmiar, nie stan towaru. Pole koloru
+		// czytamy, bo bywa w nim wpisana wada ("Black Matt Jedna felga posiada
+		// delikatne uszkodzenie rantu").
 		$tekst = html_entity_decode(
-			wp_strip_all_tags( $product->get_description() . ' ' . $product->get_short_description() ),
+			wp_strip_all_tags( $product->get_description() . ' ' . $product->get_short_description() . '. ' . $product->get_attribute( 'pa_kolor' ) ),
 			ENT_QUOTES | ENT_HTML5,
 			'UTF-8'
 		);
@@ -472,6 +587,31 @@ class Dawmac_Allegro_Product_Data {
 		}
 
 		return trim( $wycinek );
+	}
+
+	/**
+	 * Otwor centralny wyczytany z opisu, gdy brak atrybutu pa_bore.
+	 *
+	 * Opisy podaja go jako "bore 73,1", "bore: 66.6", "otwor centralny 72,6",
+	 * a przy Dawmac Forged czasem "srednica 66,9". Zakres 50-115 mm odsiewa
+	 * srednice felgi w calach (15-24), ktora tez bywa nazwana "srednica".
+	 */
+	public static function bore_z_opisu( WC_Product $product ): string {
+		$tekst = wp_strip_all_tags( $product->get_description() . ' ' . $product->get_short_description() );
+
+		if ( ! preg_match_all( '/\b(?:bore|otw[oó]r(?:\s+centralny)?|średnica(?:\s+otworu)?|cb)\s*:?\s*(\d{2,3}(?:[.,]\d{1,2})?)/iu', $tekst, $m ) ) {
+			return '';
+		}
+
+		foreach ( $m[1] as $v ) {
+			$n = (float) str_replace( ',', '.', $v );
+
+			if ( $n >= 50 && $n <= 115 ) {
+				return self::bore( $v );
+			}
+		}
+
+		return '';
 	}
 
 	/**
