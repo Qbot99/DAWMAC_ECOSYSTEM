@@ -182,7 +182,9 @@ class Dawmac_Allegro_Mapper {
 		};
 
 		// Stale wynikajace z ustalen handlowych.
-		$slownik( self::P_STAN, 'Nowy', true, 'Stan' );
+		// Stan z opisu sklepu. Byl zakodowany na sztywno jako "Nowy", przez co
+		// felgi ex-demo i odnowione szly jako nowe mimo opisu mowiacego inaczej.
+		$slownik( self::P_STAN, (string) ( $product['adnotacje']['stan'] ?? 'Nowy' ), true, 'Stan' );
 		$slownik( self::P_LICZBA, '4 szt.', true, 'Liczba felg w ofercie' );
 
 		// Marka spoza slownika dostaje wartosc ogolna z konfiguracji. Warunek

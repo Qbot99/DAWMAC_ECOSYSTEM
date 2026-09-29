@@ -490,6 +490,7 @@ class Dawmac_Allegro_Product_Data {
 			'dekielki'      => true,
 			'uszkodzenie'   => '',
 			'uzywane'       => false,
+			'stan'          => 'Nowy',
 			'sztuk'         => null,
 			'niejednorodny' => '',
 		];
@@ -505,9 +506,22 @@ class Dawmac_Allegro_Product_Data {
 			[ 'uszkodz', 'rysy', 'zarysow', 'obtar', 'wady lakieru', 'utleniaj', 'ślady po demontażu' ]
 		);
 
-		foreach ( [ 'ex-demo', 'ex demo', 'odnowion', 'z demontażu', 'ślady użytkowania' ] as $f ) {
-			if ( str_contains( $maly, $f ) ) {
-				$out['uzywane'] = true;
+		// Stan wedlug slownika Allegro (Nowy / Uzywany / Regenerowany /
+		// Z demontazu (demo)). Kolejnosc ma znaczenie: odnowione felgi
+		// z demontazu to przede wszystkim "Regenerowany".
+		$stany = [
+			'Regenerowany'       => [ 'odnowion', 'regenerowan' ],
+			'Z demontażu (demo)' => [ 'ex-demo', 'ex demo', 'z demontażu', 'zdjęte z auta', 'zdjęte z naszego' ],
+			'Używany'            => [ 'ślady użytkowania', 'używane felgi', 'felgi używane' ],
+		];
+
+		foreach ( $stany as $stan => $frazy ) {
+			foreach ( $frazy as $f ) {
+				if ( str_contains( $maly, $f ) ) {
+					$out['stan']    = $stan;
+					$out['uzywane'] = true;
+					break 2;
+				}
 			}
 		}
 

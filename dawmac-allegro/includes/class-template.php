@@ -257,8 +257,14 @@ class Dawmac_Allegro_Template {
 			$punkty[] = '<b>Felgi w zestawie różnią się między sobą.</b> ' . esc_html( $a['niejednorodny'] );
 		}
 
-		if ( ! empty( $a['uzywane'] ) ) {
-			$punkty[] = '<b>Towar używany</b> — felgi były wcześniej eksploatowane.';
+		$opis_stanu = [
+			'Regenerowany'       => '<b>Felgi regenerowane</b> — były używane i zostały profesjonalnie odnowione.',
+			'Z demontażu (demo)' => '<b>Felgi z demontażu</b> — zdjęte z auta pokazowego, mogą nosić ślady montażu.',
+			'Używany'            => '<b>Towar używany</b> — felgi były wcześniej eksploatowane.',
+		];
+
+		if ( isset( $opis_stanu[ $a['stan'] ?? '' ] ) ) {
+			$punkty[] = $opis_stanu[ $a['stan'] ];
 		}
 
 		if ( ! empty( $a['uszkodzenie'] ) ) {
