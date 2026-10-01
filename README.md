@@ -58,6 +58,7 @@ The core backend that powers the entire ecosystem.
 * **Core Tech:** PHP 8, MySQL.
 * **Custom Engineering:** 
   * **Unified REST Endpoints:** Serves live data simultaneously to the React frontend, the main PHP site, and the native iOS app.
+  * **Wheel Fitment Database:** Our own wheel-size style catalogue of makes, models and generations with hub specs (PCD, center bore, thread) and OEM wheel sizes, plus a "which cars does this wheel fit" search (`dawmac-api/api/fitment`).
   * **Dynamic Image Engine:** A custom-built script that intercepts bot requests (WhatsApp/Facebook), queries the database, and performs on-the-fly image resizing and compression to ensure perfect link previews without overloading the server.
 
 ## 🚀 Key Technical Achievements
