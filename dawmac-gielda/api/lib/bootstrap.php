@@ -26,19 +26,28 @@ function gielda_load_env(): void
         if (!is_file($file)) {
             continue;
         }
-        foreach (file($file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $line) {
-            $line = trim($line);
-            if ($line === '' || $line[0] === '#' || !str_contains($line, '=')) {
-                continue;
-            }
-            [$key, $value] = array_map('trim', explode('=', $line, 2));
-            $value = trim($value, "\"'");
+        foreach (gielda_parse_env($file) as $key => $value) {
             if (getenv($key) === false) {
                 $_ENV[$key] = $value;
             }
         }
         return;
     }
+}
+
+/** KEY=VALUE z pliku .env jako tablica (komentarze # i puste linie pominięte). */
+function gielda_parse_env(string $file): array
+{
+    $vars = [];
+    foreach (file($file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: [] as $line) {
+        $line = trim($line);
+        if ($line === '' || $line[0] === '#' || !str_contains($line, '=')) {
+            continue;
+        }
+        [$key, $value] = array_map('trim', explode('=', $line, 2));
+        $vars[$key] = trim($value, "\"'");
+    }
+    return $vars;
 }
 
 function env(string $key, ?string $default = null): ?string
@@ -67,7 +76,8 @@ function db(): PDO
 
 /**
  * Słownik aut (car_brand, car_model) z bazy galerii. Gdy CARS_DB_NAME
- * nie jest ustawione, szukamy tabel w bazie giełdy.
+ * nie jest ustawione, szukamy tabel w bazie giełdy (kopia robiona przez
+ * cron z GALLERY_ENV_FILE albo seed_cars.sql w testach).
  */
 function cars_db(): PDO
 {
@@ -187,3 +197,9 @@ function app_url(string $path = ''): string
 gielda_load_env();
 
 date_default_timezone_set('Europe/Warsaw');
+
+// Ostrzeżenia PHP idą do logu, nie do odpowiedzi — inaczej psują JSON i
+// pokazują ścieżki serwera (na dhostingu display_errors jest włączone).
+if (PHP_SAPI !== 'cli') {
+    ini_set('display_errors', '0');
+}

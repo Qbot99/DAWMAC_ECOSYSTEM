@@ -62,8 +62,8 @@ Giełda stoi pod `dawmac.pl/gielda`, w podkatalogu sklepu (ma własny `.htaccess
         └── uploads/     ← zdjęcia, zapisywalne przez PHP
 ```
 
-1. Baza: `sql/schema.sql` w nowej bazie. `CARS_DB_NAME` = baza galerii (użytkownik giełdy potrzebuje do niej tylko odczytu).
-2. `.env` z `.env.example`: baza, `APP_URL=https://dawmac.pl/gielda`, `UPLOAD_DIR`, `UPLOAD_URL=/gielda/uploads`, dane firmy (`OPERATOR_INFO`) i e-maile. API szuka `.env` przez `GIELDA_ENV_FILE` (np. `SetEnv` w `api/.htaccess`) albo dwa poziomy nad `api/lib`.
+1. Baza: `sql/schema.sql` w nowej bazie. Słownik aut z galerii: `CARS_DB_NAME` = baza galerii, jeśli użytkownik giełdy ma do niej odczyt; jeśli nie (na dhostingu użytkownik bazy widzi tylko swoją bazę, a `open_basedir` nie wpuszcza PHP strony do plików galerii) — `CARS_DB_NAME` puste i `GALLERY_ENV_FILE` = ścieżka do `.env` galerii: `tools/cron.php` kopiuje wtedy co dobę `car_brand` i `car_model` z galerii do bazy giełdy (te same id). Pierwszą kopię zrób od razu, uruchamiając cron ręcznie.
+2. `.env` z `.env.example` w `gielda-app/`: baza, `APP_URL=https://dawmac.pl/gielda`, `UPLOAD_DIR`, `UPLOAD_URL=/gielda/uploads`, dane firmy (`OPERATOR_INFO`) i e-maile. Narzędzia z `gielda-app/tools/` znajdą go same (`gielda-app/api/` to kopia `api/`); API w `public_html` dostaje ścieżkę przez `SetEnv GIELDA_ENV_FILE /…/gielda-app/.env` na początku `public_html/gielda/api/.htaccess` (LiteSpeed na dhostingu to obsługuje). Nie kładź `.env` w `public_html/gielda/`.
 3. Front: `cd web && npm run build -- --base=/gielda/`, wgrać `web/dist/*` do `public_html/gielda/`.
 4. API: wgrać `api/` do `public_html/gielda/api/`.
 5. Cron w dPanelu, raz dziennie: `php83 ~/…/tools/cron.php` (domyślne `php` w konsoli dhostingu to 5.4).
