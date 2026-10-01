@@ -1,0 +1,18 @@
+# Front giełdy (SPA): nieistniejące ścieżki → index.html, z wyjątkiem api/ i uploads/.
+# Działa w katalogu głównym domeny i w podkatalogu (dawmac.pl/gielda/) — ten plik
+# ma własne RewriteEngine, więc reguły WordPressa z katalogu wyżej go nie dotyczą.
+Options -Indexes
+RewriteEngine On
+RewriteRule ^(api|uploads)/ - [L]
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ index.html [L]
+
+<IfModule mod_headers.c>
+  <FilesMatch "^index\.html$|^sw\.js$">
+    Header set Cache-Control "no-cache"
+  </FilesMatch>
+  <If "%{REQUEST_URI} =~ m#/assets/#">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </If>
+</IfModule>

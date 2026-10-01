@@ -1,0 +1,8 @@
+# Wszystkie adresy /api/... trafiają do index.php
+Options -Indexes
+RewriteEngine On
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^ index.php [QSA,L]
+
+# Biblioteki i trasy nie są dostępne bezpośrednio
+RewriteRule ^(lib|routes)/ - [F,L]
