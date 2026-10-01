@@ -17,7 +17,7 @@ export default function Layout() {
       <header className="topbar">
         <div className="topbar-inner">
           <Link to="/" className="brand">
-            <img src="/dawmac-logo.png" alt="DAWMAC" width={126} height={28} />
+            <img src="/dawmac-logo-dark.png" alt="DAWMAC" width={126} height={28} />
             <span className="brand-badge">Giełda</span>
           </Link>
           <nav className="topnav">
@@ -45,7 +45,7 @@ export default function Layout() {
           </div>
         </div>
       </header>
-      <div className="hazard" />
+      <div className="accent-line" />
 
       {user && !user.email_verified && (
         <div className="notice notice-warn">
