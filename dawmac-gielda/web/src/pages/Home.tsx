@@ -38,7 +38,8 @@ export default function Home() {
   return (
     <div className="container">
       <section className="hero">
-        <h1>Felgi od ludzi, dla ludzi</h1>
+        <div className="kicker"><span className="kicker-line" /><span className="kicker-label">Giełda felg · bez opłat</span></div>
+        <h1>Felgi od ludzi, <em>dla ludzi</em></h1>
         <p>Sprzedaj swoje felgi albo napisz, do jakiego auta szukasz. Bez opłat i prowizji.</p>
         <form
           className="search"
