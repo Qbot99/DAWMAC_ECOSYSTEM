@@ -80,21 +80,23 @@ if (!function_exists('dawmac_fit_slug')) {
 
     /**
      * "7.5Jx17 ET51" → width 7.5, diameter 17, et 51
-     * Przyjmuje też "7,5J x 17 ET 51", "8Jx18 ET+40", "7x16 ET-5".
+     * Przyjmuje też "7,5J x 17 ET 51", "8Jx18 ET+40", "7x16 ET-5", "7Jx17 ET48.5".
+     * ET z połówką milimetra bywa w dokumentach homologacji (COC), więc
+     * przyjmujemy jedno miejsce po przecinku; więcej to już błąd zapisu.
      *
-     * @return array{width:float, diameter:int, et:int}|null
+     * @return array{width:float, diameter:int, et:float}|null
      */
     function dawmac_fit_parse_rim(?string $value): ?array
     {
         $value = str_replace(['×', ','], ['x', '.'], (string) $value);
 
-        if (!preg_match('~^\s*(\d{1,2}(?:\.\d)?)\s*J?\s*[xX]\s*(\d{2})\s*ET\s*([+-]?\d{1,3})\s*$~i', $value, $m)) {
+        if (!preg_match('~^\s*(\d{1,2}(?:\.\d)?)\s*J?\s*[xX]\s*(\d{2})\s*ET\s*([+-]?\d{1,3}(?:\.\d)?)\s*$~i', $value, $m)) {
             return null;
         }
 
         $width    = (float) $m[1];
         $diameter = (int) $m[2];
-        $et       = (int) $m[3];
+        $et       = (float) $m[3];
 
         // Szerokość felgi idzie co pół cala — 7.3J to literówka, nie felga.
         if ($width < 3 || $width > 14 || fmod($width * 2, 1.0) !== 0.0) {
@@ -107,10 +109,10 @@ if (!function_exists('dawmac_fit_slug')) {
         return ['width' => $width, 'diameter' => $diameter, 'et' => $et];
     }
 
-    /** (7.5, 17, 51) → "7.5Jx17 ET51" */
-    function dawmac_fit_rim_label(float $width, int $diameter, int $et): string
+    /** (7.5, 17, 51) → "7.5Jx17 ET51",  (7, 17, 48.5) → "7Jx17 ET48.5" */
+    function dawmac_fit_rim_label(float $width, int $diameter, float $et): string
     {
-        return dawmac_fit_num($width) . 'Jx' . $diameter . ' ET' . $et;
+        return dawmac_fit_num($width) . 'Jx' . $diameter . ' ET' . dawmac_fit_num($et);
     }
 
     /**
@@ -326,10 +328,10 @@ if (!function_exists('dawmac_fit_slug')) {
     {
         return [
             'axle'     => $row['axle'],
-            'size'     => dawmac_fit_rim_label((float) $row['width'], (int) $row['diameter'], (int) $row['et']),
+            'size'     => dawmac_fit_rim_label((float) $row['width'], (int) $row['diameter'], (float) $row['et']),
             'diameter' => (int) $row['diameter'],
             'width'    => (float) $row['width'],
-            'et'       => (int) $row['et'],
+            'et'       => (float) $row['et'],
             'tire'     => $row['tire'] !== '' ? $row['tire'] : null,
             'oem'      => (bool) $row['is_oem'],
         ];

@@ -319,13 +319,14 @@ try {
             $axle  = $rozmiar['axle'] ?? 'both';
             $oem   = !empty($rozmiar['oem']) ? 1 : 0;
             $width = number_format($rim['width'], 1, '.', '');
+            $et    = number_format($rim['et'], 1, '.', '');
 
             $stmt = $conn->prepare(
                 "INSERT INTO fit_wheel (generation_id, axle, diameter, width, et, tire, is_oem)
                  VALUES (?, ?, ?, ?, ?, ?, ?)
                  ON DUPLICATE KEY UPDATE is_oem = VALUES(is_oem)"
             );
-            $stmt->bind_param('isisisi', $genId, $axle, $rim['diameter'], $width, $rim['et'], $tire, $oem);
+            $stmt->bind_param('isisssi', $genId, $axle, $rim['diameter'], $width, $et, $tire, $oem);
             $stmt->execute();
             if ($stmt->affected_rows === 1) {
                 $wynik['rozmiary nowe']++;

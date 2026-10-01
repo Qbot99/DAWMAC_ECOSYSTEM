@@ -86,14 +86,21 @@ def gwint(srednica, skok):
     return 'M%dx%s' % (srednica, SKOKI_GWINTU[skok]), None
 
 
+def jedno_miejsce(x):
+    """Czy liczba ma najwyzej jedno miejsce po przecinku (48.5 tak, 48.25 nie).
+    Z tolerancja, bo 48.3 * 10 we floatach to nie zawsze rowno 483."""
+    return abs(x * 10 - round(x * 10)) < 1e-6
+
+
 def felga(szer, sred, et):
-    """('7,50', '17', '41,00') -> '7.5Jx17 ET41' albo None, gdy nie przejdzie walidacji."""
+    """('7,50', '17', '41,00') -> '7.5Jx17 ET41', ('7,00', '17', '48,50') -> '7Jx17 ET48.5',
+    albo None, gdy nie przejdzie walidacji (ET najwyzej z jednym miejscem po przecinku)."""
     s, d, e = liczba(szer), liczba(sred), liczba(et)
     if s is None or d is None or e is None:
         return None
-    if not 3 <= s <= 14 or (s * 2) % 1 or d % 1 or not 12 <= d <= 26 or e % 1 or not -100 <= e <= 100:
+    if not 3 <= s <= 14 or (s * 2) % 1 or d % 1 or not 12 <= d <= 26 or not jedno_miejsce(e) or not -100 <= e <= 100:
         return None
-    return '%sJx%d ET%d' % (num(s), d, e)
+    return '%sJx%d ET%s' % (num(s), d, num(e))
 
 
 def opona(szer, profil, sred):
@@ -117,9 +124,9 @@ def kola_z_coc(wiersze, liczniki):
                 et = liczba(r['offset_' + s])
                 if et is None:
                     liczniki['felga odrzucona: brak ET'] += 1
-                elif et % 1:
-                    # Import przyjmuje ET w pelnych mm; nie zaokraglamy za strone.
-                    liczniki['felga odrzucona: ET z ulamkiem mm'] += 1
+                elif not jedno_miejsce(et):
+                    # Import przyjmuje ET z jednym miejscem po przecinku; nie zaokraglamy za strone.
+                    liczniki['felga odrzucona: ET z wiecej niz 1 miejscem po przecinku'] += 1
                 else:
                     liczniki['felga odrzucona: inny blad'] += 1
                 continue

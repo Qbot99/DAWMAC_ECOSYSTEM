@@ -59,8 +59,10 @@ def baza(sciezka):
         # dobry rozmiar, ten sam w drugiej wersji (bez powtorzen w wyniku)
         ('g1', 1, 0, '205', '55', '16', '6,50', '46,00', '', '', '', '', ''),
         ('g2', 1, 0, '205', '55', '16', '6,50', '46,00', '', '', '', '', ''),
-        # brak ET i ET z polowka mm - wypadaja, generacja zostaje
+        # brak ET i ET z dwoma miejscami po przecinku - wypadaja, generacja zostaje
         ('g2', 2, 0, '225', '45', '17', '7,50', '', '', '', '', '', ''),
+        ('g2', 5, 0, '225', '45', '17', '7,50', '49,25', '', '', '', '', ''),
+        # ET z polowka mm zostaje
         ('g2', 3, 0, '225', '40', '18', '7,50', '49,50', '', '', '', '', ''),
         # opona bez profilu - felga zostaje bez opony
         ('g2', 4, 0, '175', '', '14', '5,50', '35,00', '', '', '', '', ''),
@@ -98,6 +100,7 @@ class TestZSqlite(unittest.TestCase):
         self.assertEqual(g['source'], ZRODLO + ': typ vw_golf_vii')
         self.assertEqual(g['wheels'], [
             {'size': '6.5Jx16 ET46', 'oem': True, 'tire': '205/55 R16'},
+            {'size': '7.5Jx18 ET49.5', 'oem': True, 'tire': '225/40 R18'},
             {'size': '5.5Jx14 ET35', 'oem': True},
         ])
 
@@ -114,7 +117,7 @@ class TestZSqlite(unittest.TestCase):
         self.assertEqual(self.liczniki['pominiete: brak gwintu'], 1)
         self.assertEqual(self.liczniki['pominiete: rozstaw niejednoznaczny (120 albo 120.65)'], 1)
         self.assertEqual(self.liczniki['felga odrzucona: brak ET'], 1)
-        self.assertEqual(self.liczniki['felga odrzucona: ET z ulamkiem mm'], 1)
+        self.assertEqual(self.liczniki['felga odrzucona: ET z wiecej niz 1 miejscem po przecinku'], 1)
         self.assertEqual(self.liczniki['przeniesione'], 2)
 
     def test_obciety_rozstaw(self):

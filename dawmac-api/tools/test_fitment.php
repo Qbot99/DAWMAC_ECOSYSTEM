@@ -51,10 +51,14 @@ sprawdz('pcd: etykieta z ułamkiem', dawmac_fit_pcd_label(5, 114.3), '5x114.3');
 
 /* Felga --------------------------------------------------------------- */
 
-sprawdz('felga: 7.5Jx17 ET51', dawmac_fit_parse_rim('7.5Jx17 ET51'), ['width' => 7.5, 'diameter' => 17, 'et' => 51]);
-sprawdz('felga: zapis z przecinkiem', dawmac_fit_parse_rim('7,5J x 17 ET 51'), ['width' => 7.5, 'diameter' => 17, 'et' => 51]);
-sprawdz('felga: ET ze znakiem +', dawmac_fit_parse_rim('8Jx18 ET+40'), ['width' => 8.0, 'diameter' => 18, 'et' => 40]);
-sprawdz('felga: ujemne ET', dawmac_fit_parse_rim('10x16 ET-25'), ['width' => 10.0, 'diameter' => 16, 'et' => -25]);
+sprawdz('felga: 7.5Jx17 ET51', dawmac_fit_parse_rim('7.5Jx17 ET51'), ['width' => 7.5, 'diameter' => 17, 'et' => 51.0]);
+sprawdz('felga: zapis z przecinkiem', dawmac_fit_parse_rim('7,5J x 17 ET 51'), ['width' => 7.5, 'diameter' => 17, 'et' => 51.0]);
+sprawdz('felga: ET ze znakiem +', dawmac_fit_parse_rim('8Jx18 ET+40'), ['width' => 8.0, 'diameter' => 18, 'et' => 40.0]);
+sprawdz('felga: ujemne ET', dawmac_fit_parse_rim('10x16 ET-25'), ['width' => 10.0, 'diameter' => 16, 'et' => -25.0]);
+sprawdz('felga: ET z połówką', dawmac_fit_parse_rim('7Jx17 ET48,5'), ['width' => 7.0, 'diameter' => 17, 'et' => 48.5]);
+sprawdz('felga: ET z dwoma miejscami po przecinku', dawmac_fit_parse_rim('7Jx17 ET48.25'), null);
+sprawdz('felga: etykieta z połówką', dawmac_fit_rim_label(7.0, 17, 48.5), '7Jx17 ET48.5');
+sprawdz('felga: etykieta ujemnego ET', dawmac_fit_rim_label(10.0, 16, -25.0), '10Jx16 ET-25');
 sprawdz('felga: szerokość nie co pół cala', dawmac_fit_parse_rim('7.3Jx17 ET51'), null);
 sprawdz('felga: brak ET', dawmac_fit_parse_rim('7.5Jx17'), null);
 sprawdz('felga: etykieta', dawmac_fit_rim_label(8.0, 18, 40), '8Jx18 ET40');

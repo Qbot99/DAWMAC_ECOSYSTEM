@@ -91,7 +91,7 @@ $tabele = [
             `axle`          ENUM('both','front','rear') NOT NULL DEFAULT 'both',
             `diameter`      TINYINT UNSIGNED NOT NULL,
             `width`         DECIMAL(3,1) NOT NULL,
-            `et`            SMALLINT NOT NULL,
+            `et`            DECIMAL(4,1) NOT NULL,
             `tire`          VARCHAR(24) NOT NULL DEFAULT '',
             `is_oem`        TINYINT(1) NOT NULL DEFAULT 0,
             UNIQUE KEY `uq_fit_wheel` (`generation_id`, `axle`, `diameter`, `width`, `et`, `tire`),
@@ -121,5 +121,9 @@ foreach ($tabele as $nazwa => $sql) {
 // ją uruchomić, ta linia dopuszcza "nieznane"; na nowej tabeli nic nie zmienia.
 $conn->query("ALTER TABLE `fit_generation` MODIFY `fastener` ENUM('bolt','nut') NULL")
     or exit("Błąd ALTER TABLE fit_generation: " . $conn->error . "\n");
+
+// To samo dla ET: pierwsza wersja miała pełne milimetry, a COC podaje też 48.5.
+$conn->query("ALTER TABLE `fit_wheel` MODIFY `et` DECIMAL(4,1) NOT NULL")
+    or exit("Błąd ALTER TABLE fit_wheel: " . $conn->error . "\n");
 
 echo "\nDalej: php import_fitment.php  (podgląd i walidacja danych z data/fitment)\n";
