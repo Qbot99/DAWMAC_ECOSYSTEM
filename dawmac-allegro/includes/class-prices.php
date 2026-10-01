@@ -89,6 +89,24 @@ class Dawmac_Allegro_Prices {
 				continue;
 			}
 
+			// Cennik dostawy pilnowany przy okazji - to tez czesc tego, ile
+			// placi kupujacy. 1.10.2026 okazalo sie, ze 735 ofert mialo
+			// darmowa wysylke; tego samego dnia doszly cenniki wedlug srednicy.
+			$dostawa = Dawmac_Allegro_Offer::cennik_dostawy( $dane, $config['oferta']['cenniki_dostawy'] ?? [] );
+
+			if ( '' !== $dostawa && ( $o['delivery']['shippingRates']['id'] ?? '' ) !== $dostawa && ! $na_sucho ) {
+				$d = Dawmac_Allegro_Client::patch( "/sale/product-offers/{$r->meta_value}", [
+					'delivery' => [
+						'shippingRates' => [ 'id' => $dostawa ],
+						'handlingTime'  => $o['delivery']['handlingTime'] ?? 'PT48H',
+					],
+				] );
+
+				if ( ! is_wp_error( $d ) ) {
+					$wynik['dostawa'] = ( $wynik['dostawa'] ?? 0 ) + 1;
+				}
+			}
+
 			$obecna = (float) ( $o['sellingMode']['price']['amount'] ?? 0 );
 
 			if ( abs( $docelowa - $obecna ) < 0.01 ) {

@@ -212,12 +212,30 @@ return [
 				. "\n" . 'Nie używaj felg uszkodzonych, pękniętych ani odkształconych.',
 		],
 
-		// Cennik dostawy per producent; 'domyslny' lapie reszte.
-		// Japan Racing i Concaver ida z wysylka 0 zl (ustalenie z 2026-09-01).
+		// Cennik dostawy. Japan Racing i Concaver ida z wysylka 0 zl
+		// (ustalenie z 2026-09-01). Pozostale marki wedlug srednicy, tymi
+		// samymi stawkami co cennik wysylek w sklepie: kurier przedplata
+		// / pobranie, do tego paleta Raben 250 zl.
+		//
+		// 'srednice': klucz to najwieksza srednica w calach, ktora cennik
+		// obejmuje (99 = wszystko od 21"). 'domyslny' tylko dla produktu bez
+		// srednicy - Allegro i tak jej wymaga, wiec w praktyce sie nie zdarza.
+		//
+		// 'domyslny' wskazywal kiedys na "0zl", bo na starcie wystawialismy
+		// tylko JR i Concavera. Gdy doszly inne marki, 735 ofert poszlo
+		// z darmowa wysylka. Poprawione 2026-10-01.
 		'cenniki_dostawy' => [
-			'Japan Racing' => '58445eb2-893e-4d75-95e8-dbe1e24d1c70', // "0zl"
-			'Concaver'     => '58445eb2-893e-4d75-95e8-dbe1e24d1c70', // "0zl"
-			'domyslny'     => '58445eb2-893e-4d75-95e8-dbe1e24d1c70',
+			'marki'    => [
+				'Japan Racing' => '58445eb2-893e-4d75-95e8-dbe1e24d1c70', // "0zl"
+				'Concaver'     => '58445eb2-893e-4d75-95e8-dbe1e24d1c70', // "0zl"
+			],
+			'srednice' => [
+				18 => 'ace2f14f-8aa4-4127-9f88-8425244cf30e', // "Felgi do 18 - 80 lub 120"
+				19 => 'bbe784c6-6aa6-439a-96de-4ece45cf0e5c', // "Felgi 19 - 90 lub 130"
+				20 => 'd62671c2-057b-4bfe-a13e-80e2ef77b4ce', // "Felgi 20 - 100 lub 140"
+				99 => '66c339a4-26bb-4257-807d-d5c3940fec31', // "Felgi 21+ - 150 lub 190"
+			],
+			'domyslny' => 'e409e276-bb41-476c-8e60-5df0005233fe', // "120 lub 180"
 		],
 	],
 

@@ -14,6 +14,7 @@ declare( strict_types=1 );
 require __DIR__ . '/../includes/class-text.php';
 require __DIR__ . '/../includes/class-template.php';
 require __DIR__ . '/../includes/class-client.php';
+require __DIR__ . '/../includes/class-offer.php';
 
 $pass = 0;
 $fail = 0;
@@ -309,6 +310,31 @@ foreach ( $agents as $value => $want ) {
 		$want,
 		Dawmac_Allegro_Client::valid_user_agent( (string) $value )
 	);
+}
+
+// Cennik dostawy: marka przed srednica, progi jak w cenniku wysylek sklepu.
+// Progi celowo nie po kolei - kolejnosc w konfiguracji nie moze miec znaczenia.
+$cenniki = [
+	'marki'    => [ 'Japan Racing' => 'jr' ],
+	'srednice' => [ 20 => 's20', 99 => 's21', 18 => 's18', 19 => 's19' ],
+	'domyslny' => 'dom',
+];
+$dostawy = [
+	'JR po marce, nie po srednicy'  => [ [ 'producent' => 'Japan Racing', 'srednica' => '22"' ], 'jr' ],
+	'marka bez wielkosci liter'     => [ [ 'producent' => 'japan racing ', 'srednica' => '19"' ], 'jr' ],
+	'15 cali'                       => [ [ 'producent' => 'Wrath Wheels', 'srednica' => '15"' ], 's18' ],
+	'18 cali'                       => [ [ 'producent' => 'Wrath Wheels', 'srednica' => '18' ], 's18' ],
+	'19 cali'                       => [ [ 'producent' => 'Wrath Wheels', 'srednica' => '19"' ], 's19' ],
+	'20 cali'                       => [ [ 'producent' => 'Wrath Wheels', 'srednica' => '20"' ], 's20' ],
+	'21 cali'                       => [ [ 'producent' => 'Wrath Wheels', 'srednica' => '21"' ], 's21' ],
+	'24 cale'                       => [ [ 'producent' => 'Wrath Wheels', 'srednica' => '24"' ], 's21' ],
+	'rozne srednice - wieksza'      => [ [ 'producent' => 'Wrath Wheels', 'srednica' => [ '19"', '20"' ] ], 's20' ],
+	'brak srednicy'                 => [ [ 'producent' => 'Wrath Wheels' ], 'dom' ],
+	'pusta srednica'                => [ [ 'producent' => 'Wrath Wheels', 'srednica' => '' ], 'dom' ],
+];
+
+foreach ( $dostawy as $nazwa => [ $dane, $want ] ) {
+	check( "dostawa: {$nazwa}", $want, Dawmac_Allegro_Offer::cennik_dostawy( $dane, $cenniki ) );
 }
 
 echo "\n";

@@ -12,7 +12,7 @@
  * ("769.G", "941.J") i uzywa jej operacyjnie. Nadpisanie skasowaloby te dane.
  */
 
-if ( ! defined( 'ABSPATH' ) ) {
+if ( defined( 'ABSPATH' ) && ! defined( 'DAWMAC_ALLEGRO_VERSION' ) ) {
 	exit;
 }
 
@@ -108,7 +108,7 @@ class Dawmac_Allegro_Offer {
 			'location' => $o['lokalizacja'],
 
 			'delivery' => [
-				'shippingRates' => [ 'id' => self::cennik( $dane, $o ) ],
+				'shippingRates' => [ 'id' => self::cennik_dostawy( $dane, $o['cenniki_dostawy'] ) ],
 				'handlingTime'  => $o['handling_time'],
 			],
 
@@ -588,11 +588,47 @@ class Dawmac_Allegro_Offer {
 		return $o['gpsr']['producenci'][ $producent ] ?? $o['gpsr']['producenci']['domyslny'];
 	}
 
-	/** Cennik dostawy - per producent, z zapasowym dla reszty. */
-	private static function cennik( array $dane, array $o ): string {
-		$producent = (string) ( $dane['producent'] ?? '' );
+	/**
+	 * Cennik dostawy: najpierw marka (JR i Concaver - darmowa wysylka),
+	 * potem srednica felgi, jak w cenniku wysylek sklepu. Publiczna, bo
+	 * dzienna synchronizacja pilnuje cennika takze na wystawionych ofertach.
+	 */
+	public static function cennik_dostawy( array $dane, array $cenniki ): string {
+		$marka = mb_strtolower( trim( (string) ( $dane['producent'] ?? '' ) ), 'UTF-8' );
 
-		return $o['cenniki_dostawy'][ $producent ] ?? $o['cenniki_dostawy']['domyslny'];
+		foreach ( (array) ( $cenniki['marki'] ?? [] ) as $nazwa => $id ) {
+			if ( mb_strtolower( trim( (string) $nazwa ), 'UTF-8' ) === $marka ) {
+				return (string) $id;
+			}
+		}
+
+		$cale  = self::cale( $dane );
+		$progi = (array) ( $cenniki['srednice'] ?? [] );
+		ksort( $progi );
+
+		foreach ( $progi as $do => $id ) {
+			if ( $cale > 0 && $cale <= (int) $do ) {
+				return (string) $id;
+			}
+		}
+
+		return (string) ( $cenniki['domyslny'] ?? '' );
+	}
+
+	/**
+	 * Srednica w calach; przy roznych srednicach w komplecie wieksza -
+	 * wieksze kolo to wieksza paczka. 0 gdy brak.
+	 */
+	private static function cale( array $dane ): int {
+		$max = 0;
+
+		foreach ( (array) ( $dane['srednica'] ?? [] ) as $v ) {
+			if ( preg_match( '/\d+/', (string) $v, $m ) ) {
+				$max = max( $max, (int) $m[0] );
+			}
+		}
+
+		return $max;
 	}
 
 	/**
