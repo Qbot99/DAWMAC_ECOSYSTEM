@@ -28,3 +28,22 @@ Adapter strony (`adapters/<nazwa>.py`) zna tylko jej budowę: ma funkcję
 `run(pobieracz, zbior, opcje)` i woła `zbior.dodaj(marka, model, generacja, url)`.
 
 Testy bez internetu: `python3 test_scraper.py`.
+
+## Dane z wcześniejszego zbioru alukonfigurator.pl
+
+`z_sqlite_alukonfigurator.py` nie pobiera niczego z sieci. Zamienia bazę
+SQLite z zbioru z 22–24.09.2026 na pliki importu:
+
+```
+python3 z_sqlite_alukonfigurator.py --baza KOPIA.sqlite --out ../../data/fitment/alukonfigurator
+```
+
+Podawaj kopię bazy (jest otwierana tylko do odczytu). Generacja to typ auta
+z alukonfiguratora, a felgi to fabryczne rozmiary z COC. Strona nie podaje
+śruba/nakrętka ani momentu, więc `fastener` i `torque_nm` są `null`.
+Rozstaw jest w źródle obcięty do pełnych mm: 114/139/101/165 zamieniamy na
+114.3/139.7/101.6/165.1, a `x/120` u marek GM jest pomijany (120 albo 120.65).
+Rozmiary bez ET albo z ET z połówką mm wypadają. Wynik nie trafia do gita
+(`data/fitment/alukonfigurator/` jest w `.gitignore`).
+
+Testy: `python3 test_z_sqlite_alukonfigurator.py`.
