@@ -18,7 +18,8 @@ function session_begin(): void
     session_name('GIELDA_SID');
     session_set_cookie_params([
         'lifetime' => 60 * 60 * 24 * 30,
-        'path'     => '/',
+        // Ciasteczko tylko dla giełdy (np. /gielda/), nie dla całego dawmac.pl.
+        'path'     => rtrim((string) parse_url(app_url(), PHP_URL_PATH), '/') . '/',
         'secure'   => env('COOKIE_SECURE', '1') === '1',
         'httponly' => true,
         'samesite' => 'Lax',

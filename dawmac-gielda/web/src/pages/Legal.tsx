@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { useLocation } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { useSession } from '../auth'
 
 /*
@@ -107,7 +107,7 @@ export function Terms() {
       <ol>
         <li>Reklamacje dotyczące działania giełdy przyjmujemy na <a href={`mailto:${mail}`}>{mail}</a> i odpowiadamy w ciągu 14 dni.</li>
         <li>O zmianach regulaminu informujemy z co najmniej 15-dniowym wyprzedzeniem. Możesz wtedy usunąć konto. Zakończenie działania giełdy ogłosimy z wyprzedzeniem, z możliwością pobrania swoich danych.</li>
-        <li>Zasady przetwarzania danych opisuje <a href="/prywatnosc">polityka prywatności</a>.</li>
+        <li>Zasady przetwarzania danych opisuje <Link to="/prywatnosc">polityka prywatności</Link>.</li>
         <li>Regulamin podlega prawu polskiemu, co nie pozbawia konsumenta ochrony przepisów państwa jego zamieszkania.</li>
       </ol>
     </div>

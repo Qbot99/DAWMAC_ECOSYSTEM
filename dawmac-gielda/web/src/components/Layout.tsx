@@ -17,7 +17,7 @@ export default function Layout() {
       <header className="topbar">
         <div className="topbar-inner">
           <Link to="/" className="brand">
-            <img src="/dawmac-logo-dark.png" alt="DAWMAC" width={126} height={28} />
+            <img src={`${import.meta.env.BASE_URL}dawmac-logo-dark.png`} alt="DAWMAC" width={126} height={28} />
             <span className="brand-badge">Giełda</span>
           </Link>
           <nav className="topnav">

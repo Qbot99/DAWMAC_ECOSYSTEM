@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { api } from '../api'
+import { api, BASE } from '../api'
 import { useSession } from '../auth'
 import type { User } from '../types'
 import { ErrorBox } from '../components/ui'
@@ -143,7 +143,7 @@ export default function Account() {
       <section className="card pad form">
         <h2>Twoje dane</h2>
         <p className="small">Możesz pobrać wszystkie swoje dane albo usunąć konto razem z ogłoszeniami, zdjęciami i wiadomościami.</p>
-        <a className="btn" href="/api/me/export" download>Pobierz moje dane (JSON)</a>
+        <a className="btn" href={`${BASE}/me/export`} download>Pobierz moje dane (JSON)</a>
         <label className="field"><span>Hasło, żeby usunąć konto</span><input type="password" value={deletePw} onChange={(e) => setDeletePw(e.target.value)} />{errs.password && <em className="err">{errs.password}</em>}</label>
         <button className="btn btn-danger" disabled={!deletePw} onClick={deleteAccount}>Usuń konto na zawsze</button>
       </section>

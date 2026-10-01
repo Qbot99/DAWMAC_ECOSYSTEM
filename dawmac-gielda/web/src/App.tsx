@@ -17,7 +17,7 @@ import { Contact, Privacy, Safety, Terms } from './pages/Legal'
 export default function App() {
   return (
     <SessionProvider>
-      <BrowserRouter>
+      <BrowserRouter basename={import.meta.env.BASE_URL.replace(/\/$/, '')}>
         <Routes>
           <Route element={<Layout />}>
             <Route index element={<Home />} />

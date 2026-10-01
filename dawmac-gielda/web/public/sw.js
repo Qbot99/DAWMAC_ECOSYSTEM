@@ -1,10 +1,12 @@
 // Service worker giełdy: aplikacja działa jak zainstalowana (PWA).
 // Strategia: API zawsze z sieci (dane muszą być świeże), pliki aplikacji
 // z sieci z zapasem w cache, żeby po utracie zasięgu otwierała się powłoka.
-const CACHE = 'gielda-v1';
+// Ścieżki liczone od katalogu sw.js — działa i pod /, i pod /gielda/.
+const CACHE = 'gielda-v2';
+const ROOT = new URL('./', self.location).pathname;
 
 self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(['/', '/manifest.webmanifest', '/icon-192.png'])));
+  e.waitUntil(caches.open(CACHE).then((c) => c.addAll([ROOT, ROOT + 'manifest.webmanifest', ROOT + 'icon-192.png'])));
   self.skipWaiting();
 });
 
@@ -17,19 +19,19 @@ self.addEventListener('activate', (e) => {
 
 self.addEventListener('fetch', (e) => {
   const url = new URL(e.request.url);
-  if (e.request.method !== 'GET' || url.origin !== location.origin || url.pathname.startsWith('/api/')) return;
+  if (e.request.method !== 'GET' || url.origin !== location.origin || url.pathname.startsWith(ROOT + 'api/')) return;
 
   e.respondWith(
     fetch(e.request)
       .then((res) => {
-        if (res.ok && (url.pathname.startsWith('/assets/') || url.pathname.startsWith('/uploads/'))) {
+        if (res.ok && (url.pathname.startsWith(ROOT + 'assets/') || url.pathname.startsWith(ROOT + 'uploads/'))) {
           const copy = res.clone();
           caches.open(CACHE).then((c) => c.put(e.request, copy));
         }
         return res;
       })
       .catch(() =>
-        caches.match(e.request).then((hit) => hit || (e.request.mode === 'navigate' ? caches.match('/') : undefined)),
+        caches.match(e.request).then((hit) => hit || (e.request.mode === 'navigate' ? caches.match(ROOT) : undefined)),
       ),
   );
 });

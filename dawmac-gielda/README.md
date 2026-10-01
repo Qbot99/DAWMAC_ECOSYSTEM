@@ -50,24 +50,25 @@ Testy: `./tests/run.sh` (czyści bazę z `tests/test.env`, 87 sprawdzeń całej 
 
 ## Wdrożenie na dhosting
 
-Proponowany układ (np. subdomena `gielda.dawmacpolska.pl`):
+Giełda stoi pod `dawmac.pl/gielda`, w podkatalogu sklepu (ma własny `.htaccess`, więc reguły WordPressa jej nie dotyczą):
 
 ```
-~/domains/gielda.dawmacpolska.pl/
-├── .env                 ← z .env.example, poza public_html
-├── tools/  sql/         ← poza public_html
+~/dawmac.pl-aid9/
+├── gielda-app/          ← poza public_html: .env, tools/, sql/
 └── public_html/
-    ├── (zawartość web/dist po `npm run build`, razem z .htaccess)
-    ├── api/             ← katalog api/ (index.php, .htaccess, lib/, routes/)
-    └── uploads/         ← zdjęcia, zapisywalne przez PHP
+    └── gielda/
+        ├── (zawartość web/dist, razem z .htaccess)
+        ├── api/         ← katalog api/ (index.php, .htaccess, lib/, routes/)
+        └── uploads/     ← zdjęcia, zapisywalne przez PHP
 ```
 
-1. Baza: `sql/schema.sql` w wybranej bazie. `CARS_DB_NAME` = baza galerii (użytkownik musi mieć do niej odczyt).
-2. `.env` z `.env.example` — uzupełnić bazę, `APP_URL`, `UPLOAD_DIR`, dane firmy (`OPERATOR_INFO`) i e-maile.
-3. Front: `cd web && npm run build`, wgrać `web/dist/*` do `public_html/`.
-4. API: wgrać `api/` do `public_html/api/`. `api/lib/bootstrap.php` szuka `.env` dwa poziomy nad `api/lib`, czyli w katalogu domeny — przy innym układzie ustaw zmienną `GIELDA_ENV_FILE`.
-5. Cron w dPanelu, raz dziennie: `php ~/…/tools/cron.php`.
-6. Konto admina: rejestracja + `php tools/nadaj_role.php EMAIL admin`.
+1. Baza: `sql/schema.sql` w nowej bazie. `CARS_DB_NAME` = baza galerii (użytkownik giełdy potrzebuje do niej tylko odczytu).
+2. `.env` z `.env.example`: baza, `APP_URL=https://dawmac.pl/gielda`, `UPLOAD_DIR`, `UPLOAD_URL=/gielda/uploads`, dane firmy (`OPERATOR_INFO`) i e-maile. API szuka `.env` przez `GIELDA_ENV_FILE` (np. `SetEnv` w `api/.htaccess`) albo dwa poziomy nad `api/lib`.
+3. Front: `cd web && npm run build -- --base=/gielda/`, wgrać `web/dist/*` do `public_html/gielda/`.
+4. API: wgrać `api/` do `public_html/gielda/api/`.
+5. Cron w dPanelu, raz dziennie: `php83 ~/…/tools/cron.php` (domyślne `php` w konsoli dhostingu to 5.4).
+6. Konto admina: rejestracja + `php83 tools/nadaj_role.php EMAIL admin`.
+7. W Cloudflare nie cachować `/gielda/api/*` (domyślnie JSON nie jest cachowany, ale reguła „Cache Everything” by to zepsuła).
 
 PHP potrzebuje rozszerzeń `pdo_mysql`, `gd` z WebP, `mbstring` (opcjonalnie `exif` — do obracania zdjęć z telefonu).
 

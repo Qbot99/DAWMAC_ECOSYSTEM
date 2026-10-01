@@ -12,7 +12,8 @@ export class ApiError extends Error {
   }
 }
 
-const BASE = '/api'
+// BASE_URL to '/' lokalnie i '/gielda/' na dawmac.pl (vite --base).
+export const BASE = `${import.meta.env.BASE_URL}api`
 
 export async function api<T>(path: string, options: { method?: string; json?: unknown; form?: FormData } = {}): Promise<T> {
   const method = options.method ?? (options.json !== undefined || options.form ? 'POST' : 'GET')
