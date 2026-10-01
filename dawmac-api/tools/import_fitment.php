@@ -13,6 +13,10 @@
  *   php import_fitment.php                         — sprawdza data/fitment/*.json, bez bazy
  *   php import_fitment.php plik.json               — sprawdza wskazany plik
  *   php import_fitment.php --apply [plik.json ...] — sprawdza i zapisuje
+ *   php import_fitment.php --apply --pomin-bledne KATALOG/*.json
+ *        — dla dużych pobranych zbiorów: błędne generacje są wypisywane
+ *          i pomijane, a poprawne zapisywane. Błędny wpis nadal nie trafia
+ *          do bazy, tylko nie blokuje tysięcy dobrych.
  *
  * Format pliku: patrz data/fitment/README.md.
  */
@@ -28,7 +32,8 @@ require_once is_file(__DIR__ . '/../api/fitment/lib/fitment.php')
     ? __DIR__ . '/../api/fitment/lib/fitment.php'
     : $root . '/api/fitment/lib/fitment.php';
 
-$apply = in_array('--apply', $argv, true);
+$apply       = in_array('--apply', $argv, true);
+$pominBledne = in_array('--pomin-bledne', $argv, true);
 $pliki = array_values(array_filter(array_slice($argv, 1), fn($a) => strpos($a, '--') !== 0));
 
 if (!$pliki) {
@@ -50,9 +55,10 @@ echo $apply ? "TRYB: zapis\n\n" : "TRYB: podgląd (bez bazy). Dodaj --apply.\n\n
 /* Walidacja — wszystko, zanim cokolwiek dotknie bazy                  */
 /* ------------------------------------------------------------------ */
 
-$bledy   = [];
-$wpisy   = []; // spłaszczone generacje gotowe do zapisu
-$liczniki = ['marek' => 0, 'modeli' => 0, 'generacji' => 0, 'rozmiarów' => 0];
+$bledy        = [];
+$wpisy        = []; // spłaszczone generacje gotowe do zapisu
+$bledneKlucze = []; // generacje z błędem — przy --pomin-bledne odpadają
+$bledneMarki  = [];
 
 foreach ($pliki as $plik) {
     $nazwaPliku = basename($plik);
@@ -78,14 +84,13 @@ foreach ($pliki as $plik) {
         $country = $make['country'] ?? null;
         if ($country !== null && !preg_match('~^[A-Z]{2}$~', (string) $country)) {
             $bledy[] = "$sciezkaMarki: country musi być kodem kraju z 2 wielkich liter (np. DE, CN) albo null";
+            $bledneMarki[$makeSlug] = true;
         }
 
         if (!isset($make['models']) || !is_array($make['models'])) {
             $bledy[] = "$sciezkaMarki: brak listy \"models\"";
             continue;
         }
-
-        $liczniki['marek']++;
 
         foreach ($make['models'] as $model) {
             $modelName = trim((string) ($model['name'] ?? ''));
@@ -101,8 +106,6 @@ foreach ($pliki as $plik) {
                 continue;
             }
 
-            $liczniki['modeli']++;
-
             foreach ($model['generations'] as $g) {
                 $genName = trim((string) ($g['name'] ?? ''));
                 $sciezka = "$sciezkaModelu › " . ($genName !== '' ? $genName : '?');
@@ -110,10 +113,14 @@ foreach ($pliki as $plik) {
 
                 foreach (dawmac_fit_validate_generation(is_array($g) ? $g : []) as $blad) {
                     $bledy[] = "$sciezka: $blad";
+                    $bledneKlucze[$klucz] = true;
                 }
 
+                // Dwa różne wpisy tej samej generacji — nie wiadomo, który jest
+                // prawdziwy, więc przy --pomin-bledne odpadają oba.
                 if (isset($wpisy[$klucz])) {
                     $bledy[] = "$sciezka: ta generacja występuje w danych dwa razy";
+                    $bledneKlucze[$klucz] = true;
                 }
 
                 $wpisy[$klucz] = [
@@ -123,25 +130,50 @@ foreach ($pliki as $plik) {
                     'source'  => isset($g['source']) ? (string) $g['source'] : $zrodloPliku,
                     'sciezka' => $sciezka,
                 ];
-
-                $liczniki['generacji']++;
-                $liczniki['rozmiarów'] += is_array($g['wheels'] ?? null) ? count($g['wheels']) : 0;
             }
         }
     }
 }
 
-if ($bledy) {
+if ($bledy && !$pominBledne) {
     echo "BŁĘDY (" . count($bledy) . ") — nic nie zapisano:\n";
     foreach ($bledy as $b) {
         echo "  - $b\n";
     }
+    echo "\nPoprawne wpisy można zapisać bez błędnych: dodaj --pomin-bledne.\n";
     exit(1);
+}
+
+if ($bledy) {
+    echo "POMIJAM BŁĘDNE (" . count($bledy) . "):\n";
+    foreach ($bledy as $b) {
+        echo "  - $b\n";
+    }
+    echo "\n";
+
+    $wpisy = array_filter(
+        $wpisy,
+        fn($w, $klucz) => !isset($bledneKlucze[$klucz]) && !isset($bledneMarki[$w['make']['slug']]),
+        ARRAY_FILTER_USE_BOTH
+    );
+
+    if (!$wpisy) {
+        echo "Nie zostało nic poprawnego do zapisu.\n";
+        exit(1);
+    }
+}
+
+$marki = $modele = [];
+$rozmiarow = 0;
+foreach ($wpisy as $w) {
+    $marki[$w['make']['slug']] = true;
+    $modele[$w['make']['slug'] . '/' . $w['model']['slug']] = true;
+    $rozmiarow += is_array($w['gen']['wheels'] ?? null) ? count($w['gen']['wheels']) : 0;
 }
 
 printf(
     "Dane poprawne: %d marek, %d modeli, %d generacji, %d rozmiarów felg.\n",
-    $liczniki['marek'], $liczniki['modeli'], $liczniki['generacji'], $liczniki['rozmiarów']
+    count($marki), count($modele), count($wpisy), $rozmiarow
 );
 
 if (!$apply) {
