@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <g transform="rotate(-14 100 100)">
+    <circle cx="100" cy="100" r="92" fill="none" stroke="#fadadb" stroke-width="14"/>
+    <circle cx="100" cy="100" r="81" fill="none" stroke="#fdecec" stroke-width="4"/>
+    <g fill="#f7d3d4">
+      <path d="M92 76Q95 48 79 20Q100 15 121 20Q105 48 108 76Z"/>
+      <path d="M92 76Q95 48 79 20Q100 15 121 20Q105 48 108 76Z" transform="rotate(72 100 100)"/>
+      <path d="M92 76Q95 48 79 20Q100 15 121 20Q105 48 108 76Z" transform="rotate(144 100 100)"/>
+      <path d="M92 76Q95 48 79 20Q100 15 121 20Q105 48 108 76Z" transform="rotate(216 100 100)"/>
+      <path d="M92 76Q95 48 79 20Q100 15 121 20Q105 48 108 76Z" transform="rotate(288 100 100)"/>
+      <circle cx="100" cy="100" r="28"/>
+    </g>
+    <g stroke="#fdecec" stroke-width="3" stroke-linecap="round">
+      <path d="M100 70V25"/>
+      <path d="M100 70V25" transform="rotate(72 100 100)"/>
+      <path d="M100 70V25" transform="rotate(144 100 100)"/>
+      <path d="M100 70V25" transform="rotate(216 100 100)"/>
+      <path d="M100 70V25" transform="rotate(288 100 100)"/>
+    </g>
+    <g fill="#fdecec">
+      <circle cx="110.6" cy="85.4" r="4"/>
+      <circle cx="117.1" cy="105.6" r="4"/>
+      <circle cx="100" cy="118" r="4"/>
+      <circle cx="82.9" cy="105.6" r="4"/>
+      <circle cx="89.4" cy="85.4" r="4"/>
+    </g>
+    <circle cx="100" cy="100" r="9" fill="#fff" stroke="#f7d3d4" stroke-width="3"/>
+  </g>
+</svg>

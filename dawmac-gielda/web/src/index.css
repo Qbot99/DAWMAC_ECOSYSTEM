@@ -128,16 +128,22 @@ img { max-width: 100%; display: block; }
 .kicker-line { width: 24px; height: 3px; background: var(--acc); }
 .kicker-label { font: 700 11px var(--font-display); letter-spacing: 0.18em; text-transform: uppercase; color: var(--acc); }
 .hero { background: #fff; border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: 1.5rem 1.2rem; margin-bottom: 1.25rem; position: relative; overflow: hidden; isolation: isolate; }
-.hero::after { content: ''; position: absolute; right: -60px; top: -60px; width: 220px; height: 220px; border-radius: 50%; border: 26px solid var(--acc-soft); pointer-events: none; z-index: -1; }
+/* Dekoracja w rogu: felga z 5 dzielonymi ramionami w odcieniach --acc-soft (assets/felga.svg) */
+.hero::after { content: ''; position: absolute; right: -60px; top: -60px; width: 220px; height: 220px; background: url('./assets/felga.svg') center / contain no-repeat; pointer-events: none; z-index: -1; }
 .hero h1 { margin: 0 0 0.5rem; font-size: clamp(1.8rem, 5vw, 2.8rem); position: relative; }
 .hero p { margin: 0 0 1.1rem; color: var(--muted); max-width: 50ch; position: relative; }
 .search { display: flex; gap: 0.5rem; max-width: 720px; position: relative; }
 .search input { flex: 1; min-width: 0; }
 .hero-cta { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.8rem; position: relative; }
-@media (min-width: 860px) { .hero { padding: 2.2rem 2.2rem; } .hero::after { width: 320px; height: 320px; right: -80px; top: -90px; border-width: 36px; } }
+@media (min-width: 860px) { .hero { padding: 2.2rem 2.2rem; } .hero::after { width: 320px; height: 320px; right: -80px; top: -90px; } }
 
-.tabs { display: flex; gap: 0.25rem; margin-bottom: 0.9rem; border-bottom: 1px solid var(--line); overflow-x: auto; }
-.tab { padding: 0.65rem 1rem; border: 0; border-bottom: 3px solid transparent; background: none; color: var(--muted); font: 700 0.92rem var(--font-body); cursor: pointer; white-space: nowrap; margin-bottom: -1px; }
+/* Linia pod zakładkami jako cień wewnątrz paska: podkreślenie aktywnej zakładki leży na niej
+   i nic nie wystaje, więc nie pojawia się suwak. W bok da się przewinąć (wąskie telefony,
+   panel pracownika), ale bez widocznego paska przewijania. */
+.tabs { display: flex; gap: 0.25rem; margin-bottom: 0.9rem; box-shadow: inset 0 -1px 0 var(--line); overflow-x: auto; scrollbar-width: none; }
+.tabs::-webkit-scrollbar { display: none; }
+.tab { padding: 0.65rem 1rem; border: 0; border-bottom: 3px solid transparent; background: none; color: var(--muted); font: 700 0.92rem var(--font-body); cursor: pointer; white-space: nowrap; }
+@media (max-width: 480px) { .tab { padding: 0.65rem 0.7rem; } }
 .tab:hover { color: var(--ink); }
 .tab.active { color: var(--ink); border-bottom-color: var(--acc); }
 .tab-filters { margin-left: auto; }

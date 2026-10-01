@@ -27,8 +27,9 @@ function send_mail(string $to, string $subject, string $text): void
     }
 
     $text .= "\n\n--\nDAWMAC Giełda — bezpłatna giełda felg\n" . app_url('/') . "\n";
+    // Polskie litery w nagłówkach muszą być zakodowane (RFC 2047), inaczej poczta pokazuje „Gie**da”.
     $headers = implode("\r\n", [
-        'From: DAWMAC Giełda <' . $from . '>',
+        'From: =?UTF-8?B?' . base64_encode('DAWMAC Giełda') . '?= <' . $from . '>',
         'Reply-To: ' . env('CONTACT_EMAIL', $from),
         'MIME-Version: 1.0',
         'Content-Type: text/plain; charset=UTF-8',
