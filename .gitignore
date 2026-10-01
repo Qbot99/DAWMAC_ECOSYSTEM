@@ -31,3 +31,4 @@ ios-app/*.xcworkspace/
 ios-app/DerivedData/
 ios-app/build/
 ios-app/**/*.xcuserstate
+/dawmac-api/data/fitment/alukonfigurator/

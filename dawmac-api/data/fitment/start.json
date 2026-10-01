@@ -1,0 +1,138 @@
+{
+  "source": "Dane startowe wpisane przy tworzeniu bazy. Do potwierdzenia przed pokazaniem klientom.",
+  "makes": [
+    {
+      "name": "Audi",
+      "country": "DE",
+      "models": [
+        {
+          "name": "A4",
+          "generations": [
+            {
+              "name": "B9",
+              "years": [2015, 2024],
+              "pcd": "5x112",
+              "center_bore": 66.5,
+              "thread": "M14x1.5",
+              "fastener": "bolt",
+              "torque_nm": 120,
+              "verified": false,
+              "wheels": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "BMW",
+      "country": "DE",
+      "models": [
+        {
+          "name": "3 Series",
+          "generations": [
+            {
+              "name": "G20",
+              "years": [2018, null],
+              "pcd": "5x112",
+              "center_bore": 66.6,
+              "thread": "M14x1.25",
+              "fastener": "bolt",
+              "torque_nm": 140,
+              "verified": false,
+              "wheels": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Škoda",
+      "country": "CZ",
+      "models": [
+        {
+          "name": "Octavia",
+          "generations": [
+            {
+              "name": "IV",
+              "years": [2020, null],
+              "pcd": "5x112",
+              "center_bore": 57.1,
+              "thread": "M14x1.5",
+              "fastener": "bolt",
+              "torque_nm": 140,
+              "verified": false,
+              "wheels": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Tesla",
+      "country": "US",
+      "models": [
+        {
+          "name": "Model 3",
+          "generations": [
+            {
+              "name": "I",
+              "years": [2017, null],
+              "pcd": "5x114.3",
+              "center_bore": 64.1,
+              "thread": "M14x1.5",
+              "fastener": "nut",
+              "torque_nm": 175,
+              "verified": false,
+              "wheels": [
+                { "size": "8.5Jx18 ET40", "tire": "235/45 R18", "oem": true },
+                { "size": "8.5Jx19 ET35", "tire": "235/40 R19", "oem": true }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Model Y",
+          "generations": [
+            {
+              "name": "I",
+              "years": [2020, null],
+              "pcd": "5x114.3",
+              "center_bore": 64.1,
+              "thread": "M14x1.5",
+              "fastener": "nut",
+              "torque_nm": 175,
+              "verified": false,
+              "wheels": [
+                { "size": "9.5Jx19 ET45", "tire": "255/45 R19", "oem": true }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Volkswagen",
+      "country": "DE",
+      "models": [
+        {
+          "name": "Golf",
+          "generations": [
+            {
+              "name": "VIII",
+              "years": [2019, null],
+              "pcd": "5x112",
+              "center_bore": 57.1,
+              "thread": "M14x1.5",
+              "fastener": "bolt",
+              "torque_nm": 140,
+              "verified": false,
+              "wheels": [
+                { "size": "6.5Jx16 ET46", "tire": "205/55 R16", "oem": true }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
