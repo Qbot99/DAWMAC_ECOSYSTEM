@@ -68,6 +68,8 @@ export interface Listing {
   created_at: string
   expires_at: string
   is_owner: boolean
+  /** Pracownik oglądający cudze ogłoszenie — może je poprawić lub usunąć. */
+  can_moderate?: boolean
   is_favorite?: boolean
   has_phone?: boolean
   show_phone?: boolean

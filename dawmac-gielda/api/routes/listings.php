@@ -86,6 +86,7 @@ function listing_view(array $l, array $images, ?array $viewer, bool $full = fals
         'created_at'       => $l['created_at'],
         'expires_at'       => $l['expires_at'],
         'is_owner'         => $isOwner,
+        'can_moderate'     => !$isOwner && is_staff($viewer),
         'seller'           => [
             'id'           => (int) $l['user_id'],
             'display_name' => $l['display_name'],
@@ -381,26 +382,50 @@ function add_images(int $listingId, array $files, int $startPosition): void
 }
 
 /** Ogłoszenie, które bieżący użytkownik może zmieniać. */
-function own_listing(string $id): array
+/**
+ * Ogłoszenie, które zalogowany może zmieniać: własne albo — dla pracownika —
+ * dowolne (zwraca też $asStaff, żeby zapisać zmianę w logu moderacji).
+ */
+function own_listing(string $id, bool $staffAllowed = false): array
 {
     $user = require_user();
     $l = load_listing((int) $id);
-    if (!$l || (int) $l['user_id'] !== (int) $user['id']) {
+    $isOwner = $l && (int) $l['user_id'] === (int) $user['id'];
+    $asStaff = $l && !$isOwner && $staffAllowed && is_staff($user);
+    if (!$l || (!$isOwner && !$asStaff)) {
         fail(404, 'Nie ma takiego ogłoszenia na Twoim koncie.');
     }
-    if ($l['status'] === 'removed') {
+    if ($l['status'] === 'removed' && !$asStaff) {
         fail(403, 'Ogłoszenie zostało usunięte przez moderację i nie można go zmieniać. Odwołanie: ' . env('CONTACT_EMAIL', ''));
     }
-    return [$user, $l];
+    return [$user, $l, $asStaff];
+}
+
+/** Zmiana cudzego ogłoszenia przez pracownika: wpis w logu i informacja dla autora (bez e-maila). */
+function staff_edit_log(array $staff, array $l, string $what): void
+{
+    mod_log($staff, 'listing_edit', 'listing', (int) $l['id'], $what);
+    notify(
+        (int) $l['user_id'],
+        'moderation',
+        'Pracownik DAWMAC poprawił Twoje ogłoszenie „' . $l['title'] . '”',
+        $what . '. Jeśli coś się nie zgadza, napisz na ' . env('CONTACT_EMAIL', 'gielda@dawmac.pl') . '.',
+        '/ogloszenie/' . $l['id'],
+        ['listing_id' => (int) $l['id']],
+        false
+    );
 }
 
 function route_listing_update(string $id): void
 {
-    [$user, $l] = own_listing($id);
+    [$user, $l, $asStaff] = own_listing($id, true);
     $data = listing_fields(input(), $l['type']);
 
     $set = implode(', ', array_map(fn ($c) => "`$c` = ?", array_keys($data)));
     db()->prepare("UPDATE g_listings SET $set WHERE id = ?")->execute([...array_values($data), $l['id']]);
+    if ($asStaff) {
+        staff_edit_log($user, $l, 'Zmiana treści ogłoszenia');
+    }
 
     $fresh = load_listing((int) $l['id']);
     json_out(['listing' => listing_view($fresh, listing_images([(int) $l['id']])[(int) $l['id']] ?? [], $user, true)]);
@@ -412,8 +437,11 @@ function route_listing_update(string $id): void
  */
 function route_listing_status(string $id): void
 {
-    [$user, $l] = own_listing($id);
+    [$user, $l, $asStaff] = own_listing($id, true);
     $status = input()['status'] ?? '';
+    if ($asStaff && $l['status'] === 'removed') {
+        fail(422, 'Usunięte ogłoszenie przywróć w panelu (z uzasadnieniem).');
+    }
     if (!in_array($status, ['active', 'sold', 'closed'], true)) {
         fail(422, 'Niedozwolony status.');
     }
@@ -422,6 +450,9 @@ function route_listing_status(string $id): void
             ->execute([$l['id']]);
     } else {
         db()->prepare('UPDATE g_listings SET status = ? WHERE id = ?')->execute([$status, $l['id']]);
+    }
+    if ($asStaff) {
+        staff_edit_log($user, $l, 'Zmiana statusu na: ' . ['active' => 'aktywne', 'sold' => 'sprzedane', 'closed' => 'zakończone'][$status]);
     }
     $fresh = load_listing((int) $l['id']);
     json_out(['listing' => listing_view($fresh, listing_images([(int) $l['id']])[(int) $l['id']] ?? [], $user, true)]);
@@ -441,7 +472,7 @@ function route_listing_delete(string $id): void
 
 function route_listing_add_images(string $id): void
 {
-    [$user, $l] = own_listing($id);
+    [$user, $l, $asStaff] = own_listing($id, true);
     $files = uploaded_images();
     if (!$files) {
         fail(422, 'Wybierz zdjęcia.');
@@ -457,12 +488,15 @@ function route_listing_add_images(string $id): void
     }
     validate_images($files);
     add_images((int) $l['id'], $files, (int) $maxPos + 1);
+    if ($asStaff) {
+        staff_edit_log($user, $l, 'Dodanie zdjęć');
+    }
     json_out(['images' => listing_images([(int) $l['id']])[(int) $l['id']] ?? []]);
 }
 
 function route_listing_delete_image(string $id, string $imageId): void
 {
-    [$user, $l] = own_listing($id);
+    [$user, $l, $asStaff] = own_listing($id, true);
     $stmt = db()->prepare('SELECT * FROM g_listing_images WHERE id = ? AND listing_id = ?');
     $stmt->execute([(int) $imageId, $l['id']]);
     $img = $stmt->fetch();
@@ -476,13 +510,16 @@ function route_listing_delete_image(string $id, string $imageId): void
     }
     delete_image_files((int) $l['id'], $img['file']);
     db()->prepare('DELETE FROM g_listing_images WHERE id = ?')->execute([$img['id']]);
+    if ($asStaff) {
+        staff_edit_log($user, $l, 'Usunięcie zdjęcia');
+    }
     json_out(['images' => listing_images([(int) $l['id']])[(int) $l['id']] ?? []]);
 }
 
 /** Ustawia kolejność zdjęć; pierwsze jest okładką. */
 function route_listing_order_images(string $id): void
 {
-    [$user, $l] = own_listing($id);
+    [$user, $l, $asStaff] = own_listing($id, true);
     $order = input()['order'] ?? [];
     if (!is_array($order)) {
         fail(422, 'Zła kolejność.');
@@ -490,6 +527,9 @@ function route_listing_order_images(string $id): void
     $stmt = db()->prepare('UPDATE g_listing_images SET position = ? WHERE id = ? AND listing_id = ?');
     foreach (array_values($order) as $pos => $imgId) {
         $stmt->execute([$pos, (int) $imgId, $l['id']]);
+    }
+    if ($asStaff) {
+        staff_edit_log($user, $l, 'Zmiana kolejności zdjęć');
     }
     json_out(['images' => listing_images([(int) $l['id']])[(int) $l['id']] ?? []]);
 }

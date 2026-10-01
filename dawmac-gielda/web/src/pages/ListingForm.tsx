@@ -44,6 +44,7 @@ export default function ListingForm() {
   const [error, setError] = useState<unknown>(null)
   const [busy, setBusy] = useState(false)
   const [loaded, setLoaded] = useState(!editing)
+  const [asStaff, setAsStaff] = useState(false)
   const errs = fieldErrors(error)
   const max = config?.max_images ?? 8
 
@@ -54,6 +55,7 @@ export default function ListingForm() {
         setType(listing.type)
         setV(fromListing(listing))
         setImages(listing.images)
+        setAsStaff(!!listing.can_moderate)
         setLoaded(true)
       })
       .catch(setError)
@@ -166,6 +168,7 @@ export default function ListingForm() {
   return (
     <div className="container narrow">
       <h1>{editing ? 'Edytuj ogłoszenie' : sell ? 'Sprzedam felgi' : 'Kupię felgi'}</h1>
+      {asStaff && <p className="notice">Edytujesz cudze ogłoszenie jako pracownik. Zmiana trafi do logu decyzji, a autor dostanie powiadomienie.</p>}
       {!editing && (
         <p className="muted">
           {sell ? 'Szukasz felg? ' : 'Sprzedajesz felgi? '}

@@ -284,6 +284,26 @@ check($s === 200, 'przywrócenie ogłoszenia');
 [$s, $r] = $anon->get("/listings/$sellId");
 check($s === 200, 'przywrócone znów widoczne');
 
+echo "Edycja przez pracownika\n";
+check(($r['listing']['can_moderate'] ?? null) === false, 'anonim nie ma przycisków pracownika');
+[$s, $r] = $mod->get("/listings/$sellId");
+check(($r['listing']['can_moderate'] ?? false) === true, 'pracownik widzi tryb pracownika na cudzym ogłoszeniu');
+[$s, $r] = $buyer->call('POST', "/listings/$sellId", form: ['title' => 'Przejęte'] + $sellForm);
+check($s === 404, 'zwykły użytkownik nie edytuje cudzego ogłoszenia');
+[$s, $r] = $mod->call('POST', "/listings/$sellId", form: ['title' => 'BMW styling 19" 5x120 (poprawione)'] + $sellForm);
+check($s === 200 && $r['listing']['title'] === 'BMW styling 19" 5x120 (poprawione)', 'pracownik poprawia cudze ogłoszenie', $r);
+[$s, $r] = $mod->post("/listings/$sellId/status", ['status' => 'sold']);
+check($s === 200 && $r['listing']['status'] === 'sold', 'pracownik zmienia status');
+$mod->post("/listings/$sellId/status", ['status' => 'active']);
+[$s, $r] = $mod->get('/mod/log');
+check(count(array_filter($r['items'], fn ($i) => $i['action'] === 'listing_edit')) === 3, 'edycje pracownika w logu decyzji', $r['items'][0] ?? null);
+[$s, $r] = $seller->get('/me/notifications');
+check(str_contains($r['items'][0]['title'] ?? '', 'poprawił'), 'autor dostał informację o poprawce', $r['items'][0] ?? null);
+[$s, $r] = $mod->get('/me');
+check(isset($r['open_reports']), 'licznik zgłoszeń dla pracownika w /me');
+[$s, $r] = $seller->get('/me');
+check(!isset($r['open_reports']), 'zwykły użytkownik nie widzi licznika zgłoszeń');
+
 [$s, $r] = $mod->get('/mod/users?q=kupujacy');
 $buyerId = $r['items'][0]['id'] ?? 0;
 [$s, $r] = $mod->post("/mod/users/$buyerId/ban", ['reason' => 'Wielokrotne próby wyłudzenia przedpłaty.']);

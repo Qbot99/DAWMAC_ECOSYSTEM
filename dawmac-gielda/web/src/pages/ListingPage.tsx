@@ -7,6 +7,7 @@ import { CONDITION_LABEL, car, date, price, size, STATUS } from '../format'
 import { ErrorBox, Loading } from '../components/ui'
 import { useLoad } from '../hooks'
 import ReportDialog from '../components/ReportDialog'
+import DecisionDialog, { type Decision } from '../components/DecisionDialog'
 
 export default function ListingPage() {
   const { id } = useParams()
@@ -17,6 +18,8 @@ export default function ListingPage() {
   const [report, setReport] = useState(false)
   const [phone, setPhone] = useState<string | null>(null)
   const [actionError, setActionError] = useState<unknown>(null)
+  const [decision, setDecision] = useState<Decision | null>(null)
+  const reload = async () => setData(await api<{ listing: Listing }>(`/listings/${id}`))
 
   if (loading) return <Loading />
   if (error || !data) return <div className="container"><ErrorBox error={error} /><Link to="/">← Wróć do ogłoszeń</Link></div>
@@ -161,6 +164,28 @@ export default function ListingPage() {
             )}
           </div>
 
+          {l.can_moderate && (
+            <div className="card pad staff-box">
+              <b>Tryb pracownika</b>
+              <p className="muted small">Zmiany zapisują się w logu decyzji, a autor dostaje powiadomienie.</p>
+              <div className="stack">
+                <Link to={`/edytuj/${l.id}`} className="btn btn-primary">Edytuj ogłoszenie</Link>
+                {l.status === 'active' && (
+                  <button className="btn" onClick={() => setStatus('sold')}>Oznacz jako {l.type === 'sell' ? 'sprzedane' : 'kupione'}</button>
+                )}
+                {['sold', 'closed', 'expired'].includes(l.status) && (
+                  <button className="btn" onClick={() => setStatus('active')}>Wznów ogłoszenie</button>
+                )}
+                {l.status === 'removed' ? (
+                  <button className="btn" onClick={() => setDecision({ title: 'Przywróć ogłoszenie', hint: 'Dlaczego przywracasz (dostanie to autor)', confirm: 'Przywróć', run: (reason) => api(`/mod/listings/${l.id}/restore`, { json: { reason } }) })}>Przywróć</button>
+                ) : (
+                  <button className="btn btn-danger" onClick={() => setDecision({ title: 'Usuń ogłoszenie', hint: 'Uzasadnienie dla autora: co narusza regulamin lub prawo', confirm: 'Usuń', run: (reason) => api(`/mod/listings/${l.id}/remove`, { json: { reason } }) })}>Usuń (moderacja)</button>
+                )}
+                <Link to={`/uzytkownik/${l.seller.id}`} className="btn btn-ghost">Profil autora</Link>
+              </div>
+            </div>
+          )}
+
           <div className="card pad tips">
             <b>Bezpiecznie kupuj i sprzedawaj</b>
             <ul>
@@ -171,12 +196,13 @@ export default function ListingPage() {
             <Link to="/bezpieczenstwo" className="small">Więcej porad</Link>
           </div>
 
-          {!l.is_owner && (
+          {!l.is_owner && !l.can_moderate && (
             <button className="link-btn danger small" onClick={() => setReport(true)}>⚑ Zgłoś ogłoszenie</button>
           )}
         </aside>
       </div>
 
+      {decision && <DecisionDialog d={decision} onClose={() => setDecision(null)} onDone={() => { setDecision(null); reload().catch(setActionError) }} />}
       {report && <ReportDialog listingId={l.id} onClose={() => setReport(false)} />}
     </div>
   )

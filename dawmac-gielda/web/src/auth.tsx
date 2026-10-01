@@ -7,6 +7,7 @@ interface Session {
   loading: boolean
   unreadNotifications: number
   unreadConversations: number
+  openReports: number
   config: AppConfig | null
   refresh: () => Promise<void>
   setUser: (u: User | null) => void
@@ -18,6 +19,7 @@ interface MeResponse {
   user: User | null
   unread_notifications?: number
   unread_conversations?: number
+  open_reports?: number
 }
 
 export function SessionProvider({ children }: { children: ReactNode }) {
@@ -25,6 +27,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
   const [unreadNotifications, setUN] = useState(0)
   const [unreadConversations, setUC] = useState(0)
+  const [openReports, setOR] = useState(0)
   const [config, setConfig] = useState<AppConfig | null>(null)
 
   const refresh = useCallback(async () => {
@@ -33,6 +36,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       setUser(me.user)
       setUN(me.unread_notifications ?? 0)
       setUC(me.unread_conversations ?? 0)
+      setOR(me.open_reports ?? 0)
     } catch {
       // brak sieci — zostaw poprzedni stan
     } finally {
@@ -54,7 +58,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   }, [refresh])
 
   return (
-    <Ctx.Provider value={{ user, loading, unreadNotifications, unreadConversations, config, refresh, setUser }}>
+    <Ctx.Provider value={{ user, loading, unreadNotifications, unreadConversations, openReports, config, refresh, setUser }}>
       {children}
     </Ctx.Provider>
   )

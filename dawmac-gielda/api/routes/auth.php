@@ -142,11 +142,16 @@ function route_me(): void
             OR (other_id = ? AND other_read_id < last_message_id)'
     );
     $msgs->execute([$user['id'], $user['id']]);
-    json_out([
+    $out = [
         'user'                 => user_private_view($user),
         'unread_notifications' => (int) $unread->fetchColumn(),
         'unread_conversations' => (int) $msgs->fetchColumn(),
-    ]);
+    ];
+    if (is_staff($user)) {
+        // Licznik na przycisku „Panel” w aplikacji pracownika.
+        $out['open_reports'] = (int) db()->query("SELECT COUNT(*) FROM g_reports WHERE status = 'open'")->fetchColumn();
+    }
+    json_out($out);
 }
 
 function route_forgot(): void

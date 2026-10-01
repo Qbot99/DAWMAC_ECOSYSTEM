@@ -3,7 +3,7 @@ import { useEffect } from 'react'
 import { useSession } from '../auth'
 
 export default function Layout() {
-  const { user, unreadConversations, unreadNotifications, config } = useSession()
+  const { user, unreadConversations, unreadNotifications, openReports, config } = useSession()
   const { pathname } = useLocation()
 
   useEffect(() => {
@@ -20,6 +20,7 @@ export default function Layout() {
             <img src={`${import.meta.env.BASE_URL}dawmac-logo-dark.png`} alt="DAWMAC" width={126} height={28} />
             <span className="brand-badge">Giełda</span>
           </Link>
+          {staff && <Link to="/panel" className="staff-badge" title="Jesteś zalogowany jako pracownik">Pracownik</Link>}
           <nav className="topnav">
             <NavLink to="/" end>Ogłoszenia</NavLink>
             {user && <NavLink to="/moje">Moje</NavLink>}
@@ -28,7 +29,7 @@ export default function Layout() {
                 Wiadomości{unreadConversations > 0 && <span className="badge">{unreadConversations}</span>}
               </NavLink>
             )}
-            {staff && <NavLink to="/panel">Panel</NavLink>}
+            {staff && <NavLink to="/panel">Panel{openReports > 0 && <span className="badge">{openReports}</span>}</NavLink>}
           </nav>
           <div className="topbar-actions">
             {user ? (
@@ -80,7 +81,12 @@ export default function Layout() {
 
       <nav className="bottomnav">
         <NavLink to="/" end>🏠<span>Szukaj</span></NavLink>
-        <NavLink to="/moje">📋<span>Moje</span></NavLink>
+        {staff ? (
+          // Pracownik ma w aplikacji Panel zamiast „Moje” (Moje są w Panelu i na Koncie).
+          <NavLink to="/panel">🛡️<span>Panel</span>{openReports > 0 && <i className="dot" />}</NavLink>
+        ) : (
+          <NavLink to="/moje">📋<span>Moje</span></NavLink>
+        )}
         <NavLink to="/dodaj" className="bottomnav-add">＋</NavLink>
         <NavLink to="/wiadomosci">
           💬<span>Wiadomości</span>{unreadConversations > 0 && <i className="dot" />}

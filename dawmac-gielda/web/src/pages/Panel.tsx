@@ -4,7 +4,8 @@ import { api, qs } from '../api'
 import { useSession } from '../auth'
 import type { Listing, User } from '../types'
 import { date, price, size, STATUS } from '../format'
-import { Empty, ErrorBox, Loading, Modal } from '../components/ui'
+import { Empty, ErrorBox, Loading } from '../components/ui'
+import DecisionDialog, { type Decision } from '../components/DecisionDialog'
 import { useLoad } from '../hooks'
 
 /**
@@ -28,12 +29,6 @@ interface Report {
 
 type StaffUser = User & { ban_reason: string | null; last_login_at: string | null; listings: number; reports: number }
 
-interface Decision {
-  title: string
-  hint: string
-  confirm: string
-  run: (reason: string) => Promise<unknown>
-}
 
 export default function Panel() {
   const [tab, setTab] = useState<'reports' | 'listings' | 'users' | 'log'>('reports')
@@ -44,7 +39,11 @@ export default function Panel() {
 
   return (
     <div className="container">
-      <h1>Panel pracownika</h1>
+      <div className="panel-head">
+        <h1>Panel pracownika</h1>
+        <Link to="/moje" className="small">Moje ogłoszenia</Link>
+      </div>
+      <p className="muted small">Na każdym ogłoszeniu masz też przyciski pracownika: edycja, zmiana statusu, usunięcie.</p>
       {stats.data && (
         <div className="stats">
           <Stat n={stats.data.open_reports} label="Otwarte zgłoszenia" warn={stats.data.open_reports > 0} />
@@ -78,38 +77,6 @@ function Stat({ n, label, warn }: { n: number; label: string; warn?: boolean }) 
       <b>{n}</b>
       <span>{label}</span>
     </div>
-  )
-}
-
-function DecisionDialog({ d, onClose, onDone }: { d: Decision; onClose: () => void; onDone: () => void }) {
-  const [reason, setReason] = useState('')
-  const [error, setError] = useState<unknown>(null)
-  const [busy, setBusy] = useState(false)
-  return (
-    <Modal title={d.title} onClose={onClose}>
-      <form
-        className="form"
-        onSubmit={async (e) => {
-          e.preventDefault()
-          setBusy(true)
-          try {
-            await d.run(reason)
-            onDone()
-          } catch (err) {
-            setError(err)
-            setBusy(false)
-          }
-        }}
-      >
-        <label className="field">
-          <span>{d.hint}</span>
-          <textarea rows={4} value={reason} onChange={(e) => setReason(e.target.value)} required minLength={10}
-            placeholder="np. Ogłoszenie zawiera podróbki z logo BBS (pkt 5 regulaminu — zakazane treści)." />
-        </label>
-        <ErrorBox error={error} />
-        <button className="btn btn-danger" disabled={busy}>{d.confirm}</button>
-      </form>
-    </Modal>
   )
 }
 
@@ -276,7 +243,7 @@ function Users({ decide }: { decide: (d: Decision) => void }) {
 interface LogRow { id: number; staff_name: string; action: string; target_type: string; target_id: number; reason: string | null; created_at: string }
 
 const ACTIONS: Record<string, string> = {
-  listing_remove: 'usunął ogłoszenie', listing_restore: 'przywrócił ogłoszenie', user_ban: 'zablokował konto', user_unban: 'odblokował konto',
+  listing_remove: 'usunął ogłoszenie', listing_edit: 'poprawił ogłoszenie', listing_restore: 'przywrócił ogłoszenie', user_ban: 'zablokował konto', user_unban: 'odblokował konto',
   report_dismiss: 'odrzucił zgłoszenie', report_remove_listing: 'uwzględnił zgłoszenie', report_ban_user: 'uwzględnił zgłoszenie (blokada)',
   user_role_user: 'odebrał rolę', user_role_moderator: 'nadał rolę moderatora', user_role_admin: 'nadał rolę admina',
 }
