@@ -237,6 +237,7 @@ try {
         $yearFrom = $g['years'][0];
         $yearTo   = $g['years'][1] ?? null;
         $torque   = $g['torque_nm'] ?? null;
+        $fastener = $g['fastener'] ?? null;
         $source   = $w['source'] !== null ? mb_substr($w['source'], 0, 255, 'UTF-8') : null;
         $verified = !empty($g['verified']) ? 1 : 0;
 
@@ -259,7 +260,7 @@ try {
         $nowe = [
             'name' => $name, 'year_from' => $yearFrom, 'year_to' => $yearTo,
             'pcd_holes' => $pcd['holes'], 'pcd_mm' => $pcdMm, 'center_bore' => $cb,
-            'thread' => $thread, 'fastener' => $g['fastener'], 'torque_nm' => $torque,
+            'thread' => $thread, 'fastener' => $fastener, 'torque_nm' => $torque,
             'source' => $source, 'verified' => $verified,
         ];
 
@@ -286,7 +287,7 @@ try {
                 $stmt->bind_param(
                     'siiissssisii',
                     $name, $yearFrom, $yearTo, $pcd['holes'], $pcdMm, $cb,
-                    $thread, $g['fastener'], $torque, $source, $verified, $genId
+                    $thread, $fastener, $torque, $source, $verified, $genId
                 );
                 $stmt->execute();
                 $stmt->close();
@@ -304,7 +305,7 @@ try {
             $stmt->bind_param(
                 'issiiissssisi',
                 $modelId, $name, $slug, $yearFrom, $yearTo, $pcd['holes'], $pcdMm, $cb,
-                $thread, $g['fastener'], $torque, $source, $verified
+                $thread, $fastener, $torque, $source, $verified
             );
             $stmt->execute();
             $genId = (int) $stmt->insert_id;

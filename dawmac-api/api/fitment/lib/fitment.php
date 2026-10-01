@@ -245,8 +245,11 @@ if (!function_exists('dawmac_fit_slug')) {
             $errors[] = 'nieprawidłowy gwint "' . ($g['thread'] ?? '') . '" (oczekiwany np. M14x1.5)';
         }
 
-        if (!in_array($g['fastener'] ?? null, ['bolt', 'nut'], true)) {
-            $errors[] = 'fastener musi być "bolt" (śruba) albo "nut" (nakrętka)';
+        // Śruba czy nakrętka bywa nieznana (zbiór z alukonfiguratora jej nie
+        // ma). Wtedy null: lepiej "nie wiemy" niż zgadywanie po marce.
+        $fastener = $g['fastener'] ?? null;
+        if ($fastener !== null && !in_array($fastener, ['bolt', 'nut'], true)) {
+            $errors[] = 'fastener musi być "bolt" (śruba), "nut" (nakrętka) albo null, gdy nieznany';
         }
 
         $torque = $g['torque_nm'] ?? null;

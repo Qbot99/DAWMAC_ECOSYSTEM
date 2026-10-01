@@ -71,7 +71,7 @@ $tabele = [
             `pcd_mm`      DECIMAL(6,2) NOT NULL,
             `center_bore` DECIMAL(6,2) NOT NULL,
             `thread`      VARCHAR(16) NOT NULL,
-            `fastener`    ENUM('bolt','nut') NOT NULL,
+            `fastener`    ENUM('bolt','nut') NULL,
             `torque_nm`   SMALLINT UNSIGNED NULL,
             `source`      VARCHAR(255) NULL,
             `verified`    TINYINT(1) NOT NULL DEFAULT 0,
@@ -116,5 +116,10 @@ foreach ($tabele as $nazwa => $sql) {
     $conn->query($sql) or exit("Błąd CREATE TABLE $nazwa: " . $conn->error . "\n");
     echo "Tabela $nazwa gotowa.\n";
 }
+
+// Pierwsza wersja tej migracji miała fastener NOT NULL. Gdyby ktoś zdążył
+// ją uruchomić, ta linia dopuszcza "nieznane"; na nowej tabeli nic nie zmienia.
+$conn->query("ALTER TABLE `fit_generation` MODIFY `fastener` ENUM('bolt','nut') NULL")
+    or exit("Błąd ALTER TABLE fit_generation: " . $conn->error . "\n");
 
 echo "\nDalej: php import_fitment.php  (podgląd i walidacja danych z data/fitment)\n";

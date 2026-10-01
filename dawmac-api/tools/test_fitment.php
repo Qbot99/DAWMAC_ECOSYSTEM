@@ -107,13 +107,17 @@ sprawdz('walidacja: poprawny wpis', dawmac_fit_validate_generation($dobra), []);
 sprawdz('walidacja: center_bore jako tekst', count(dawmac_fit_validate_generation(['center_bore' => '57.1'] + $dobra)), 1);
 sprawdz('walidacja: rok końca przed początkiem', count(dawmac_fit_validate_generation(['years' => [2019, 2010]] + $dobra)), 1);
 sprawdz('walidacja: nieznany rodzaj mocowania', count(dawmac_fit_validate_generation(['fastener' => 'screw'] + $dobra)), 1);
+sprawdz('walidacja: mocowanie nieznane (null)', dawmac_fit_validate_generation(['fastener' => null] + $dobra), []);
+$bezMocowania = $dobra;
+unset($bezMocowania['fastener']);
+sprawdz('walidacja: brak pola mocowania', dawmac_fit_validate_generation($bezMocowania), []);
 sprawdz('walidacja: verified jako tekst', count(dawmac_fit_validate_generation(['verified' => 'tak'] + $dobra)), 1);
 sprawdz(
     'walidacja: opona R17 na felgę 16"',
     dawmac_fit_validate_generation(['wheels' => [['size' => '6.5Jx16 ET46', 'tire' => '225/45 R17']]] + $dobra),
     ['wheels[0]: opona R17 nie pasuje do felgi 16"']
 );
-sprawdz('walidacja: pusty wpis łapie wszystko naraz', count(dawmac_fit_validate_generation([])), 6);
+sprawdz('walidacja: pusty wpis łapie wszystko naraz', count(dawmac_fit_validate_generation([])), 5);
 
 /* Pliki danych w repozytorium ----------------------------------------- */
 

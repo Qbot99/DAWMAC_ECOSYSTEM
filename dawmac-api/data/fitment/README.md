@@ -58,7 +58,7 @@ nie usuwa.
 | `pcd` | rozstaw śrub, np. `5x112`, `5x114.3` |
 | `center_bore` | otwór centralny piasty w mm |
 | `thread` | gwint, np. `M14x1.5`, `M12x1.25`, `1/2-20 UNF` |
-| `fastener` | `bolt` (śruba) albo `nut` (nakrętka na szpilce) |
+| `fastener` | `bolt` (śruba), `nut` (nakrętka na szpilce) albo `null`, gdy nieznane |
 | `torque_nm` | moment dokręcania w Nm albo `null`, gdy nieznany |
 | `verified` | `true` tylko wtedy, gdy człowiek potwierdził dane |
 | `wheels[].size` | felga w zapisie `szerokośćJxśrednica ETodsadzenie` |
