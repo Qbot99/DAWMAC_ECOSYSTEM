@@ -15,6 +15,7 @@
 | `dawmac-app/` | Internal iOS app for warehouse workers | Swift, SwiftUI |
 | `dawmac-forged/` | forged.dawmacpolska.pl storefront | React, TypeScript, Vite |
 | `dawmac-gallery/` | Public photo gallery | Astro, React |
+| `dawmac-gielda/` | Free wheel marketplace (sell/buy listings, messages, moderation panel) | PHP, MySQL, React (PWA) |
 | `dawmac-wp-plugins/` | WordPress plugins for the shop (`dawmac-filters`, `dawmac-galeria`) | PHP |
 | `dawmac-wp-snippets/` | Standalone WPCode snippets running on the shop | PHP |
 | `dawmac-serwer/` | Scripts running straight on the dhosting account (cron reindex, uptime monitor) | Bash |

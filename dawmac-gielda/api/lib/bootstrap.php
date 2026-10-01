@@ -84,11 +84,14 @@ function gielda_connect(string $dbname): PDO
     $host = env('DB_SERVER', 'localhost');
     $dsn = "mysql:host={$host};dbname={$dbname};charset=utf8mb4";
     try {
-        return new PDO($dsn, env('DB_USER', ''), env('DB_PASSWORD', ''), [
+        $pdo = new PDO($dsn, env('DB_USER', ''), env('DB_PASSWORD', ''), [
             PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
             PDO::ATTR_EMULATE_PREPARES   => false,
         ]);
+        // NOW() w bazie i date() w PHP mają pokazywać ten sam czas (Europe/Warsaw).
+        $pdo->exec("SET time_zone = '" . date('P') . "'");
+        return $pdo;
     } catch (PDOException $e) {
         error_log('[gielda] DB: ' . $e->getMessage());
         json_error(500, 'Baza danych jest chwilowo niedostępna.');
