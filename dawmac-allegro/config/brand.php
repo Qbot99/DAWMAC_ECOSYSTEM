@@ -72,6 +72,8 @@ return [
 				</ul>
 				<p>Przed zakupem porównaj rozstaw śrub, średnicę otworu centralnego i odsadzenie ET z danymi swojego samochodu. Jeśli nie masz pewności co do dopasowania, napisz przez formularz kontaktu Allegro i podaj markę, model oraz rocznik auta — sprawdzimy to za Ciebie.</p>
 			',
+			// Outlet, uzywane, regenerowane, demo - opis nie moze mowic "nowe".
+			'gdy_nie_nowe' => [ 'cztery nowe felgi aluminiowe' => 'cztery felgi aluminiowe' ],
 		],
 
 		'about' => [
@@ -84,6 +86,7 @@ return [
 					<li>Obsługa po polsku, bez pośredników.</li>
 				</ul>
 			',
+			'gdy_nie_nowe' => [ '<li>Felgi fabrycznie nowe, prosto od producenta.</li>' => '' ],
 			// Zamiast grafiki firmowej idzie tu kolejne zdjecie produktu -
 			// realna felga sprzedaje lepiej niz baner udajacy, ze sprzedaje.
 			'image' => 'produkt',

@@ -15,7 +15,7 @@
  *   pa_profil, pa_srednica_opony                  - opony
  */
 
-if ( ! defined( 'ABSPATH' ) ) {
+if ( defined( 'ABSPATH' ) && ! defined( 'DAWMAC_ALLEGRO_VERSION' ) ) {
 	exit;
 }
 
@@ -472,7 +472,7 @@ class Dawmac_Allegro_Product_Data {
 	 * produktow tego nie spelnia i opis musi to powiedziec wprost, inaczej
 	 * kupujacy dostaje co innego, niz przeczytal.
 	 *
-	 * @return array{dekielki:bool,uszkodzenie:string,uzywane:bool,sztuk:?int,niejednorodny:string}
+	 * @return array{dekielki:bool,uszkodzenie:string,uzywane:bool,stan:string,outlet:bool,sztuk:?int,niejednorodny:string,uwagi:string}
 	 */
 	public static function adnotacje( WC_Product $product ): array {
 		// Tytul pomijamy - niesie nazwe i rozmiar, nie stan towaru. Pole koloru
@@ -491,11 +491,12 @@ class Dawmac_Allegro_Product_Data {
 			'uszkodzenie'   => '',
 			'uzywane'       => false,
 			'stan'          => 'Nowy',
+			'outlet'        => false,
 			'sztuk'         => null,
 			'niejednorodny' => '',
 		];
 
-		foreach ( [ 'brak dekli', 'brak dekielk', 'brak kapsli', 'brak deki' ] as $f ) {
+		foreach ( [ 'brak dekli', 'brak dekielk', 'brak dakiel', 'brak kapsli', 'brak deki' ] as $f ) {
 			if ( str_contains( $maly, $f ) ) {
 				$out['dekielki'] = false;
 			}
@@ -525,6 +526,18 @@ class Dawmac_Allegro_Product_Data {
 			}
 		}
 
+		// Outlet sprzedawca zaznacza w tytule ("Outlet: Japan Racing JR37"),
+		// czasem tylko w opisie ("Felgi outletowe"). To towar wyprzedazowy,
+		// nie fabrycznie nowy - bez stanu z opisu idzie jako "Używany".
+		if ( str_contains( $maly, 'outlet' ) || false !== mb_stripos( $product->get_name(), 'outlet' ) ) {
+			$out['outlet']  = true;
+			$out['uzywane'] = true;
+
+			if ( 'Nowy' === $out['stan'] ) {
+				$out['stan'] = 'Używany';
+			}
+		}
+
 		if ( preg_match( '/\b([2356])\s*(?:szt|sztuk)/iu', $tekst, $m ) ) {
 			$out['sztuk'] = (int) $m[1];
 		}
@@ -534,7 +547,60 @@ class Dawmac_Allegro_Product_Data {
 			[ 'kierunek prawy', 'felgi o szerokości', 'w rozstawie', 'sztuki posiadają', 'kolejne 2' ]
 		);
 
+		// Pelna tresc, ktora sprzedawca dopisal o tym towarze. Pojedyncze
+		// frazy gubily reszte: 1.10.2026 oferta OEMS IFG10 miala kierunki
+		// felg, ale nie inny kolor jednej z nich, a Arceo Valencia nic
+		// o roznych kolorach.
+		$out['uwagi'] = self::uwagi_z_tekstu(
+			html_entity_decode( wp_strip_all_tags( $product->get_description() ), ENT_QUOTES | ENT_HTML5, 'UTF-8' )
+		);
+
 		return $out;
+	}
+
+	/** Kolory i wykonczenia, ktore moga stac po "Kolor:" w opisie sklepowym. */
+	const SLOWA_KOLORU = [ 'silver', 'diamond', 'matt', 'matte', 'black', 'gloss', 'glossy', 'carbon',
+		'graphite', 'gunmetal', 'gun', 'metal', 'polished', 'brushed', 'titanium', 'titan', 'machined',
+		'face', 'bronze', 'gold', 'white', 'hyper', 'grey', 'gray', 'chrome', 'anthracite', 'satin',
+		'front', 'lip', 'red', 'blue', 'green', 'tinted', 'dark', 'light', 'platinum', 'copper', 'half',
+		'sand', 'pearl', 'metallic', 'w', 'with', 'and', '/', '+', '-' ];
+
+	/**
+	 * Uwagi sprzedawcy z dlugiego opisu: bez specyfikacji na poczatku
+	 * (konczy sie otworem centralnym, "bore 66,6"), bez stopki magazynowej
+	 * ("Felgi na magazynie! ZAPRASZAMY! 602.K / PN2 ..."), bez wagi,
+	 * nosnosci i koloru - te sa w parametrach. Pusty, gdy nic nie zostaje.
+	 */
+	public static function uwagi_z_tekstu( string $tekst ): string {
+		$t = trim( preg_replace( '/\s+/u', ' ', str_replace( "\u{00A0}", ' ', $tekst ) ) ?? $tekst );
+		$t = preg_split( '/\b(?:felg[ai]\s+na\s+magazynie|zapraszamy)\b/iu', $t )[0] ?? $t;
+
+		if ( preg_match( '/\bbore\s*[\d.,]+/iu', $t, $m, PREG_OFFSET_CAPTURE ) ) {
+			$t = substr( $t, $m[0][1] + strlen( $m[0][0] ) );
+		}
+
+		$t = preg_replace( '/\b(?:waga\s+felgi|max\s*load)\s*:?\s*[\d.,]+\s*kg\b/iu', '', $t ) ?? $t;
+
+		// "Kolor: Silver Diamond Komplet felg..." - kolor to angielskie slowa,
+		// zdanie po nim zaczyna sie po polsku, wiec zjadamy tylko te pierwsze.
+		$t = preg_replace_callback(
+			'/\bkolor:\s*((?:[\p{L}\/+\-]+\s*)+)/iu',
+			static function ( array $m ): string {
+				$reszta = $m[1];
+
+				while ( preg_match( '/^([\p{L}\/+\-]+)\s*/u', $reszta, $s )
+					&& in_array( mb_strtolower( $s[1], 'UTF-8' ), self::SLOWA_KOLORU, true ) ) {
+					$reszta = (string) substr( $reszta, strlen( $s[0] ) );
+				}
+
+				return $reszta;
+			},
+			$t
+		) ?? $t;
+
+		$t = trim( preg_replace( '/\s+/u', ' ', $t ) ?? $t, " \t.,;-" );
+
+		return preg_match( '/\p{L}{3}/u', $t ) ? $t . '.' : '';
 	}
 
 	/**

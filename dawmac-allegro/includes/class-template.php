@@ -249,12 +249,18 @@ class Dawmac_Allegro_Template {
 
 		$punkty = [];
 
+		$odbiega = ( ! empty( $a['sztuk'] ) && 4 !== (int) $a['sztuk'] )
+			|| ! empty( $a['niejednorodny'] ) || ! empty( $a['outlet'] ) || ! empty( $a['uszkodzenie'] )
+			|| 'Nowy' !== (string) ( $a['stan'] ?? 'Nowy' )
+			|| ( isset( $a['dekielki'] ) && ! $a['dekielki'] );
+
 		if ( ! empty( $a['sztuk'] ) && 4 !== (int) $a['sztuk'] ) {
 			$punkty[] = sprintf( '<b>Oferta obejmuje %d felgi</b>, nie komplet czterech.', (int) $a['sztuk'] );
 		}
 
 		if ( ! empty( $a['niejednorodny'] ) ) {
-			$punkty[] = '<b>Felgi w zestawie różnią się między sobą.</b> ' . esc_html( $a['niejednorodny'] );
+			$punkty[] = '<b>Felgi w zestawie różnią się między sobą.</b>'
+				. ( empty( $a['uwagi'] ) ? ' ' . esc_html( $a['niejednorodny'] ) : '' );
 		}
 
 		$opis_stanu = [
@@ -263,11 +269,23 @@ class Dawmac_Allegro_Template {
 			'Używany'            => '<b>Towar używany</b> — felgi były wcześniej eksploatowane.',
 		];
 
-		if ( isset( $opis_stanu[ $a['stan'] ?? '' ] ) ) {
-			$punkty[] = $opis_stanu[ $a['stan'] ];
+		if ( ! empty( $a['outlet'] ) ) {
+			$punkty[] = '<b>Felgi z outletu</b> — towar wyprzedażowy, dlatego oferujemy go jako używany. Dokładny stan widać na zdjęciach.';
 		}
 
-		if ( ! empty( $a['uszkodzenie'] ) ) {
+		// "Używany" przy outlecie wynika z samego outletu, nie z opisu -
+		// zdanie o eksploatacji twierdziloby wiecej, niz wiemy.
+		$stan = (string) ( $a['stan'] ?? '' );
+
+		if ( isset( $opis_stanu[ $stan ] ) && ! ( 'Używany' === $stan && ! empty( $a['outlet'] ) ) ) {
+			$punkty[] = $opis_stanu[ $stan ];
+		}
+
+		// Pelne uwagi sprzedawcy zastepuja wycinki o wadzie i roznicach
+		// miedzy felgami - to fragmenty tego samego tekstu.
+		if ( $odbiega && ! empty( $a['uwagi'] ) ) {
+			$punkty[] = '<b>Od sprzedawcy:</b> ' . esc_html( $a['uwagi'] );
+		} elseif ( ! empty( $a['uszkodzenie'] ) ) {
 			$punkty[] = '<b>Uwaga na stan:</b> ' . esc_html( $a['uszkodzenie'] );
 		}
 
@@ -285,6 +303,12 @@ class Dawmac_Allegro_Template {
 	}
 
 	private static function zestaw( array $product ): string {
+		// Zestaw nietypowy (1.10.2026: 1 felga 10J + 3 felgi 11J) to nie
+		// przod i tyl po dwie sztuki. Opisuja go uwagi sprzedawcy.
+		if ( ! empty( $product['adnotacje']['niejednorodny'] ) ) {
+			return '';
+		}
+
 		$szer = array_values( array_filter( array_map(
 			static fn( $v ): string => self::cale( (string) $v ),
 			is_array( $product['szerokosc'] ?? null ) ? $product['szerokosc'] : []
@@ -482,6 +506,12 @@ class Dawmac_Allegro_Template {
 		// Sama informacja o braku trafia do sekcji o stanie towaru.
 		if ( isset( $product['adnotacje']['dekielki'] ) && ! $product['adnotacje']['dekielki'] ) {
 			$tresc = preg_replace( '#<li>[^<]*dekiel[^<]*</li>#iu', '', $tresc ) ?? $tresc;
+		}
+
+		// Towar inny niz nowy nie moze byc w opisie "nowy" - zamiany
+		// siedza w konfiguracji bloku ('gdy_nie_nowe').
+		if ( 'Nowy' !== (string) ( $product['adnotacje']['stan'] ?? 'Nowy' ) ) {
+			$tresc = strtr( $tresc, (array) ( $block['gdy_nie_nowe'] ?? [] ) );
 		}
 
 		$html .= $tresc;

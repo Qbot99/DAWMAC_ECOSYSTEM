@@ -362,10 +362,15 @@ class Dawmac_Allegro_Offer {
 		}
 
 		$liczba = '';
+		$stan   = '';
 
 		foreach ( ( $o['parameters'] ?? [] ) as $x ) {
 			if ( 'Liczba felg w ofercie' === ( $x['name'] ?? '' ) ) {
 				$liczba = implode( ', ', $x['values'] ?? [] );
+			}
+
+			if ( 'Stan' === ( $x['name'] ?? '' ) ) {
+				$stan = implode( ', ', $x['values'] ?? [] );
 			}
 		}
 
@@ -387,6 +392,15 @@ class Dawmac_Allegro_Offer {
 
 		if ( ! str_contains( $opis, 'W zestawie' ) ) {
 			$zarzuty[] = 'brak sekcji "W zestawie"';
+		}
+
+		// 1.10.2026: outlet szedl jako "Nowy" z opisem "cztery nowe felgi".
+		if ( '' !== $stan && 'Nowy' !== $stan && preg_match( '/nowe felgi|fabrycznie nowe/u', $opis ) ) {
+			$zarzuty[] = "opis mówi o nowych felgach, a stan to {$stan}";
+		}
+
+		if ( 'Nowy' === $stan && false !== mb_stripos( (string) ( $o['name'] ?? '' ), 'outlet' ) ) {
+			$zarzuty[] = 'outlet ze stanem "Nowy"';
 		}
 
 		if ( '4 szt.' !== $liczba ) {

@@ -15,6 +15,13 @@ require __DIR__ . '/../includes/class-text.php';
 require __DIR__ . '/../includes/class-template.php';
 require __DIR__ . '/../includes/class-client.php';
 require __DIR__ . '/../includes/class-offer.php';
+require __DIR__ . '/../includes/class-product-data.php';
+
+if ( ! function_exists( 'esc_html' ) ) {
+	function esc_html( $s ) {
+		return htmlspecialchars( (string) $s, ENT_QUOTES, 'UTF-8' );
+	}
+}
 
 $pass = 0;
 $fail = 0;
@@ -215,6 +222,93 @@ check(
 	'Continental SportContact2 225/45 R17',
 	$template->build_offer_title( $opona )
 );
+
+// Outlet i inny towar nie-nowy: zadnego "nowe" w opisie, za to punkt
+// o outlecie. Zwykly komplet zostaje bez zmian.
+$tekst_opisu = static function ( array $d ): string {
+	$t = '';
+	foreach ( $d['sections'] as $s ) {
+		foreach ( $s['items'] as $it ) {
+			$t .= 'TEXT' === $it['type'] ? $it['content'] : '';
+		}
+	}
+	return $t;
+};
+
+$nowa = $tekst_opisu( $template->build( $felga + [ 'adnotacje' => [ 'stan' => 'Nowy', 'outlet' => false, 'dekielki' => true ] ] ) );
+contains( 'nowa: cztery nowe felgi', 'cztery nowe felgi', $nowa );
+contains( 'nowa: fabrycznie nowe', 'fabrycznie nowe', $nowa );
+contains( 'nowa: bez sekcji o stanie', 'Zanim kupisz', $nowa, false );
+
+$outlet = $tekst_opisu( $template->build( $felga + [ 'adnotacje' => [ 'stan' => 'Używany', 'outlet' => true, 'dekielki' => true ] ] ) );
+contains( 'outlet: bez "nowe felgi"', 'nowe felgi', $outlet, false );
+contains( 'outlet: bez "fabrycznie nowe"', 'fabrycznie nowe', $outlet, false );
+contains( 'outlet: zostaje "cztery felgi"', 'cztery felgi aluminiowe', $outlet );
+contains( 'outlet: punkt o outlecie', 'Felgi z outletu', $outlet );
+contains( 'outlet: bez zdania o eksploatacji', 'eksploatowane', $outlet, false );
+
+$regen = $tekst_opisu( $template->build( $felga + [ 'adnotacje' => [ 'stan' => 'Regenerowany', 'outlet' => false, 'dekielki' => true ] ] ) );
+contains( 'regenerowane: bez "nowe felgi"', 'nowe felgi', $regen, false );
+contains( 'regenerowane: punkt o regeneracji', 'Felgi regenerowane', $regen );
+
+// Uwagi sprzedawcy z prawdziwych opisow sklepowych (outlet, 1.10.2026).
+$uwagi = [
+	'OEMS: kierunki i kolory' => [
+		"OEMS IFG10 19'' 8,5J ET32 5x112 bore 66,56 Komplet felg wyprzedażowych. 1 felga kierunek prawy, 3 felgi kierunek lewy - widoczne na zdjęciach. 3 felgi w kolorze Silver, 1 w kolorze Silver Machined (polerowany front) Brak dakielków w zestawie. Felgi na Magazynie ! ZAPRASZAMY ! 602.K / PN2 Cena podana w ogłoszeniu jest ceną brutto",
+		'Komplet felg wyprzedażowych. 1 felga kierunek prawy, 3 felgi kierunek lewy - widoczne na zdjęciach. 3 felgi w kolorze Silver, 1 w kolorze Silver Machined (polerowany front) Brak dakielków w zestawie.',
+	],
+	'Arceo: rozne kolory' => [
+		'Arceo Valencia 19" 9,5J ET40 5x112 bore 73,1 Felgi w różnych kolorach, do malowania we własnym zakresie. Felgi proste. Brak uszkodzeń, wad i ubytków. Brak dekielków. Max Load 750 kg Felgi na magazynie. ZAPRASZAMY! 599.K / PN1',
+		'Felgi w różnych kolorach, do malowania we własnym zakresie. Felgi proste. Brak uszkodzeń, wad i ubytków. Brak dekielków.',
+	],
+	'Arceo: kolor przed zdaniem' => [
+		'Arceo Valencia 18" 8,5J ET35 5x108 bore 73,1 Kolor: Silver Diamond Komplet felg wyprzedażowych. Felgi proste, brak dekielków w zestawie. Waga Felgi: 10,6kg Max Load 700kg Felgi na magazynie. ZAPRASZAMY! 601.K / PN6',
+		'Komplet felg wyprzedażowych. Felgi proste, brak dekielków w zestawie.',
+	],
+	'JR37: tylko kolor - nic' => [
+		'Japan Racing JR37 SET-JR#343 19" 8,5J ET35 5x112 bore 66,6 Kolor: Gloss Black Max Load 690 kg Felgi na magazynie. ZAPRASZAMY! 961.K / NH5 JROUTD',
+		'',
+	],
+	'CVR8: rysy, podwojna kropka' => [
+		'Concaver CVR8 SET-CVR#101 19" 8,5J ET40 5x112 bore 72,6 Kolor: Matt Black Max Load 725 kg Felgi mają drobne rysy w pobliżu otworów na śruby.. Felgi na magazynie. ZAPRASZAMY 954.K / NH11 1CVROUTD',
+		'Felgi mają drobne rysy w pobliżu otworów na śruby.',
+	],
+	'ST3: kolor na koncu' => [
+		'Stuttgart ST3 (01W) 19" 8,5J ET38 bore 72,6 3 Felgi wyprzedażowe w rozstawie 5x120, 1 felga w rozstawie 5x112. W cenie felg 2 dystanse zmieniające rozstaw. Kolor: Silver Felga na magazynie! ZAPRASZAMY! 504.G / NH9',
+		'3 Felgi wyprzedażowe w rozstawie 5x120, 1 felga w rozstawie 5x112. W cenie felg 2 dystanse zmieniające rozstaw.',
+	],
+];
+
+foreach ( $uwagi as $nazwa => [ $wej, $want ] ) {
+	check( "uwagi: {$nazwa}", $want, Dawmac_Allegro_Product_Data::uwagi_z_tekstu( $wej ) );
+}
+
+$z_uwagami = $tekst_opisu( $template->build( $felga + [ 'adnotacje' => [ 'stan' => 'Używany', 'outlet' => true, 'dekielki' => false, 'uwagi' => 'Felgi w różnych kolorach, do malowania we własnym zakresie.' ] ] ) );
+contains( 'outlet: uwagi sprzedawcy w opisie', 'Felgi w różnych kolorach, do malowania we własnym zakresie.', $z_uwagami );
+$bez_odchylen = $tekst_opisu( $template->build( $felga + [ 'adnotacje' => [ 'stan' => 'Nowy', 'outlet' => false, 'dekielki' => true, 'uwagi' => 'Felgi kute.' ] ] ) );
+contains( 'zwykly komplet: bez uwag sprzedawcy', 'Od sprzedawcy', $bez_odchylen, false );
+
+$mieszany = [ 'szerokosc' => [ '10J', '11J' ], 'et' => [ '35', '40' ] ] + $felga;
+contains( 'zestaw 2+2: zdanie o przodzie i tyle', 'zestaw mieszany', $tekst_opisu( $template->build( $mieszany ) ) );
+$nietypowy = $tekst_opisu( $template->build( $mieszany + [ 'adnotacje' => [ 'stan' => 'Używany', 'outlet' => true, 'dekielki' => true, 'niejednorodny' => '1 felga o szerokości 10J, 3 felgi o szerokości 11J', 'uwagi' => '1 felga o szerokości 10J, 3 felgi o szerokości 11J.' ] ] ) );
+contains( 'zestaw 1+3: bez zdania o przodzie i tyle', 'zestaw mieszany', $nietypowy, false );
+contains( 'zestaw 1+3: uwagi sprzedawcy', '1 felga o szerokości 10J, 3 felgi o szerokości 11J.', $nietypowy );
+
+// Straznik przed publikacja: stan kontra opis.
+$oferta_z = static fn( string $stan, string $nazwa, string $opis ): array => [
+	'name'        => $nazwa,
+	'parameters'  => [ [ 'name' => 'Stan', 'values' => [ $stan ] ], [ 'name' => 'Liczba felg w ofercie', 'values' => [ '4 szt.' ] ] ],
+	'description' => [ 'sections' => [ [ 'items' => [ [ 'type' => 'TEXT', 'content' => '<h2>W zestawie</h2>' . $opis ] ] ] ] ],
+	'productSet'  => [ [
+		'product'             => [ 'parameters' => [ [ 'name' => 'Otwór centralny', 'values' => [ '66,6' ] ] ] ],
+		'responsibleProducer' => [ 'id' => 'x' ],
+		'safetyInformation'   => [ 'description' => 'x' ],
+	] ],
+];
+check( 'zarzuty: nowa i nowe felgi - czysto', [], Dawmac_Allegro_Offer::zarzuty( $oferta_z( 'Nowy', 'JR37 19"', 'cztery nowe felgi' ) ) );
+check( 'zarzuty: uzywana z "nowe felgi"', [ 'opis mówi o nowych felgach, a stan to Używany' ], Dawmac_Allegro_Offer::zarzuty( $oferta_z( 'Używany', 'JR37 19"', 'cztery nowe felgi' ) ) );
+check( 'zarzuty: outlet jako nowy', [ 'outlet ze stanem "Nowy"' ], Dawmac_Allegro_Offer::zarzuty( $oferta_z( 'Nowy', 'Outlet Japan Racing JR37 19"', 'cztery felgi' ) ) );
+check( 'zarzuty: outlet jako uzywany - czysto', [], Dawmac_Allegro_Offer::zarzuty( $oferta_z( 'Używany', 'Outlet Japan Racing JR37 19"', 'cztery felgi' ) ) );
 
 // Zadna sekcja nie moze miec wiecej niz dwoch itemow.
 foreach ( $desc['sections'] as $i => $section ) {
